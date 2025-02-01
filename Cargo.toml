@@ -1,0 +1,13 @@
+[package]
+name = "herbolution"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.95"
+glyphon = "0.8.0"
+lazy_winit = "0.1.0"
+pollster = "0.4.0"
+thiserror = "2.0.11"
+wgpu = "24.0.1"
+winit = "0.30.8"
