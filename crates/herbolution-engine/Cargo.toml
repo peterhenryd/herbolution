@@ -1,0 +1,14 @@
+[package]
+name = "herbolution-engine"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bytemuck = { workspace = true, features = ["derive"] }
+herbolution-math = { path = "../herbolution-math" }
+thiserror.workspace = true
+glyphon.workspace = true
+wgpu.workspace = true
+winit.workspace = true
+image.workspace = true
+serde = { version = "1.0.217", features = ["derive"] }

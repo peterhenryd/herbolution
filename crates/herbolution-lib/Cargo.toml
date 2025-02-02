@@ -1,0 +1,16 @@
+[package]
+name = "herbolution-lib"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+herbolution-engine = { path = "../herbolution-engine" }
+herbolution-game = { path = "../herbolution-game" }
+herbolution-math = { path = "../herbolution-math" }
+anyhow.workspace = true
+hashbrown.workspace = true
+lazy_winit.workspace = true
+thiserror.workspace = true
+winit.workspace = true
+tokio = { workspace = true, features = ["sync"] }
+tracing.workspace = true
