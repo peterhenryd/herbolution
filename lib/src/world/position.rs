@@ -4,6 +4,12 @@ use math::vector::{vec3, vec3i, vec3u8};
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub struct CubePosition(pub vec3i);
 
+impl From<vec3i> for CubePosition {
+    fn from(value: vec3i) -> Self {
+        CubePosition(value)
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub struct ChunkLocalPosition {
     pub chunk: vec3i,

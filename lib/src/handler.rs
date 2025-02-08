@@ -1,16 +1,16 @@
 use crate::engine::Engine;
 use crate::game::Game;
 use crate::listener::{InputEvent, Listener};
+use crate::Options;
 use lazy_winit::ApplicationInit;
 use std::sync::Arc;
-use wgpu::{Color, CommandEncoderDescriptor, LoadOp, Operations, RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPassDescriptor, StoreOp};
+use wgpu::CommandEncoderDescriptor;
 use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalSize;
 use winit::event::{DeviceEvent, DeviceId, KeyEvent, WindowEvent};
 use winit::event_loop::ActiveEventLoop;
 use winit::keyboard::PhysicalKey;
 use winit::window::{WindowAttributes, WindowId};
-use crate::Options;
 
 pub struct Handler {
     engine: Engine,
@@ -31,43 +31,21 @@ impl Listener for Handler {
 
 impl Handler {
     fn update(&mut self) {
-        self.game.update();
+        self.game.update(&self.engine);
     }
 
-    fn render(&self) {
+    fn render(&mut self) {
         let (surface_texture, surface_view) = self.engine.surface.prepare();
         let mut encoder = self.engine.gpu.device
             .create_command_encoder(&CommandEncoderDescriptor {
                 label: Some("herbolution_renderer_command_encoder"),
             });
-        let mut render_pass = encoder
-            .begin_render_pass(&RenderPassDescriptor {
-                label: Some("herbolution_render_pass"),
-                color_attachments: &[Some(RenderPassColorAttachment {
-                    view: &surface_view,
-                    resolve_target: None,
-                    ops: Operations {
-                        load: LoadOp::Clear(Color::BLACK),
-                        store: StoreOp::Store,
-                    },
-                })],
-                depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
-                    view: self.game.world.renderer.depth_texture.as_ref(),
-                    depth_ops: Some(Operations {
-                        load: LoadOp::Clear(1.0),
-                        store: StoreOp::Store,
-                    }),
-                    stencil_ops: None,
-                }),
-                ..Default::default()
-            });
-
-        self.game.render(&mut render_pass);
-
-        drop(render_pass);
+        self.game.render(&mut encoder, &surface_view);
 
         self.engine.gpu.queue.submit(Some(encoder.finish()));
         surface_texture.present();
+
+        self.game.ui.cleanup();
     }
 }
 

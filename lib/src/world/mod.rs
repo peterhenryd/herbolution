@@ -6,6 +6,7 @@ pub mod position;
 mod renderer;
 pub mod physics;
 pub mod transform;
+pub mod debugger;
 
 use crate::engine::binding::{Binding, BindingBuilder};
 use crate::engine::gpu::Gpu;
@@ -28,6 +29,9 @@ use wgpu::{AddressMode, FilterMode, RenderPass, SamplerBindingType, SamplerDescr
 use winit::dpi::PhysicalSize;
 use winit::event::{ElementState, MouseButton};
 use winit::keyboard::KeyCode;
+use crate::game::fps::Fps;
+use crate::ui::Ui;
+use crate::world::debugger::Debugger;
 
 pub struct World {
     pub(crate) renderer: Renderer,
@@ -35,14 +39,18 @@ pub struct World {
     entity_set: EntitySet,
     player: Player,
     physics: Physics,
+    debugger: Debugger,
 }
 
 impl Listener for World {
     fn on_window_resized(&mut self, size: PhysicalSize<u32>) {
         self.renderer.on_window_resized(size);
+        self.debugger.on_window_resized(size);
     }
 
     fn on_input(&mut self, event: &InputEvent) {
+        self.debugger.on_input(event);
+
         match event {
             InputEvent::Key { code, state } => {
                 let f = if state.is_pressed() { 1.0 } else { 0.0 };
@@ -62,7 +70,8 @@ impl Listener for World {
                     return self.player.motion.rotation = Some((dx, dy));
                 }
 
-                let (x, y) = self.player.motion.rotation.as_mut().unwrap();
+                let (x, y) = self
+                    .player.motion.rotation.as_mut().unwrap();
                 *x += dx;
                 *y += dy;
             }
@@ -77,7 +86,6 @@ impl World {
         let renderer = Renderer::create(engine.gpu.clone(), &engine.surface);
         let mut chunk_map = ChunkMap::new(engine.gpu.clone(), 48323);
 
-
         for x in -2..2 {
             for y in 0..5 {
                 for z in -2..2 {
@@ -89,6 +97,7 @@ impl World {
         let player = Player::new(vec3::new(0., 128., 0.));
         let entity_set = EntitySet::new();
         let physics = Physics::new();
+        let debugger = Debugger::create();
 
         Self {
             chunk_map,
@@ -96,6 +105,7 @@ impl World {
             player,
             entity_set,
             physics,
+            debugger,
         }
     }
 
@@ -149,13 +159,14 @@ impl World {
         self.chunk_map.chunk(p.chunk).set(p.local, material);
     }
 
-    pub fn update(&mut self, dt: Duration) {
+    pub fn update(&mut self, dt: Duration, ui: &mut Ui, fps: &Fps) {
         self.physics.update();
+        self.debugger.update(ui, fps, &self.player);
 
         while self.player.break_cube > 0 {
             self.player.break_cube -= 1;
 
-            let Some(pos) = self.ray_cast(self.player.position, self.player.rotation.into_center()) else { continue };
+            let Some(pos) = self.ray_cast(self.renderer.camera.transform.position, self.renderer.camera.transform.rotation.into_center()) else { continue };
 
             self.set_material(CubePosition(pos), Material::Air);
         }

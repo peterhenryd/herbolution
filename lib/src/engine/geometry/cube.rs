@@ -1,7 +1,7 @@
 use bitflags::bitflags;
 use math::angle::Deg;
 use math::quat::Quat;
-use math::vector::vec3i;
+use math::vector::{vec3, vec3i};
 
 #[repr(u8)]
 #[derive(Debug, Copy, Clone)]
@@ -23,6 +23,18 @@ impl Face {
             Face::Right => Quat::from_euler(Deg(0.0), Deg(90.0), Deg(0.0)),
             Face::Front => Quat::from_euler(Deg(0.0), Deg(0.0), Deg(0.0)),
             Face::Back => Quat::from_euler(Deg(0.0), Deg(180.0), Deg(0.0)),
+        }
+    }
+
+    pub fn from_vec3i(pos: vec3i) -> Option<Self> {
+        match pos {
+            vec3 { x: 0, y: 1, z: 0 } => Some(Face::Top),
+            vec3 { x: 0, y: -1, z: 0 } => Some(Face::Bottom),
+            vec3 { x: -1, y: 0, z: 0 } => Some(Face::Left),
+            vec3 { x: 1, y: 0, z: 0 } => Some(Face::Right),
+            vec3 { x: 0, y: 0, z: 1 } => Some(Face::Front),
+            vec3 { x: 0, y: 0, z: -1 } => Some(Face::Back),
+            _ => None,
         }
     }
 
@@ -52,6 +64,13 @@ impl Face {
 impl Into<Quat> for Face {
     fn into(self) -> Quat {
         self.into_quat()
+    }
+}
+
+
+impl From<vec3i> for Face {
+    fn from(pos: vec3i) -> Self {
+        Face::from_vec3i(pos).unwrap()
     }
 }
 

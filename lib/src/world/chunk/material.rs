@@ -1,5 +1,6 @@
 use Material::*;
 
+#[repr(u16)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum Material {
     Air,

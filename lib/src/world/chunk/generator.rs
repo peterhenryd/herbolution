@@ -1,5 +1,5 @@
 use crate::world::chunk;
-use crate::world::chunk::Chunk;
+use crate::world::chunk::{Chunk, ChunkMesh};
 use hashbrown::HashMap;
 use math::vector::{vec2f, vec2i, vec3u8};
 use simdnoise::NoiseBuilder;
@@ -35,7 +35,7 @@ impl ChunkGenerator {
         self.chunk_noise_map.get(&position).unwrap().as_slice()
     }
 
-    pub fn generate(&mut self, chunk: &mut Chunk) {
+    pub fn generate<A: ChunkMesh>(&mut self, chunk: &mut Chunk<A>) {
         let noise = self.get_noise(chunk.position.xz());
         for x in 0..chunk::LENGTH {
             for z in 0..chunk::LENGTH {

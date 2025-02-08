@@ -41,7 +41,7 @@ impl From<PhysicalSize<u32>> for Perspective {
         Self::new(
             Deg(70.0),
             width as f32 / height as f32,
-            0.1,
+            0.001,
             100.0,
         )
     }

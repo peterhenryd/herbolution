@@ -3,7 +3,9 @@ use crate::engine::surface::Surface;
 use std::sync::Arc;
 use wgpu::Instance;
 use winit::dpi::PhysicalSize;
-use winit::window::Window;
+use winit::event::ElementState;
+use winit::keyboard::KeyCode;
+use winit::window::{CursorGrabMode, Window};
 use crate::listener::{InputEvent, Listener};
 
 pub mod as_no_uninit;
@@ -22,6 +24,7 @@ pub struct Engine {
     pub window: Arc<Window>,
     pub gpu: Gpu,
     pub surface: Surface,
+    pub is_focused: bool,
 }
 
 impl Engine {
@@ -33,7 +36,7 @@ impl Engine {
         let gpu = Gpu::create(&instance, &inner_surface).expect("Failed to create GPU");
         let surface = Surface::new(&gpu, inner_surface, size);
 
-        Self { window, gpu, surface }
+        Self { window, gpu, surface, is_focused: false }
     }
 }
 
@@ -42,5 +45,20 @@ impl Listener for Engine {
         self.surface.resize(size);
     }
 
-    fn on_input(&mut self, _: &InputEvent) {}
+    fn on_input(&mut self, event: &InputEvent) {
+        use InputEvent::*;
+        match event {
+            Key { code: KeyCode::Escape, state: ElementState::Pressed } if self.is_focused => {
+                self.window.set_cursor_visible(true);
+                self.window.set_cursor_grab(CursorGrabMode::None).expect("Failed to release cursor");
+                self.is_focused = false;
+            }
+            MouseClick { state: ElementState::Pressed, .. } if !self.is_focused => {
+                self.window.set_cursor_visible(false);
+                self.window.set_cursor_grab(CursorGrabMode::Locked).expect("Failed to lock cursor");
+                self.is_focused = true;
+            }
+            _ => {}
+        }
+    }
 }
