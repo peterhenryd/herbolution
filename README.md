@@ -12,7 +12,7 @@ Herbolution uses Rust's build system, Cargo. To install Rust and Cargo, refer to
 git clone https://github.com/peterhenryd/herbolution
 
 # Enter the downloaded directory
-cd herbolution
+cd client
 
 # Build the project
 cargo build --release

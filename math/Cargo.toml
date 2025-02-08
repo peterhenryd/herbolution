@@ -1,0 +1,10 @@
+[package]
+name = "herbolution-math"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bytemuck = { version = "1.21.0", features = ["derive"] }
+herbolution-math-derive = { path = "derive" }
+num = "0.4.3"
+serde = { version = "1.0.217", features = ["derive"] }

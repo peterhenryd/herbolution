@@ -1,0 +1,20 @@
+[package]
+name = "herbolution-lib"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bitflags = "2.8.0"
+bytemuck = "1.21.0"
+hashbrown = "0.15.2"
+herbolution-math = { path = "../math" }
+image = "0.25.5"
+image-atlas = "0.4.1"
+lazy_winit = "0.1.1"
+pollster = "0.4.0"
+rapier3d = "0.23.0"
+serde = { version = "1.0.217", features = ["derive"] }
+simdnoise = "3.1.6"
+thiserror = "2.0.11"
+wgpu = { version = "24.0.1" }
+winit = "0.30.9"

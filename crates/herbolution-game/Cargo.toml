@@ -1,9 +1,0 @@
-[package]
-name = "herbolution-game"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-herbolution-math = { path = "../herbolution-math" }
-serde = { version = "1.0.217", features = ["derive"] }
-winit.workspace = true
