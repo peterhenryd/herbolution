@@ -102,7 +102,7 @@ impl<'a> PipelineBuilder<'_, 'a> {
         self
     }
 
-    pub fn with_buffers(mut self, buffers: impl IntoIterator<Item = VertexBufferLayout<'a>>) -> Self {
+    pub fn with_buffers(mut self, buffers: impl IntoIterator<Item=VertexBufferLayout<'a>>) -> Self {
         self.buffers.extend(buffers);
         self
     }

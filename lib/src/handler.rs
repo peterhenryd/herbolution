@@ -86,7 +86,7 @@ impl ApplicationHandler for Handler {
                 self.on_input(&InputEvent::MouseClick { button, state }),
             WindowEvent::KeyboardInput { event: KeyEvent { physical_key: PhysicalKey::Code(code), state, .. }, .. } =>
                 self.on_input(&InputEvent::Key { code, state }),
-            WindowEvent::CursorEntered { ..} =>
+            WindowEvent::CursorEntered { .. } =>
                 self.on_input(&InputEvent::MouseEntered),
             WindowEvent::CursorLeft { .. } =>
                 self.on_input(&InputEvent::MouseLeft),

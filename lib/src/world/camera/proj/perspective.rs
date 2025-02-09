@@ -39,10 +39,10 @@ impl Proj for Perspective {
 impl From<PhysicalSize<u32>> for Perspective {
     fn from(PhysicalSize { width, height }: PhysicalSize<u32>) -> Self {
         Self::new(
-            Deg(70.0),
+            Deg(90.0),
             width as f32 / height as f32,
             0.001,
-            100.0,
+            500.0,
         )
     }
 }

@@ -2,13 +2,13 @@ pub mod time;
 pub mod fps;
 
 use crate::engine::Engine;
+use crate::game::fps::Fps;
 use crate::game::time::DeltaTime;
 use crate::listener::{InputEvent, Listener};
 use crate::ui::Ui;
 use crate::world::World;
 use wgpu::{Color, CommandEncoder, LoadOp, Operations, RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPassDescriptor, StoreOp, TextureView};
 use winit::dpi::PhysicalSize;
-use crate::game::fps::Fps;
 
 pub struct Game {
     pub world: World,

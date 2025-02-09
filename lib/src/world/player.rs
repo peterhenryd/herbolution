@@ -1,9 +1,9 @@
+use crate::world::transform::Rotation;
 use crate::world::Cuboid;
 use math::angle::Rad;
 use math::vector::{vec3, vec3f};
 use std::f64::consts::FRAC_PI_2;
 use std::time::Duration;
-use crate::world::transform::Rotation;
 
 #[derive(Debug)]
 pub struct Player {
@@ -60,8 +60,8 @@ impl Default for PlayerMotion {
 impl PlayerMotion {
     pub fn get_velocity(&mut self, rotation: Rotation) -> vec3f {
         let (straight, side) = rotation.into_directions();
-        let (straight, side) = (straight.cast() * 6.0, side.cast() * 6.0);
-        let up = vec3::y() * 6.0;
+        let (straight, side) = (straight.cast() * 18.0, side.cast() * 18.0);
+        let up = vec3::y() * 18.0;
 
         let mut direction = vec3::zero();
         direction += straight * (self.forward - self.backward);

@@ -1,9 +1,9 @@
 pub mod text;
 
-use std::time::Duration;
-use wgpu::RenderPass;
 use crate::engine::Engine;
 use crate::ui::text::{TextRenderer, TextSection};
+use std::time::Duration;
+use wgpu::RenderPass;
 
 pub struct Ui {
     text_renderer: TextRenderer,

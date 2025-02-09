@@ -1,8 +1,8 @@
+use crate::world::physics::Physics;
+use math::vector::vec3f;
 use rapier3d::dynamics::LockedAxes;
 use rapier3d::na::Vector3;
 use rapier3d::prelude::{Isometry, RigidBodyBuilder, RigidBodyHandle};
-use math::vector::vec3f;
-use crate::world::physics::Physics;
 
 pub mod set;
 
@@ -26,7 +26,5 @@ impl Entity {
         }
     }
 
-    pub fn tick(&mut self) {
-
-    }
+    pub fn tick(&mut self) {}
 }

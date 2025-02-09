@@ -33,7 +33,7 @@ impl Material {
         }
     }
 
-    pub fn entries() -> impl Iterator<Item = Material> {
+    pub fn entries() -> impl Iterator<Item=Material> {
         [Stone, Dirt, Grass].into_iter()
     }
 

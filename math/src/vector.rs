@@ -14,6 +14,17 @@ pub struct vec3<T> {
 }
 
 impl<T> vec3<T> {
+    pub fn splat(v: T) -> Self
+    where
+        T: Copy,
+    {
+        Self {
+            x: v,
+            y: v,
+            z: v,
+        }
+    }
+
     pub fn extend(self, w: T) -> vec4<T> {
         vec4 {
             x: self.x,

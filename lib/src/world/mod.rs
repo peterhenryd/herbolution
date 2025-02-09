@@ -1,37 +1,40 @@
 pub mod camera;
 pub mod chunk;
+pub mod debugger;
 pub mod entity;
+pub mod physics;
 pub mod player;
 pub mod position;
 mod renderer;
-pub mod physics;
 pub mod transform;
-pub mod debugger;
+mod lighting;
 
 use crate::engine::binding::{Binding, BindingBuilder};
 use crate::engine::gpu::Gpu;
 use crate::engine::storage::Storage;
 use crate::engine::texture::Texture;
 use crate::engine::Engine;
+use crate::game::fps::Fps;
 use crate::listener::{InputEvent, Listener};
+use crate::ui::Ui;
+use crate::world::camera::frustum::Frustum;
 use crate::world::chunk::map::ChunkMap;
 use crate::world::chunk::material::Material;
+use crate::world::debugger::Debugger;
 use crate::world::entity::set::EntitySet;
 use crate::world::physics::Physics;
 use crate::world::player::Player;
-use crate::world::position::{ChunkLocalPosition, CubePosition};
+use crate::world::position::CubePosition;
 use crate::world::renderer::Renderer;
-use bytemuck::Zeroable;
 use image_atlas::{AtlasDescriptor, AtlasEntry, AtlasEntryMipOption};
 use math::vector::{vec2, vec3, vec3d, vec3f, vec3i, ArrVec2F32};
 use std::time::Duration;
-use wgpu::{AddressMode, FilterMode, RenderPass, SamplerBindingType, SamplerDescriptor, ShaderStages};
+use wgpu::{
+    AddressMode, FilterMode, RenderPass, SamplerBindingType, SamplerDescriptor, ShaderStages,
+};
 use winit::dpi::PhysicalSize;
 use winit::event::{ElementState, MouseButton};
 use winit::keyboard::KeyCode;
-use crate::game::fps::Fps;
-use crate::ui::Ui;
-use crate::world::debugger::Debugger;
 
 pub struct World {
     pub(crate) renderer: Renderer,
@@ -70,12 +73,14 @@ impl Listener for World {
                     return self.player.motion.rotation = Some((dx, dy));
                 }
 
-                let (x, y) = self
-                    .player.motion.rotation.as_mut().unwrap();
+                let (x, y) = self.player.motion.rotation.as_mut().unwrap();
                 *x += dx;
                 *y += dy;
             }
-            InputEvent::MouseClick { button: MouseButton::Left, state: ElementState::Pressed } => self.player.break_cube += 1,
+            InputEvent::MouseClick {
+                button: MouseButton::Left,
+                state: ElementState::Pressed,
+            } => self.player.break_cube += 1,
             _ => {}
         }
     }
@@ -86,15 +91,15 @@ impl World {
         let renderer = Renderer::create(engine.gpu.clone(), &engine.surface);
         let mut chunk_map = ChunkMap::new(engine.gpu.clone(), 48323);
 
-        for x in -2..2 {
-            for y in 0..5 {
-                for z in -2..2 {
+        for x in -4..4 {
+            for y in 1..3 {
+                for z in -4..4 {
                     chunk_map.load_chunk(vec3::new(x, y, z));
                 }
             }
         }
 
-        let player = Player::new(vec3::new(0., 128., 0.));
+        let player = Player::new(vec3::new(0., 64., 0.));
         let entity_set = EntitySet::new();
         let physics = Physics::new();
         let debugger = Debugger::create();
@@ -109,14 +114,24 @@ impl World {
         }
     }
 
-    pub fn is_colliding(&self, cuboid: Cuboid) -> bool {
-        let min = vec3::new(cuboid.min.x.floor(), cuboid.min.y.floor(), cuboid.min.z.floor());
-        let max = vec3::new(cuboid.max.x.ceil(), cuboid.max.y.ceil(), cuboid.max.z.ceil());
+    pub fn check_collision(&mut self, cuboid: Cuboid) -> bool {
+        let min = vec3::new(
+            cuboid.min.x.floor(),
+            cuboid.min.y.floor(),
+            cuboid.min.z.floor(),
+        );
+        let max = vec3::new(
+            cuboid.max.x.ceil(),
+            cuboid.max.y.ceil(),
+            cuboid.max.z.ceil(),
+        );
 
         for x in min.x as i32..max.x as i32 {
             for y in min.y as i32..max.y as i32 {
                 for z in min.z as i32..max.z as i32 {
-                    if let Some(material) = self.get_material(CubePosition(vec3::new(x, y, z))) {
+                    if let Some(material) =
+                        self.chunk_map.get_cube(CubePosition(vec3::new(x, y, z)))
+                    {
                         if material.can_collide() {
                             return true;
                         }
@@ -128,7 +143,7 @@ impl World {
         false
     }
 
-    pub fn ray_cast(&self, origin: vec3f, direction: vec3d) -> Option<vec3i> {
+    pub fn ray_cast(&mut self, origin: vec3f, direction: vec3d) -> Option<vec3i> {
         let mut position = origin;
         let step = direction.normalize().cast() * 0.1;
         let mut distance = 0.0;
@@ -138,7 +153,7 @@ impl World {
             let y = position.y.floor() as i32;
             let z = position.z.floor() as i32;
 
-            if let Some(_) = self.get_material(CubePosition(vec3::new(x, y, z))) {
+            if let Some(_) = self.chunk_map.get_cube(CubePosition(vec3::new(x, y, z))) {
                 return Some(vec3::new(x, y, z).cast());
             }
 
@@ -149,14 +164,14 @@ impl World {
         None
     }
 
-    pub fn get_material(&self, position: CubePosition) -> Option<Material> {
-        let p: ChunkLocalPosition = position.into();
-        self.chunk_map.get_chunk(p.chunk)?.get(p.local)
+    #[inline]
+    pub fn chunks(&self) -> &ChunkMap {
+        &self.chunk_map
     }
 
-    pub fn set_material(&mut self, position: CubePosition, material: Material) {
-        let p: ChunkLocalPosition = position.into();
-        self.chunk_map.chunk(p.chunk).set(p.local, material);
+    #[inline]
+    pub fn chunks_mut(&mut self) -> &mut ChunkMap {
+        &mut self.chunk_map
     }
 
     pub fn update(&mut self, dt: Duration, ui: &mut Ui, fps: &Fps) {
@@ -166,13 +181,20 @@ impl World {
         while self.player.break_cube > 0 {
             self.player.break_cube -= 1;
 
-            let Some(pos) = self.ray_cast(self.renderer.camera.transform.position, self.renderer.camera.transform.rotation.into_center()) else { continue };
+            let Some(pos) = self.ray_cast(
+                self.renderer.camera.transform.position,
+                self.renderer.camera.transform.rotation.into_center(),
+            ) else {
+                continue;
+            };
 
-            self.set_material(CubePosition(pos), Material::Air);
+            self.chunk_map.set_cube(pos, Material::Air);
         }
 
         self.player.update(dt);
-        if self.renderer.camera().position != self.player.position || self.renderer.camera().rotation != self.player.rotation {
+        if self.renderer.camera().position != self.player.position
+            || self.renderer.camera().rotation != self.player.rotation
+        {
             self.renderer.camera.edit(|c| {
                 c.transform.position = self.player.position;
                 c.transform.rotation = self.player.rotation;
@@ -188,7 +210,6 @@ impl World {
             self.player.motion.speed -= 0.1 * dt.as_secs_f32();
             self.player.motion.speed = self.player.motion.speed.max(0.0);
         }
-
          */
 
         for chunk in self.chunk_map.iter_mut() {
@@ -202,7 +223,15 @@ impl World {
         self.renderer.pipeline.enable(render_pass);
         self.renderer.quad_mesh.load(render_pass);
 
+        let mut visible_chunks = Vec::new();
+        let frustum = Frustum::new(&self.renderer.camera);
         for chunk in self.chunk_map.iter() {
+            if frustum.contains_chunk(chunk.position) {
+                visible_chunks.push(chunk);
+            }
+        }
+
+        for chunk in visible_chunks {
             chunk.render(render_pass);
         }
     }
@@ -221,25 +250,34 @@ fn build_textures(gpu: &Gpu, builder: BindingBuilder) -> Binding {
         size: 256,
         mip: Default::default(),
         entries: &entries,
-    }).unwrap();
+    })
+        .unwrap();
     let texture = diffuse_atlas.textures.into_iter().next().unwrap();
     let image = texture.mip_maps.into_iter().next().unwrap();
 
-    let diffuse_atlas_texture = Texture::from_bytes(gpu, "texture_atlas", image.width(), image.height(), image.as_ref());
-    let mut diffuse_atlas_positions = [ArrVec2F32::zeroed(); 128];
-    for (i, tex_coord) in diffuse_atlas.texcoords.iter().enumerate() {
+    let diffuse_atlas_texture = Texture::from_bytes(
+        gpu,
+        "texture_atlas",
+        image.width(),
+        image.height(),
+        image.as_ref(),
+    );
+    let mut diffuse_atlas_positions: Vec<ArrVec2F32> = vec![];
+    for tex_coord in diffuse_atlas.texcoords {
         let size = vec2::new(tex_coord.size, tex_coord.size).cast::<f32>();
-        diffuse_atlas_positions[i * 4] = (vec2::new(tex_coord.min_x, tex_coord.min_y).cast::<f32>() / size).into();
-        diffuse_atlas_positions[i * 4 + 1] = (vec2::new(tex_coord.max_x, tex_coord.min_y).cast::<f32>() / size).into();
-        diffuse_atlas_positions[i * 4 + 2] = (vec2::new(tex_coord.min_x, tex_coord.max_y).cast::<f32>() / size).into();
-        diffuse_atlas_positions[i * 4 + 3] = (vec2::new(tex_coord.max_x, tex_coord.max_y).cast::<f32>() / size).into();
+        diffuse_atlas_positions.push((vec2::new(tex_coord.min_x, tex_coord.min_y).cast::<f32>() / size).into());
+        diffuse_atlas_positions.push((vec2::new(tex_coord.max_x, tex_coord.min_y).cast::<f32>() / size).into());
+        diffuse_atlas_positions.push((vec2::new(tex_coord.min_x, tex_coord.max_y).cast::<f32>() / size).into());
+        diffuse_atlas_positions.push((vec2::new(tex_coord.max_x, tex_coord.max_y).cast::<f32>() / size).into());
     }
-    let diffuse_atlas_positions_uniform = Storage::create(gpu, "diffuse_atlas_positions", diffuse_atlas_positions);
+    let diffuse_atlas_positions_uniform =
+        Storage::create(gpu, "diffuse_atlas_positions", diffuse_atlas_positions);
 
     builder
         .with_texture(&diffuse_atlas_texture.create_view())
-        .with_sampler(SamplerBindingType::Filtering, &gpu.device
-            .create_sampler(&SamplerDescriptor {
+        .with_sampler(
+            SamplerBindingType::Filtering,
+            &gpu.device.create_sampler(&SamplerDescriptor {
                 label: Some("herbolution_world_texture_sampler"),
                 address_mode_u: AddressMode::Repeat,
                 address_mode_v: AddressMode::Repeat,

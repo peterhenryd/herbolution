@@ -62,7 +62,7 @@ impl Physics {
             &mut self.ccd_solver,
             Some(&mut self.query_pipeline),
             &(),
-            &()
+            &(),
         );
     }
 }

@@ -1,9 +1,9 @@
+use crate::engine::as_no_uninit::AsNoUninit;
 use bytemuck::{Pod, Zeroable};
-use wgpu::{vertex_attr_array, BufferAddress, VertexAttribute, VertexBufferLayout, VertexStepMode};
 use math::matrix::{mat4, mat4f, ArrMat4F32};
 use math::quat::Quat;
 use math::vector::vec3f;
-use crate::engine::as_no_uninit::AsNoUninit;
+use wgpu::{vertex_attr_array, BufferAddress, VertexAttribute, VertexBufferLayout, VertexStepMode};
 
 pub struct Instance {
     pub position: vec3f,

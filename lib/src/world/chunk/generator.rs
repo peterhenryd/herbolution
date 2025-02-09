@@ -22,8 +22,8 @@ impl ChunkGenerator {
         let l = chunk::LENGTH;
         if !self.chunk_noise_map.contains_key(&position) {
             let vec2f { x, y } = position.cast();
-            let noise = NoiseBuilder::ridge_2d_offset(x * 32.0, l, y * 32.0, l)
-                .with_octaves(4)
+            let noise = NoiseBuilder::ridge_2d_offset(x * chunk::LENGTH as f32, l, y * chunk::LENGTH as f32, l)
+                .with_octaves(2)
                 .with_freq(0.01)
                 .with_lacunarity(2.0)
                 .with_gain(0.5)
@@ -39,11 +39,11 @@ impl ChunkGenerator {
         let noise = self.get_noise(chunk.position.xz());
         for x in 0..chunk::LENGTH {
             for z in 0..chunk::LENGTH {
-                let f = noise[z * chunk::LENGTH + x];
+                let f = noise[x + chunk::LENGTH * z];
                 let h = Self::MIN_HEIGHT + (f * (Self::MAX_HEIGHT - Self::MIN_HEIGHT) as f32) as i32;
 
                 for chunk_y in 0..chunk::LENGTH {
-                    let y = chunk.position.y * 32 + chunk_y as i32;
+                    let y = chunk.position.y * chunk::LENGTH as i32 + chunk_y as i32;
                     if y < h - 6 {
                         chunk.set(vec3u8::new(x as u8, chunk_y as u8, z as u8), chunk::Material::Stone);
                     } else if y < h - 1 {

@@ -21,7 +21,10 @@ impl AsRef<TextureView> for DepthTexture {
     }
 }
 
-fn create_depth_texture(device: &Device, PhysicalSize { width, height }: PhysicalSize<u32>) -> (Texture, TextureView) {
+fn create_depth_texture(
+    device: &Device,
+    PhysicalSize { width, height }: PhysicalSize<u32>
+) -> (Texture, TextureView) {
     let texture = device.create_texture(&TextureDescriptor {
         size: Extent3d { width, height, depth_or_array_layers: 1 },
         mip_level_count: 1,

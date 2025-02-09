@@ -1,5 +1,5 @@
 use crate::engine::gpu::Gpu;
-use wgpu::{Device, SurfaceConfiguration, SurfaceTexture, TextureFormat, TextureUsages, TextureView, TextureViewDescriptor};
+use wgpu::{Device, PresentMode, SurfaceConfiguration, SurfaceTexture, TextureFormat, TextureUsages, TextureView, TextureViewDescriptor};
 use winit::dpi::PhysicalSize;
 
 pub struct Surface(Device, wgpu::Surface<'static>, SurfaceConfiguration);
@@ -16,7 +16,7 @@ impl Surface {
             format,
             width: size.width,
             height: size.height,
-            present_mode: capabilities.present_modes[0],
+            present_mode: PresentMode::Immediate,
             desired_maximum_frame_latency: 2,
             alpha_mode: capabilities.alpha_modes[0],
             view_formats: vec![],

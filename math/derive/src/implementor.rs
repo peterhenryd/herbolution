@@ -79,7 +79,7 @@ impl Implementor {
             self.field_idents.iter()
                 .map(|x| Ident::new(
                     &format!("p{}", x.to_string()),
-                    Span::call_site()
+                    Span::call_site(),
                 ).to_token_stream())
                 .collect()
         } else {

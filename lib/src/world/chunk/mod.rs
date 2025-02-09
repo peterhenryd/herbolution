@@ -21,8 +21,8 @@ pub const SIZE: usize = LENGTH.pow(3);
 
 #[derive(Debug)]
 pub struct Chunk<M> {
-    position: vec3i,
-    data: [Cube; SIZE],
+    pub position: vec3i,
+    data: Box<[Cube; SIZE]>,
     mesh: M,
 }
 
@@ -71,8 +71,8 @@ impl Chunk<()> {
     pub fn new(position: vec3i) -> Self {
         Self {
             position,
-            data: [Cube::new(); SIZE],
-            mesh: ()
+            data: Box::new([Cube::new(); SIZE]),
+            mesh: (),
         }
     }
 
@@ -98,7 +98,7 @@ impl Chunk<()> {
                 instance_buffer,
                 instance_count: quads.len() as u32,
                 has_changed: true,
-            }
+            },
         }
     }
 }
@@ -117,16 +117,14 @@ impl<M: ChunkMesh> Chunk<M> {
         }
     }
 
-    // The basic idea here is to find the slice of cubes on which faces are shared between two
+    // The basic idea here is to find the 32x32x1 slice of cubes on which faces are shared between two
     // chunks, and then to iterate over each cube and its corresponding cube, and cull their
     // shared faces if possible.
     pub fn cull_shared_faces<A: ChunkMesh>(&mut self, other: &mut Chunk<A>) {
         // The difference in position between the two chunks, this is a unit component vector.
         let dp = self.position - other.position;
-        dbg!(dp);
         // Get the face that is shared between the two chunks.
         let Some(shared_face) = Face::from_vec3i(dp) else { return };
-        dbg!(shared_face);
 
         // Get the slices of cubes that are shared between the two chunks.
         let this_matrix = self.get_facial_boundary_indices(shared_face.inverse());
@@ -138,10 +136,6 @@ impl<M: ChunkMesh> Chunk<M> {
                     let this = &mut self.data[x1 + y1 + z1];
                     let that = &mut other.data[x2 + y2 + z2];
 
-                    if this.material == Material::Air || that.material == Material::Air {
-                        continue;
-                    }
-
                     if this.material.is_face_culled() && that.material.is_face_culled() {
                         this.faces.remove(Faces::from(shared_face.inverse()));
                         that.faces.remove(Faces::from(shared_face));
@@ -149,6 +143,7 @@ impl<M: ChunkMesh> Chunk<M> {
                 }
             }
         }
+        self.mesh.schedule_update();
     }
 
     pub fn get_facial_boundary_indices(&self, face: Face) -> vec3<StepBy<Range<usize>>> {
@@ -167,7 +162,7 @@ impl<M: ChunkMesh> Chunk<M> {
                 (0..LENGTH).step_by(LENGTH),
                 full_z.clone(),
             ),
-            Face::Left =>  vec3::new(
+            Face::Left => vec3::new(
                 (0..1).step_by(1),
                 full_y.clone(),
                 full_z.clone(),

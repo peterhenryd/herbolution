@@ -1,10 +1,12 @@
-use crate::world::camera::proj::Proj;
-use math::matrix::{mat4, mat4f, ArrMat4F32};
-use math::vector::{vec3, vec4};
+use bytemuck::{Pod, Zeroable};
 use crate::engine::as_no_uninit::AsNoUninit;
+use crate::world::camera::proj::Proj;
 use crate::world::transform::Transform;
+use math::matrix::{mat4, mat4f, ArrMat4F32};
+use math::vector::{vec3, vec4, ArrVec3F32};
 
 pub mod proj;
+pub mod frustum;
 
 pub struct Camera<P> {
     pub transform: Transform,
@@ -24,12 +26,16 @@ impl<P: Proj> Camera<P> {
 }
 
 impl<P: Proj> AsNoUninit for Camera<P> {
-    type Output = ArrMat4F32;
+    type Output = ArrCamera;
 
     fn as_no_uninit(&self) -> Self::Output {
-        self.as_mat4f().into()
+        ArrCamera(self.as_mat4f().into(), self.transform.position.into(), 0)
     }
 }
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
+pub struct ArrCamera(pub ArrMat4F32, pub ArrVec3F32, u32);
 
 impl Transform {
     pub fn as_view_mat4f(&self) -> mat4f {

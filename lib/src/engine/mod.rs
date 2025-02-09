@@ -1,12 +1,12 @@
 use crate::engine::gpu::Gpu;
 use crate::engine::surface::Surface;
+use crate::listener::{InputEvent, Listener};
 use std::sync::Arc;
 use wgpu::Instance;
 use winit::dpi::PhysicalSize;
 use winit::event::ElementState;
 use winit::keyboard::KeyCode;
 use winit::window::{CursorGrabMode, Window};
-use crate::listener::{InputEvent, Listener};
 
 pub mod as_no_uninit;
 pub mod binding;

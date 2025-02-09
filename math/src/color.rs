@@ -1,3 +1,5 @@
+use bytemuck::{Pod, Zeroable};
+
 #[derive(derive::Vector)]
 pub struct Color3<T> {
     pub r: T,
@@ -102,4 +104,177 @@ impl ColorComp for f64 {
     const MIN: Self = 0.0;
     const HALF: Self = 0.5;
     const MAX: Self = 1.0;
+}
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
+pub struct ArrColor3U8(pub [u8; 3]);
+
+impl Color3<u8> {
+    pub fn into_arr(self) -> ArrColor3U8 {
+        ArrColor3U8([self.r, self.g, self.b])
+    }
+}
+
+impl ArrColor3U8 {
+    pub fn into_struct(self) -> Color3<u8> {
+        Color3::new(self.0[0], self.0[1], self.0[2])
+    }
+}
+
+impl From<Color3<u8>> for ArrColor3U8 {
+    fn from(color: Color3<u8>) -> Self {
+        color.into_arr()
+    }
+}
+
+impl From<ArrColor3U8> for Color3<u8> {
+    fn from(arr: ArrColor3U8) -> Self {
+        arr.into_struct()
+    }
+}
+
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
+pub struct ArrColor3F32(pub [f32; 3]);
+
+impl Color3<f32> {
+    pub fn into_arr(self) -> ArrColor3F32 {
+        ArrColor3F32([self.r, self.g, self.b])
+    }
+}
+
+impl ArrColor3F32 {
+    pub fn into_struct(self) -> Color3<f32> {
+        Color3::new(self.0[0], self.0[1], self.0[2])
+    }
+}
+
+impl From<Color3<f32>> for ArrColor3F32 {
+    fn from(color: Color3<f32>) -> Self {
+        color.into_arr()
+    }
+}
+
+impl From<ArrColor3F32> for Color3<f32> {
+    fn from(arr: ArrColor3F32) -> Self {
+        arr.into_struct()
+    }
+}
+
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
+pub struct ArrColor3F64(pub [f64; 3]);
+
+impl Color3<f64> {
+    pub fn into_arr(self) -> ArrColor3F64 {
+        ArrColor3F64([self.r, self.g, self.b])
+    }
+}
+
+impl ArrColor3F64 {
+    pub fn into_struct(self) -> Color3<f64> {
+        Color3::new(self.0[0], self.0[1], self.0[2])
+    }
+}
+
+impl From<Color3<f64>> for ArrColor3F64 {
+    fn from(color: Color3<f64>) -> Self {
+        color.into_arr()
+    }
+}
+
+impl From<ArrColor3F64> for Color3<f64> {
+    fn from(arr: ArrColor3F64) -> Self {
+        arr.into_struct()
+    }
+}
+
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
+pub struct ArrColor4U8(pub [u8; 4]);
+
+impl Color4<u8> {
+    pub fn into_arr(self) -> ArrColor4U8 {
+        ArrColor4U8([self.r, self.g, self.b, self.a])
+    }
+}
+
+impl ArrColor4U8 {
+    pub fn into_struct(self) -> Color4<u8> {
+        Color4::new(self.0[0], self.0[1], self.0[2], self.0[3])
+    }
+}
+
+impl From<Color4<u8>> for ArrColor4U8 {
+    fn from(color: Color4<u8>) -> Self {
+        color.into_arr()
+    }
+}
+
+impl From<ArrColor4U8> for Color4<u8> {
+    fn from(arr: ArrColor4U8) -> Self {
+        arr.into_struct()
+    }
+}
+
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
+pub struct ArrColor4F32(pub [f32; 4]);
+
+impl Color4<f32> {
+    pub fn into_arr(self) -> ArrColor4F32 {
+        ArrColor4F32([self.r, self.g, self.b, self.a])
+    }
+}
+
+impl ArrColor4F32 {
+    pub fn into_struct(self) -> Color4<f32> {
+        Color4::new(self.0[0], self.0[1], self.0[2], self.0[3])
+    }
+}
+
+impl From<Color4<f32>> for ArrColor4F32 {
+    fn from(color: Color4<f32>) -> Self {
+        color.into_arr()
+    }
+}
+
+impl From<ArrColor4F32> for Color4<f32> {
+    fn from(arr: ArrColor4F32) -> Self {
+        arr.into_struct()
+    }
+}
+
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
+pub struct ArrColor4F64(pub [f64; 4]);
+
+impl Color4<f64> {
+    pub fn into_arr(self) -> ArrColor4F64 {
+        ArrColor4F64([self.r, self.g, self.b, self.a])
+    }
+}
+
+impl ArrColor4F64 {
+    pub fn into_struct(self) -> Color4<f64> {
+        Color4::new(self.0[0], self.0[1], self.0[2], self.0[3])
+    }
+}
+
+impl From<Color4<f64>> for ArrColor4F64 {
+    fn from(color: Color4<f64>) -> Self {
+        color.into_arr()
+    }
+}
+
+impl From<ArrColor4F64> for Color4<f64> {
+    fn from(arr: ArrColor4F64) -> Self {
+        arr.into_struct()
+    }
 }

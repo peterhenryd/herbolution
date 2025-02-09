@@ -1,13 +1,13 @@
+use crate::game::fps::Fps;
 use crate::listener::{InputEvent, Listener};
 use crate::ui::text::TextSection;
 use crate::ui::Ui;
+use crate::world::player::Player;
+use math::color::Color4;
 use math::vector::vec2;
 use winit::dpi::PhysicalSize;
 use winit::event::ElementState;
 use winit::keyboard::KeyCode;
-use math::color::Color4;
-use crate::game::fps::Fps;
-use crate::world::player::Player;
 
 pub struct Debugger {
     is_enabled: bool,
@@ -60,7 +60,7 @@ impl Debugger {
         // Makeshift cross-hair
         let PhysicalSize { width, height } = ui.get_text_renderer().get_resolution();
         ui.push_text(TextSection {
-            position: vec2::new(width as f32 / 2.0, height as f32 / 2.0),
+            position: vec2::new(width as f32 / 2.0 - 1.5, height as f32 / 2.0 - 1.5),
             content: "+".to_string(),
             font_size: 24.0,
             line_height: 24.0,

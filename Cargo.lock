@@ -1061,6 +1061,7 @@ dependencies = [
  "image",
  "image-atlas",
  "lazy_winit",
+ "num",
  "pollster",
  "rapier3d",
  "serde",

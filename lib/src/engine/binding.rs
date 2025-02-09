@@ -33,11 +33,11 @@ impl crate::engine::gpu::Gpu {
 mod builder {
     use crate::engine::binding::Binding;
     use crate::engine::gpu::Gpu;
+    use crate::engine::storage::Storage;
     use crate::engine::uniform::Uniform;
     use std::num::NonZeroU32;
     use std::sync::Arc;
     use wgpu::{BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType, BufferBindingType, Sampler, SamplerBindingType, ShaderStages, TextureSampleType, TextureView, TextureViewDimension};
-    use crate::engine::storage::Storage;
 
     pub struct BindingBuilder<'a> {
         pub(super) gpu: Gpu,
@@ -54,7 +54,13 @@ mod builder {
     }
 
     impl<'a> BindingBuilder<'a> {
-        pub fn with_entry(mut self, visibility: ShaderStages, ty: BindingType, count: Option<NonZeroU32>, resource: BindingResource<'a>) -> Self {
+        pub fn with_entry(
+            mut self,
+            visibility: ShaderStages,
+            ty: BindingType,
+            count: Option<NonZeroU32>,
+            resource: BindingResource<'a>
+        ) -> Self {
             self.entries.push(BindingEntry { visibility, ty, count, resource });
             self
         }
@@ -70,7 +76,7 @@ mod builder {
                     min_binding_size: None,
                 },
                 None,
-                buffer.buffer.as_entire_binding()
+                buffer.buffer.as_entire_binding(),
             )
         }
 

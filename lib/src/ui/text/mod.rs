@@ -1,12 +1,12 @@
-use glyphon::{Attrs, Buffer, Cache, Color, Family, FontSystem, Metrics, Resolution, Shaping, Stretch, Style, SwashCache, TextArea, TextAtlas, TextBounds, Viewport, Weight};
-use glyphon::cosmic_text::CacheKeyFlags;
-use wgpu::{Device, MultisampleState, Queue, RenderPass};
-use winit::dpi::PhysicalSize;
-use math::color::Color4;
-use math::vector::vec2f;
 use crate::engine::gpu::Gpu;
 use crate::engine::surface::Surface;
 use crate::listener::{InputEvent, Listener};
+use glyphon::cosmic_text::CacheKeyFlags;
+use glyphon::{Attrs, Buffer, Cache, Color, Family, FontSystem, Metrics, Resolution, Shaping, Stretch, Style, SwashCache, TextArea, TextAtlas, TextBounds, Viewport, Weight};
+use math::color::Color4;
+use math::vector::vec2f;
+use wgpu::{Device, MultisampleState, Queue, RenderPass};
+use winit::dpi::PhysicalSize;
 
 pub struct TextRenderer {
     device: Device,

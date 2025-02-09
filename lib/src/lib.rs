@@ -16,6 +16,4 @@ pub fn start(options: Options) -> Result<(), winit::error::EventLoopError> {
         .run_lazy_app::<handler::Handler>(options)
 }
 
-pub struct Options {
-
-}
+pub struct Options {}
