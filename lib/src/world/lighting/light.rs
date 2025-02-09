@@ -36,7 +36,7 @@ impl Default for AmbientLight {
     fn default() -> Self {
         Self {
             color: Color3::new(1.0, 1.0, 1.0),
-            intensity: 1.0,
+            intensity: 0.5,
         }
     }
 }
@@ -80,7 +80,7 @@ impl Default for DirectionalLight {
     fn default() -> Self {
         Self {
             color: Color3::new(1.0, 1.0, 1.0),
-            intensity: 1.0,
+            intensity: 0.5,
             direction: vec3f::new(0.0, -1.0, 0.0),
         }
     }
@@ -127,8 +127,8 @@ impl Default for PointLight {
     fn default() -> Self {
         Self {
             color: Color3::new(1.0, 1.0, 1.0),
-            intensity: 1.0,
-            position: vec3f::zero(),
+            intensity: 0.5,
+            position: vec3f::new(0., 128., 0.),
             range: 10.0,
         }
     }

@@ -43,6 +43,18 @@ pub struct PlayerMotion {
     pub rotation: Option<(f64, f64)>,
 }
 
+impl PlayerMotion {
+    pub(crate) fn reset(&mut self) {
+        self.forward = 0.0;
+        self.backward = 0.0;
+        self.leftward = 0.0;
+        self.rightward = 0.0;
+        self.upward = 0.0;
+        self.downward = 0.0;
+        self.rotation = None;
+    }
+}
+
 impl Default for PlayerMotion {
     fn default() -> Self {
         Self {

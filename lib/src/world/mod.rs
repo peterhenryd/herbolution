@@ -174,7 +174,11 @@ impl World {
         &mut self.chunk_map
     }
 
-    pub fn update(&mut self, dt: Duration, ui: &mut Ui, fps: &Fps) {
+    pub fn update(&mut self, dt: Duration, engine: &Engine, ui: &mut Ui, fps: &Fps) {
+        if !engine.is_focused {
+            self.player.motion.reset();
+        }
+
         self.physics.update();
         self.debugger.update(ui, fps, &self.player);
 

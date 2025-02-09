@@ -10,6 +10,7 @@ use std::ops::{Not, Range};
 use std::path::Path;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::{Buffer, RenderPass};
+use crate::world::chunk;
 
 pub mod cube;
 pub mod material;
@@ -267,7 +268,7 @@ impl<M: ChunkMesh> Chunk<M> {
             return;
         }
 
-        let chunk_position = self.position.cast::<f32>() * 32.;
+        let chunk_position = self.position.cast::<f32>() * chunk::LENGTH as f32;
         let position = p.cast();
         for rotation in cube.faces.map(|f| f.into_quat()) {
             quads.push(Instance {

@@ -36,7 +36,7 @@ impl Game {
 
         let dt = self.time.next_delta();
 
-        self.world.update(dt, &mut self.ui, &self.fps);
+        self.world.update(dt, engine, &mut self.ui, &self.fps);
         self.ui.update(dt);
     }
 
