@@ -16,16 +16,16 @@ use crate::world::camera::frustum::Frustum;
 use crate::world::chunk::map::ChunkMap;
 use crate::world::debugger::Debugger;
 use crate::world::entity::set::EntitySet;
+use crate::world::lighting::light::PointLight;
 use crate::world::player::Player;
 use crate::world::renderer::Renderer;
+use math::color::Color3;
 use math::vector::vec3;
 use std::time::Duration;
 use wgpu::RenderPass;
 use winit::dpi::PhysicalSize;
 use winit::event::{ElementState, MouseButton};
 use winit::keyboard::KeyCode;
-use math::color::Color3;
-use crate::world::lighting::light::PointLight;
 
 pub struct World {
     pub(crate) renderer: Renderer,
@@ -79,12 +79,14 @@ impl Listener for World {
 impl World {
     pub fn create(engine: &Engine) -> Self {
         let mut renderer = Renderer::create(engine.gpu.clone(), &engine.surface);
-        renderer.lighting.point_light_set.edit(|set| *set = vec![PointLight {
-            color: Color3::WHITE,
-            intensity: 0.5,
-            position: vec3::new(0., 128., 0.),
-            range: 16.0,
-        }]);
+        renderer.lighting.point_light_set.edit(|set| {
+            *set = vec![PointLight {
+                color: Color3::WHITE,
+                intensity: 0.5,
+                position: vec3::new(0., 128., 0.),
+                range: 16.0,
+            }]
+        });
         let mut chunk_map = ChunkMap::new(engine.gpu.clone(), 48323);
 
         for x in -4..4 {
@@ -127,7 +129,8 @@ impl World {
             self.reset_input_trackers();
         }
 
-        self.player.update(dt, &mut self.chunk_map, &mut self.renderer.camera);
+        self.player
+            .update(dt, &mut self.chunk_map, &mut self.renderer.camera);
         self.debugger.update(ui, fps, &self.player);
 
         for chunk in self.chunk_map.iter_mut() {
@@ -142,7 +145,8 @@ impl World {
         self.renderer.quad_mesh.load(render_pass);
 
         let frustum = Frustum::new(&self.renderer.camera);
-        self.chunk_map.iter()
+        self.chunk_map
+            .iter()
             .filter(|chunk| frustum.contains_chunk(chunk.position))
             .for_each(|chunk| chunk.render(render_pass));
     }

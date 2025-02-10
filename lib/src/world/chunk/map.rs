@@ -15,7 +15,7 @@ pub struct ChunkMap {
 }
 
 impl ChunkMap {
-    pub fn new(gpu: Gpu, seed: i32) -> Self {
+    pub fn new(gpu: Gpu, seed: u32) -> Self {
         Self {
             gpu,
             map: HashMap::new(),
@@ -107,24 +107,21 @@ impl ChunkMap {
     }
 
     pub fn cast_ray(&mut self, origin: vec3f, direction: vec3d) -> Option<vec3i> {
-        let mut position = origin;
-        let step = direction.normalize().cast() * 0.1;
-        let mut distance = 0.0;
-
-        while distance < 10.0 {
-            let x = position.x.floor() as i32;
-            let y = position.y.floor() as i32;
-            let z = position.z.floor() as i32;
-
-            if let Some(_) = self.get_cube(CubePosition(vec3::new(x, y, z))) {
-                return Some(vec3::new(x, y, z).cast());
+        let mut v = None;
+        cast_ray(origin, direction.cast(), 10., |_, hit_pos, _| {
+            let chunk_local_position = ChunkLocalPosition::from(CubePosition(hit_pos));
+            if let Some(chunk) = self.get_chunk_mut(chunk_local_position.chunk) {
+                if let Some(material) = chunk.get(chunk_local_position.local) {
+                    if material.can_collide() {
+                        v = Some(hit_pos);
+                        return true;
+                    }
+                }
             }
 
-            position += step;
-            distance += step.length();
-        }
-
-        None
+            false
+        });
+        v
     }
 
     pub fn check_collision(&mut self, cuboid: Cuboid<f32>) -> bool {
@@ -154,5 +151,45 @@ impl ChunkMap {
         }
 
         false
+    }
+}
+
+fn stepped_index(v: vec3f) -> usize {
+    if v.x < v.y && v.x < v.z {
+        0
+    } else if v.y < v.z {
+        1
+    } else {
+        2
+    }
+}
+
+fn cast_ray(
+    origin: vec3f,
+    direction: vec3d,
+    max_distance: f32,
+    mut is_finished: impl FnMut(vec3i, vec3i, vec3i) -> bool,
+) {
+    let mut distance = 0.0;
+    let index = origin.floor().cast::<i32>();
+    let step = direction.signum().cast::<i32>();
+
+    let dd = direction.recip().abs().cast::<f32>();
+    let dv = index.cast::<f32>().zip(origin).zip_2(step)
+        .map(|(index, origin, step)|
+            if step > 0 { index + 1.0 - origin } else { origin - index }
+        );
+    let mut dm = dd * dv;
+
+    let hit_pos = |t| origin + direction.cast() * t;
+    while distance < max_distance {
+        let stepped_index = stepped_index(dm);
+        distance = dm[stepped_index];
+        dm[stepped_index] += dd[stepped_index];
+
+        let norm_pos = vec3::with_component_of_index(stepped_index, step[stepped_index]).unwrap();
+        if is_finished(index, hit_pos(distance).cast(), norm_pos) {
+            break;
+        }
     }
 }

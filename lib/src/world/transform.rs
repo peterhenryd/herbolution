@@ -2,6 +2,7 @@ use math::angle::Rad;
 use math::vector::{vec3, vec3d, vec3f};
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone)]
 pub struct Transform {
     pub position: vec3f,
     pub rotation: Rotation,

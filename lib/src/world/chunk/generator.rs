@@ -1,28 +1,31 @@
-use cached::proc_macro::cached;
 use crate::world::chunk;
-use crate::world::chunk::{Chunk, ChunkMesh};
-use math::vector::{vec2f, vec2i, vec3u8};
-use simdnoise::NoiseBuilder;
 use crate::world::chunk::material::Material;
+use crate::world::chunk::{Chunk, ChunkMesh};
+use cached::proc_macro::cached;
+use math::vector::{vec2, vec2i, vec3u8};
+use std::hash::Hash;
+use noise::{NoiseFn, PerlinSurflet, Seedable};
 
 #[derive(Debug)]
 pub struct ChunkGenerator {
-    seed: i32,
+    seed: u32,
+    noise: PerlinSurflet,
 }
 
 impl ChunkGenerator {
     const MIN_HEIGHT: i32 = 64;
     const MAX_HEIGHT: i32 = 80;
 
-    pub fn new(seed: i32) -> Self {
-        Self { seed }
+    pub fn new(seed: u32) -> Self {
+        Self { seed, noise: PerlinSurflet::new(seed) }
     }
 
     pub fn generate<A: ChunkMesh>(&self, chunk: &mut Chunk<A>) {
-        let noise = get_noise(self.seed, chunk.position.xz());
         for x in 0..chunk::LENGTH {
             for z in 0..chunk::LENGTH {
-                let f = noise[x + chunk::LENGTH * z];
+                let abs_x = chunk.position.x * chunk::LENGTH as i32 + x as i32;
+                let abs_z = chunk.position.z * chunk::LENGTH as i32 + z as i32;
+                let f = get_noise(Noise(self.noise), vec2::new(abs_x, abs_z));
                 let h = Self::MIN_HEIGHT + (f * (Self::MAX_HEIGHT - Self::MIN_HEIGHT) as f32) as i32;
 
                 for chunk_y in 0..chunk::LENGTH {
@@ -40,15 +43,31 @@ impl ChunkGenerator {
     }
 }
 
+// Wrapper to allow for caching
+pub struct Noise(PerlinSurflet);
+
+impl Clone for Noise {
+    fn clone(&self) -> Self {
+        Self(self.0.clone())
+    }
+}
+
+impl Eq for Noise {}
+
+impl PartialEq for Noise {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.seed() == other.0.seed()
+    }
+}
+
+impl Hash for Noise {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.seed().hash(state);
+    }
+}
+
+
 #[cached]
-fn get_noise(seed: i32, position: vec2i) -> Vec<f32> {
-    let vec2f { x, y } = position.cast();
-    let (x, y, l) = (x * chunk::LENGTH as f32, y * chunk::LENGTH as f32, chunk::LENGTH);
-    NoiseBuilder::ridge_2d_offset(x, l, y, l)
-        .with_octaves(2)
-        .with_freq(0.005)
-        .with_lacunarity(2.0)
-        .with_gain(0.5)
-        .with_seed(seed)
-        .generate_scaled(0.0, 1.0)
+fn get_noise(noise: Noise, position: vec2i) -> f32 {
+    noise.0.get([position.x as f64 / 32.0, position.y as f64 / 32.0]) as f32
 }

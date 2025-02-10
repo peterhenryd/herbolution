@@ -26,7 +26,7 @@ impl Player {
             self.break_cube -= 1;
 
             let Some(pos) = chunk_map.cast_ray(
-                camera.transform.position,
+                camera.transform.position + vec3::splat(0.5) * camera.transform.position.signum(),
                 camera.transform.rotation.into_center(),
             ) else {
                 continue;

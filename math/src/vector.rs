@@ -1,8 +1,9 @@
 #![allow(non_camel_case_types)]
 
-use num::traits::ConstZero;
-use num::traits::real::Real;
 use crate::as_no_uninit::AsNoUninit;
+use num::traits::real::Real;
+use num::traits::ConstZero;
+use std::ops::{Index, IndexMut};
 
 #[derive(derive::Vector, serde::Deserialize, serde::Serialize)]
 pub struct vec2<T> {
@@ -18,6 +19,15 @@ pub struct vec3<T> {
 }
 
 impl<T> vec3<T> {
+    pub fn with_component_of_index(index: usize, value: T) -> Option<Self> where T: ConstZero {
+        match index {
+            0 => Some(Self { x: value, ..Self::ZERO }),
+            1 => Some(Self { y: value, ..Self::ZERO }),
+            2 => Some(Self { z: value, ..Self::ZERO }),
+            _ => None,
+        }
+    }
+
     pub fn splat(v: T) -> Self
     where
         T: Copy,
@@ -53,6 +63,56 @@ impl<T> vec3<T> {
             x: self.x.max(other.x),
             y: self.y.max(other.y),
             z: self.z.max(other.z),
+        }
+    }
+
+    pub fn map<U>(self, mut f: impl FnMut(T) -> U) -> vec3<U> {
+        vec3 {
+            x: f(self.x),
+            y: f(self.y),
+            z: f(self.z),
+        }
+    }
+
+    pub fn zip<U>(self, other: vec3<U>) -> vec3<(T, U)> {
+        vec3 {
+            x: (self.x, other.x),
+            y: (self.y, other.y),
+            z: (self.z, other.z),
+        }
+    }
+}
+
+impl<A, B> vec3<(A, B)> {
+    pub fn zip_2<C>(self, other: vec3<C>) -> vec3<(A, B, C)> {
+        vec3 {
+            x: (self.x.0, self.x.1, other.x),
+            y: (self.y.0, self.y.1, other.y),
+            z: (self.z.0, self.z.1, other.z),
+        }
+    }
+}
+
+impl<T> Index<usize> for vec3<T> {
+    type Output = T;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        match index {
+            0 => &self.x,
+            1 => &self.y,
+            2 => &self.z,
+            _ => panic!("Index out of bounds: {}", index),
+        }
+    }
+}
+
+impl<T> IndexMut<usize> for vec3<T> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        match index {
+            0 => &mut self.x,
+            1 => &mut self.y,
+            2 => &mut self.z,
+            _ => panic!("Index out of bounds: {}", index),
         }
     }
 }
@@ -171,6 +231,46 @@ impl<T: num::Float> vec3<T> {
             x: self.x / length,
             y: self.y / length,
             z: self.z / length,
+        }
+    }
+
+    pub fn floor(self) -> Self {
+        Self {
+            x: self.x.floor(),
+            y: self.y.floor(),
+            z: self.z.floor(),
+        }
+    }
+
+    pub fn ceil(self) -> Self {
+        Self {
+            x: self.x.ceil(),
+            y: self.y.ceil(),
+            z: self.z.ceil(),
+        }
+    }
+
+    pub fn signum(self) -> Self {
+        Self {
+            x: self.x.signum(),
+            y: self.y.signum(),
+            z: self.z.signum(),
+        }
+    }
+
+    pub fn recip(self) -> Self {
+        Self {
+            x: self.x.recip(),
+            y: self.y.recip(),
+            z: self.z.recip(),
+        }
+    }
+
+    pub fn abs(self) -> Self {
+        Self {
+            x: self.x.abs(),
+            y: self.y.abs(),
+            z: self.z.abs(),
         }
     }
 }
