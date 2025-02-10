@@ -21,6 +21,16 @@ impl Debugger {
     }
 
     pub fn update(&mut self, ui: &mut Ui, fps: &Fps, player: &Player) {
+        // Makeshift cross-hair
+        let PhysicalSize { width, height } = ui.get_text_renderer().get_resolution();
+        ui.push_text(TextSection {
+            position: vec2::new(width as f32 / 2.0 - 1.5, height as f32 / 2.0 - 1.5),
+            content: "+".to_string(),
+            font_size: 24.0,
+            line_height: 24.0,
+            color: Color4::WHITE,
+        });
+
         if !self.is_enabled {
             return;
         }
@@ -56,16 +66,6 @@ impl Debugger {
             line_height: 42.0,
             color: Color4::WHITE,
         });
-
-        // Makeshift cross-hair
-        let PhysicalSize { width, height } = ui.get_text_renderer().get_resolution();
-        ui.push_text(TextSection {
-            position: vec2::new(width as f32 / 2.0 - 1.5, height as f32 / 2.0 - 1.5),
-            content: "+".to_string(),
-            font_size: 24.0,
-            line_height: 24.0,
-            color: Color4::WHITE,
-        })
     }
 }
 

@@ -1,10 +1,11 @@
-use crate::engine::as_no_uninit::AsNoUninit;
 use crate::engine::gpu::Gpu;
 use std::ops::Deref;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
-use wgpu::{Buffer, BufferUsages, Queue};
+use wgpu::{Buffer, BufferUsages, Device, Queue};
+use math::as_no_uninit::AsNoUninit;
 
 pub struct Storage<O> {
+    device: Device,
     queue: Queue,
     pub(crate) buffer: Buffer,
     objects: Vec<O>,
@@ -23,6 +24,7 @@ impl<O: AsNoUninit> Storage<O> {
             });
 
         Self {
+            device: gpu.device.clone(),
             queue: gpu.queue.clone(),
             buffer,
             objects,
@@ -34,7 +36,16 @@ impl<O: AsNoUninit> Storage<O> {
         let byte_objects = self.objects.iter()
             .map(|x| x.as_no_uninit())
             .collect::<Vec<_>>();
-        self.queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&byte_objects));
+        if self.buffer.size() < (byte_objects.len() * size_of::<O>()) as u64 {
+            self.buffer = self.device
+                .create_buffer_init(&BufferInitDescriptor {
+                    label: None,
+                    contents: bytemuck::cast_slice(&byte_objects),
+                    usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
+                });
+        } else {
+            self.queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&byte_objects));
+        }
     }
 }
 

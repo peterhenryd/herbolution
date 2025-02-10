@@ -1,7 +1,7 @@
-use crate::engine::as_no_uninit::AsNoUninit;
 use bytemuck::{Pod, Zeroable};
 use math::vector::{vec3f, ArrVec3F32};
 use wgpu::{vertex_attr_array, BufferAddress, VertexAttribute, VertexBufferLayout, VertexStepMode};
+use math::as_no_uninit::AsNoUninit;
 
 pub struct Vertex {
     pub position: vec3f,

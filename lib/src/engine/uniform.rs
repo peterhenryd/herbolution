@@ -1,8 +1,8 @@
-use crate::engine::as_no_uninit::AsNoUninit;
 use crate::engine::gpu::Gpu;
 use std::ops::Deref;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::{Buffer, BufferUsages, Queue};
+use math::as_no_uninit::AsNoUninit;
 
 pub struct Uniform<O> {
     queue: Queue,

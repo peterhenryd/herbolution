@@ -41,6 +41,7 @@ struct Instance {
     @location(4) model_2: vec4f,
     @location(5) model_3: vec4f,
     @location(6) texture_index: u32,
+    @location(7) alpha: f32,
 }
 
 @vertex
@@ -59,6 +60,7 @@ fn vs(vert: Vertex, inst: Instance) -> Fragment {
     frag.texture_position = diffuse_texture_positions[inst.texture_index * 4 + vert.index];
     frag.world_normal = (model * vec4f(vert.normal, 0.0)).xyz;
     frag.world_position = world_position.xyz;
+    frag.alpha = inst.alpha;
 
     return frag;
 }
@@ -68,15 +70,21 @@ struct Fragment {
     @location(0) texture_position: vec2f,
     @location(1) world_normal: vec3f,
     @location(2) world_position: vec3f,
+    @location(3) alpha: f32,
 }
 
 @fragment
 fn fs(frag: Fragment) -> @location(0) vec4f {
     var color = textureSample(diffuse_atlas, texture_sampler, frag.texture_position);
+    color.a = frag.alpha;
 
     let len = arrayLength(&point_light_array);
     for (var i = 0u; i < len; i++) {
         let light = point_light_array[i];
+
+        if light.intensity == 0.0 {
+            continue;
+        }
 
         let ambient_color = light.color * light.intensity;
         let light_dir = normalize(light.position - frag.world_position);

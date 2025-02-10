@@ -1,6 +1,6 @@
-use crate::engine::as_no_uninit::AsNoUninit;
 use crate::engine::gpu::Gpu;
 use wgpu::{Buffer, IndexFormat, RenderPass};
+use math::as_no_uninit::AsNoUninit;
 
 pub struct Mesh {
     vertex_buffer: Buffer,

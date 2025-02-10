@@ -1,5 +1,5 @@
 use bytemuck::{Pod, Zeroable};
-use crate::engine::as_no_uninit::AsNoUninit;
+use math::as_no_uninit::AsNoUninit;
 use crate::world::camera::proj::Proj;
 use crate::world::transform::Transform;
 use math::matrix::{mat4, mat4f, ArrMat4F32};

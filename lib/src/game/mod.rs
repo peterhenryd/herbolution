@@ -48,7 +48,12 @@ impl Game {
                     view,
                     resolve_target: None,
                     ops: Operations {
-                        load: LoadOp::Clear(Color::BLACK),
+                        load: LoadOp::Clear(Color {
+                            r: 0.5294118,
+                            g: 0.80784315,
+                            b: 0.98039216,
+                            a: 1.0,
+                        }),
                         store: StoreOp::Store,
                     },
                 })],
@@ -77,7 +82,6 @@ impl Game {
                         store: StoreOp::Store,
                     },
                 })],
-                depth_stencil_attachment: None,
                 ..Default::default()
             });
         self.ui.render(&mut render_pass);

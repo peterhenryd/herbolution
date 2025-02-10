@@ -1,8 +1,8 @@
-use crate::engine::as_no_uninit::AsNoUninit;
 use crate::engine::gpu::Gpu;
 use crate::engine::mesh::VertexIndex;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::Buffer;
+use math::as_no_uninit::AsNoUninit;
 
 impl Gpu {
     pub fn create_vertex_buffer<V: AsNoUninit>(&self, vertices: &[V]) -> Buffer {

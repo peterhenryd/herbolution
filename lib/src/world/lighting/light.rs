@@ -1,29 +1,49 @@
 use bytemuck::{Pod, Zeroable};
+use math::as_no_uninit::AsNoUninit;
 use math::color::{ArrColor3F32, Color3};
-use math::vector::{vec3f, ArrVec3F32};
-use crate::engine::as_no_uninit::AsNoUninit;
+use math::vector::{vec3, vec3f, ArrVec3F32};
 
 #[derive(Clone)]
-pub enum LightKind {
+pub enum Light {
     Ambient(AmbientLight),
     Directional(DirectionalLight),
     Point(PointLight),
 }
 
-pub enum LightType {
-    Ambient,
-    Directional,
-    Point,
+impl Light {
+    pub fn color(&self) -> Color3<f32> {
+        match self {
+            Light::Ambient(light) => light.color,
+            Light::Directional(light) => light.color,
+            Light::Point(light) => light.color,
+        }
+    }
+
+    pub fn intensity(&self) -> f32 {
+        match self {
+            Light::Ambient(light) => light.intensity,
+            Light::Directional(light) => light.intensity,
+            Light::Point(light) => light.intensity,
+        }
+    }
 }
 
-pub trait Light {
-    const TYPE: LightType;
+impl From<AmbientLight> for Light {
+    fn from(light: AmbientLight) -> Self {
+        Light::Ambient(light)
+    }
+}
 
-    fn color(&self) -> Color3<f32>;
+impl From<DirectionalLight> for Light {
+    fn from(light: DirectionalLight) -> Self {
+        Light::Directional(light)
+    }
+}
 
-    fn intensity(&self) -> f32;
-
-    fn into_kind(self) -> Option<LightKind>;
+impl From<PointLight> for Light {
+    fn from(light: PointLight) -> Self {
+        Light::Point(light)
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -32,28 +52,16 @@ pub struct AmbientLight {
     pub intensity: f32,
 }
 
+impl AmbientLight {
+    pub const INACTIVE: Self = Self { color: Color3::WHITE, intensity: 0.0 };
+}
+
 impl Default for AmbientLight {
     fn default() -> Self {
         Self {
             color: Color3::new(1.0, 1.0, 1.0),
             intensity: 0.5,
         }
-    }
-}
-
-impl Light for AmbientLight {
-    const TYPE: LightType = LightType::Ambient;
-
-    fn color(&self) -> Color3<f32> {
-        self.color
-    }
-
-    fn intensity(&self) -> f32 {
-        self.intensity
-    }
-
-    fn into_kind(self) -> Option<LightKind> {
-        Some(LightKind::Ambient(self))
     }
 }
 
@@ -76,30 +84,8 @@ pub struct DirectionalLight {
     pub direction: vec3f,
 }
 
-impl Default for DirectionalLight {
-    fn default() -> Self {
-        Self {
-            color: Color3::new(1.0, 1.0, 1.0),
-            intensity: 0.5,
-            direction: vec3f::new(0.0, -1.0, 0.0),
-        }
-    }
-}
-
-impl Light for DirectionalLight {
-    const TYPE: LightType = LightType::Directional;
-
-    fn color(&self) -> Color3<f32> {
-        self.color
-    }
-
-    fn intensity(&self) -> f32 {
-        self.intensity
-    }
-
-    fn into_kind(self) -> Option<LightKind> {
-        Some(LightKind::Directional(self))
-    }
+impl DirectionalLight {
+    pub const INACTIVE: Self = Self { color: Color3::WHITE, intensity: 0.0, direction: vec3::ZERO };
 }
 
 impl AsNoUninit for DirectionalLight {
@@ -123,6 +109,15 @@ pub struct PointLight {
     pub range: f32,
 }
 
+impl PointLight {
+    pub const INACTIVE: Self = Self {
+        color: Color3::WHITE,
+        intensity: 0.0,
+        position: vec3::ZERO,
+        range: 0.0,
+    };
+}
+
 impl Default for PointLight {
     fn default() -> Self {
         Self {
@@ -131,22 +126,6 @@ impl Default for PointLight {
             position: vec3f::new(0., 128., 0.),
             range: 10.0,
         }
-    }
-}
-
-impl Light for PointLight {
-    const TYPE: LightType = LightType::Point;
-
-    fn color(&self) -> Color3<f32> {
-        self.color
-    }
-
-    fn intensity(&self) -> f32 {
-        self.intensity
-    }
-
-    fn into_kind(self) -> Option<LightKind> {
-        Some(LightKind::Point(self))
     }
 }
 

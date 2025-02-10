@@ -1,11 +1,11 @@
-use crate::engine::geometry::cube::Faces;
+use crate::engine::geometry::cuboid::{Cuboid, Faces};
 use crate::engine::gpu::Gpu;
 use crate::world::chunk::generator::ChunkGenerator;
 use crate::world::chunk::material::Material;
 use crate::world::chunk::{Chunk, ChunkMesh, InstanceMesh};
 use crate::world::position::{ChunkLocalPosition, CubePosition};
 use hashbrown::HashMap;
-use math::vector::{vec3, vec3i};
+use math::vector::{vec3, vec3d, vec3f, vec3i};
 
 #[derive(Debug)]
 pub struct ChunkMap {
@@ -50,6 +50,7 @@ impl ChunkMap {
         for p in Faces::all().map(|x| x.into_vec3i()) {
             let Some(other) = self.get_chunk_mut(position + p) else { continue };
             chunk.cull_shared_faces(other);
+            other.cull_shared_faces(&mut chunk);
         }
 
         self.map.insert(position, chunk.into_meshed(&self.gpu));
@@ -103,5 +104,55 @@ impl ChunkMap {
     pub fn get_cube(&mut self, position: impl Into<CubePosition>) -> Option<Material> {
         let position = ChunkLocalPosition::from(position.into());
         self.chunk(position.chunk).get(position.local)
+    }
+
+    pub fn cast_ray(&mut self, origin: vec3f, direction: vec3d) -> Option<vec3i> {
+        let mut position = origin;
+        let step = direction.normalize().cast() * 0.1;
+        let mut distance = 0.0;
+
+        while distance < 10.0 {
+            let x = position.x.floor() as i32;
+            let y = position.y.floor() as i32;
+            let z = position.z.floor() as i32;
+
+            if let Some(_) = self.get_cube(CubePosition(vec3::new(x, y, z))) {
+                return Some(vec3::new(x, y, z).cast());
+            }
+
+            position += step;
+            distance += step.length();
+        }
+
+        None
+    }
+
+    pub fn check_collision(&mut self, cuboid: Cuboid<f32>) -> bool {
+        let min = vec3::new(
+            cuboid.min.x.floor(),
+            cuboid.min.y.floor(),
+            cuboid.min.z.floor(),
+        );
+        let max = vec3::new(
+            cuboid.max.x.ceil(),
+            cuboid.max.y.ceil(),
+            cuboid.max.z.ceil(),
+        );
+
+        for x in min.x as i32..max.x as i32 {
+            for y in min.y as i32..max.y as i32 {
+                for z in min.z as i32..max.z as i32 {
+                    if let Some(material) =
+                        self.get_cube(CubePosition(vec3::new(x, y, z)))
+                    {
+                        if material.can_collide() {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        false
     }
 }

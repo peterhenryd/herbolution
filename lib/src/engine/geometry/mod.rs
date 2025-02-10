@@ -1,6 +1,6 @@
 use wgpu::VertexBufferLayout;
 
-pub mod cube;
+pub mod cuboid;
 pub mod instance;
 pub mod quad;
 pub mod vertex;

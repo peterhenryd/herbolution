@@ -1,21 +1,21 @@
-use crate::engine::as_no_uninit::AsNoUninit;
-use crate::engine::geometry::cube::{Face, Faces};
+use crate::engine::geometry::cuboid::{Face, Faces};
 use crate::engine::geometry::instance::{ArrInstance, Instance};
 use crate::engine::gpu::Gpu;
 use crate::world::chunk::cube::Cube;
 use crate::world::chunk::material::Material;
+use crate::world::chunk::mesh::{ChunkMesh, InstanceMesh};
+use math::as_no_uninit::AsNoUninit;
 use math::vector::{vec3, vec3i, vec3u8};
 use std::iter::StepBy;
 use std::ops::{Not, Range};
 use std::path::Path;
-use wgpu::util::{BufferInitDescriptor, DeviceExt};
-use wgpu::{Buffer, RenderPass};
-use crate::world::chunk;
+use wgpu::RenderPass;
 
 pub mod cube;
 pub mod material;
 pub mod map;
 pub mod generator;
+pub mod mesh;
 
 pub const LENGTH: usize = 32;
 pub const SIZE: usize = LENGTH.pow(3);
@@ -25,47 +25,6 @@ pub struct Chunk<M> {
     pub position: vec3i,
     data: Box<[Cube; SIZE]>,
     mesh: M,
-}
-
-#[derive(Debug)]
-pub struct InstanceMesh {
-    instance_buffer: Buffer,
-    instance_count: u32,
-    has_changed: bool,
-}
-
-impl ChunkMesh for InstanceMesh {
-    fn schedule_update(&mut self) {
-        self.has_changed = true;
-    }
-
-    fn update(&mut self, gpu: &Gpu, quads: Vec<ArrInstance>) {
-        self.has_changed = false;
-        self.instance_count = quads.len() as u32;
-
-        if self.instance_buffer.size() < (quads.len() * size_of::<ArrInstance>()) as u64 {
-            self.instance_buffer = gpu.device
-                .create_buffer_init(&BufferInitDescriptor {
-                    label: None,
-                    contents: bytemuck::cast_slice(&quads),
-                    usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-                });
-        } else {
-            gpu.queue.write_buffer(&self.instance_buffer, 0, bytemuck::cast_slice(&quads));
-        }
-    }
-}
-
-pub trait ChunkMesh {
-    fn schedule_update(&mut self);
-
-    fn update(&mut self, gpu: &Gpu, quads: Vec<ArrInstance>);
-}
-
-impl ChunkMesh for () {
-    fn schedule_update(&mut self) {}
-
-    fn update(&mut self, _: &Gpu, _: Vec<ArrInstance>) {}
 }
 
 impl Chunk<()> {
@@ -78,28 +37,10 @@ impl Chunk<()> {
     }
 
     pub fn into_meshed(self, gpu: &Gpu) -> Chunk<InstanceMesh> {
-        let quads = self.as_arr_instances();
-
-        let contents = if quads.is_empty() {
-            &[0; 1]
-        } else {
-            bytemuck::cast_slice(&quads)
-        };
-        let instance_buffer = gpu.device
-            .create_buffer_init(&BufferInitDescriptor {
-                label: None,
-                contents,
-                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-            });
-
         Chunk {
+            mesh: InstanceMesh::new(gpu, &self.get_quad_instances()),
             position: self.position,
             data: self.data,
-            mesh: InstanceMesh {
-                instance_buffer,
-                instance_count: quads.len() as u32,
-                has_changed: true,
-            },
         }
     }
 }
@@ -235,18 +176,26 @@ impl<M: ChunkMesh> Chunk<M> {
     }
 
     fn add_neighboring_faces(&mut self, faces: Faces, p: vec3u8) {
-        faces.not()
+        faces
+            // Get the faces that are not present on the cube.
+            .not()
+            // Get the corresponding cube offset vectors for each face
             .map(|f| (f, f.into_vec3i()))
             .into_iter()
+            // Offset vectors by cube local position
             .map(|(f, v)| (f, p.cast::<i32>() + v))
+            // Filter positions that exist outside the current chunk
+            // TODO: these should be returned to the caller so that thy can be used to cull faces on
+            // neighboring chunks.
             .filter(|(_, x)| in_bounds(*x))
             .map(|(f, v)| (f, v.cast::<u8>()))
+            // Add the inverse of the removed face to the neighboring cube.
             .for_each(|(f, v)| {
                 self.data[self.get_index(v)].faces.insert(Faces::from(f.inverse()));
             });
     }
 
-    pub(crate) fn as_arr_instances(&self) -> Vec<ArrInstance> {
+    pub(crate) fn get_quad_instances(&self) -> Vec<ArrInstance> {
         let mut vec = vec![];
 
         for x in 0..LENGTH {
@@ -268,13 +217,14 @@ impl<M: ChunkMesh> Chunk<M> {
             return;
         }
 
-        let chunk_position = self.position.cast::<f32>() * chunk::LENGTH as f32;
+        let chunk_position = self.position.cast::<f32>() * LENGTH as f32;
         let position = p.cast();
-        for rotation in cube.faces.map(|f| f.into_quat()) {
+        for (i, rotation) in cube.faces.map(|f| f.into_quat()).into_iter().enumerate() {
             quads.push(Instance {
                 position: chunk_position + position,
                 rotation,
                 texture_index: cube.material.get_texture_index(),
+                light_level_alpha: cube.light_levels[i].as_alpha() as f32 / 255.0,
             }.as_no_uninit());
         }
     }
@@ -287,7 +237,7 @@ impl<M: ChunkMesh> Chunk<M> {
 impl Chunk<InstanceMesh> {
     pub fn update(&mut self, gpu: &Gpu) {
         if self.mesh.has_changed {
-            self.mesh.update(gpu, self.as_arr_instances());
+            self.mesh.update(gpu, &self.get_quad_instances());
         }
     }
 

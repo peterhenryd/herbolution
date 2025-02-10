@@ -1,5 +1,9 @@
 #![allow(non_camel_case_types)]
 
+use num::traits::ConstZero;
+use num::traits::real::Real;
+use crate::as_no_uninit::AsNoUninit;
+
 #[derive(derive::Vector, serde::Deserialize, serde::Serialize)]
 pub struct vec2<T> {
     pub x: T,
@@ -33,6 +37,24 @@ impl<T> vec3<T> {
             w,
         }
     }
+
+    pub fn min(self, other: Self) -> Self
+    where T: Real {
+        Self {
+            x: self.x.min(other.x),
+            y: self.y.min(other.y),
+            z: self.z.min(other.z),
+        }
+    }
+
+    pub fn max(self, other: Self) -> Self
+    where T: Real {
+        Self {
+            x: self.x.max(other.x),
+            y: self.y.max(other.y),
+            z: self.z.max(other.z),
+        }
+    }
 }
 
 impl<T: std::ops::Div<Output=T>> std::ops::Div for vec2<T> {
@@ -44,6 +66,14 @@ impl<T: std::ops::Div<Output=T>> std::ops::Div for vec2<T> {
             y: self.y / rhs.y,
         }
     }
+}
+
+impl<T: ConstZero> vec3<T> {
+    pub const ZERO: Self = Self {
+        x: T::ZERO,
+        y: T::ZERO,
+        z: T::ZERO,
+    };
 }
 
 impl<T: num::Num> vec3<T> {
@@ -299,6 +329,14 @@ macro impl_vec_2($arr_name:ident => $name:ident) {
             value.into_struct()
         }
     }
+
+    impl AsNoUninit for $name {
+        type Output = $arr_name;
+
+        fn as_no_uninit(&self) -> Self::Output {
+            self.into_arr()
+        }
+    }
 }
 
 macro impl_vec_2s($($arr_name:ident => $name:ident),*) {
@@ -329,6 +367,14 @@ macro impl_vec_3($arr_name:ident => $name:ident) {
             value.into_struct()
         }
     }
+
+    impl AsNoUninit for $name {
+        type Output = $arr_name;
+
+        fn as_no_uninit(&self) -> Self::Output {
+            self.into_arr()
+        }
+    }
 }
 
 macro impl_vec_3s($($arr_name:ident => $name:ident),*) {
@@ -357,6 +403,14 @@ macro impl_vec_4($arr_name:ident => $name:ident) {
     impl From<$arr_name> for $name {
         fn from(value: $arr_name) -> Self {
             value.into_struct()
+        }
+    }
+
+    impl AsNoUninit for $name {
+        type Output = $arr_name;
+
+        fn as_no_uninit(&self) -> Self::Output {
+            self.into_arr()
         }
     }
 }

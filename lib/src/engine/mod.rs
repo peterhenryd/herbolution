@@ -8,7 +8,6 @@ use winit::event::ElementState;
 use winit::keyboard::KeyCode;
 use winit::window::{CursorGrabMode, Window};
 
-pub mod as_no_uninit;
 pub mod binding;
 pub mod buffer;
 pub mod geometry;

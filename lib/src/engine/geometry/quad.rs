@@ -1,8 +1,8 @@
-use crate::engine::as_no_uninit::AsNoUninit;
 use crate::engine::geometry::vertex::ArrVertex;
 use crate::engine::gpu::Gpu;
 use crate::engine::mesh::Mesh;
 use bytemuck::{Pod, Zeroable};
+use math::as_no_uninit::AsNoUninit;
 use math::matrix::{mat4, mat4f, ArrMat4F32};
 use math::quat::Quat;
 use math::vector::{vec3f, ArrVec3F32};
@@ -14,7 +14,7 @@ pub struct Quad {
 }
 
 impl Quad {
-    const VERTICES: [ArrVertex; 4] = [
+    pub(crate) const VERTICES: [ArrVertex; 4] = [
         ArrVertex(ArrVec3F32([-0.5, 0.5, 0.5]), ArrVec3F32([0.0, 0.0, 1.0])),
         ArrVertex(ArrVec3F32([0.5, 0.5, 0.5]), ArrVec3F32([0.0, 0.0, 1.0])),
         ArrVertex(ArrVec3F32([-0.5, -0.5, 0.5]), ArrVec3F32([0.0, 0.0, 1.0])),
