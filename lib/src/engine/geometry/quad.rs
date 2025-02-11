@@ -2,9 +2,9 @@ use crate::engine::geometry::vertex::ArrVertex;
 use crate::engine::gpu::Gpu;
 use crate::engine::mesh::Mesh;
 use bytemuck::{Pod, Zeroable};
-use math::as_no_uninit::AsNoUninit;
 use math::matrix::{mat4, mat4f, ArrMat4F32};
 use math::quat::Quat;
+use math::to_no_uninit::ToNoUninit;
 use math::vector::{vec3f, ArrVec3F32};
 
 pub struct Quad {
@@ -31,10 +31,10 @@ impl Quad {
     }
 }
 
-impl AsNoUninit for Quad {
+impl ToNoUninit for Quad {
     type Output = RawQuad;
 
-    fn as_no_uninit(&self) -> Self::Output {
+    fn to_no_uninit(&self) -> Self::Output {
         RawQuad(self.as_mat4f().into(), self.texture_index)
     }
 }

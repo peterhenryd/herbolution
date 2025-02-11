@@ -4,7 +4,7 @@ use crate::engine::gpu::Gpu;
 use crate::world::chunk::cube::Cube;
 use crate::world::chunk::material::Material;
 use crate::world::chunk::mesh::{ChunkMesh, InstanceMesh};
-use math::as_no_uninit::AsNoUninit;
+use math::to_no_uninit::ToNoUninit;
 use math::vector::{vec3, vec3i, vec3u8};
 use std::iter::StepBy;
 use std::ops::{Not, Range};
@@ -225,7 +225,7 @@ impl<M: ChunkMesh> Chunk<M> {
                 rotation,
                 texture_index: cube.material.get_texture_index(),
                 light_level_alpha: cube.light_levels[i].as_alpha() as f32 / 255.0,
-            }.as_no_uninit());
+            }.to_no_uninit());
         }
     }
 

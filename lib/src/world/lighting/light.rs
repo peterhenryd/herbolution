@@ -1,6 +1,6 @@
 use bytemuck::{Pod, Zeroable};
-use math::as_no_uninit::AsNoUninit;
 use math::color::{ArrColor3F32, Color3};
+use math::to_no_uninit::ToNoUninit;
 use math::vector::{vec3, vec3f, ArrVec3F32};
 
 #[derive(Clone)]
@@ -65,10 +65,10 @@ impl Default for AmbientLight {
     }
 }
 
-impl AsNoUninit for AmbientLight {
+impl ToNoUninit for AmbientLight {
     type Output = ArrAmbientLight;
 
-    fn as_no_uninit(&self) -> Self::Output {
+    fn to_no_uninit(&self) -> Self::Output {
         ArrAmbientLight(self.color.into(), self.intensity)
     }
 }
@@ -88,10 +88,10 @@ impl DirectionalLight {
     pub const INACTIVE: Self = Self { color: Color3::WHITE, intensity: 0.0, direction: vec3::ZERO };
 }
 
-impl AsNoUninit for DirectionalLight {
+impl ToNoUninit for DirectionalLight {
     type Output = ArrDirectionalLight;
 
-    fn as_no_uninit(&self) -> Self::Output {
+    fn to_no_uninit(&self) -> Self::Output {
         ArrDirectionalLight(self.color.into(), self.intensity, self.direction.into(), 0)
     }
 }
@@ -129,10 +129,10 @@ impl Default for PointLight {
     }
 }
 
-impl AsNoUninit for PointLight {
+impl ToNoUninit for PointLight {
     type Output = ArrPointLight;
 
-    fn as_no_uninit(&self) -> Self::Output {
+    fn to_no_uninit(&self) -> Self::Output {
         ArrPointLight(self.color.into(), self.intensity, self.position.into(), self.range)
     }
 }

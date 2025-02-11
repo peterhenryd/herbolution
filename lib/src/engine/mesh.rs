@@ -1,6 +1,6 @@
 use crate::engine::gpu::Gpu;
+use math::to_no_uninit::ToNoUninit;
 use wgpu::{Buffer, IndexFormat, RenderPass};
-use math::as_no_uninit::AsNoUninit;
 
 pub struct Mesh {
     vertex_buffer: Buffer,
@@ -9,7 +9,7 @@ pub struct Mesh {
 }
 
 impl Mesh {
-    pub fn create<V: AsNoUninit, I: VertexIndex>(gpu: &Gpu, vertices: &[V], indices: &[I]) -> Self {
+    pub fn create<V: ToNoUninit, I: VertexIndex>(gpu: &Gpu, vertices: &[V], indices: &[I]) -> Self {
         let vertex_buffer = gpu.create_vertex_buffer(vertices);
         let index_buffer = gpu.create_index_buffer(indices);
         let index_count = indices.len() as u32;
@@ -27,7 +27,7 @@ impl Mesh {
     }
 }
 
-pub trait VertexIndex: AsNoUninit {
+pub trait VertexIndex: ToNoUninit {
     const FORMAT: IndexFormat;
 }
 

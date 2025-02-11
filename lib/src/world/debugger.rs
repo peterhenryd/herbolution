@@ -2,7 +2,7 @@ use crate::game::fps::Fps;
 use crate::listener::{InputEvent, Listener};
 use crate::ui::text::TextSection;
 use crate::ui::Ui;
-use crate::world::player::Player;
+use crate::world::transform::Transform;
 use math::color::Color4;
 use math::vector::vec2;
 use winit::dpi::PhysicalSize;
@@ -20,7 +20,7 @@ impl Debugger {
         }
     }
 
-    pub fn update(&mut self, ui: &mut Ui, fps: &Fps, player: &Player) {
+    pub fn update(&mut self, ui: &mut Ui, fps: &Fps, transform: Transform) {
         // Makeshift cross-hair
         let PhysicalSize { width, height } = ui.get_text_renderer().get_resolution();
         ui.push_text(TextSection {
@@ -45,7 +45,7 @@ impl Debugger {
 
         ui.push_text(TextSection {
             position: vec2::new(10., 46.),
-            content: format!("X: {:.2}", player.position.x),
+            content: format!("X: {:.2}", transform.position.x),
             font_size: 36.0,
             line_height: 42.0,
             color: Color4::WHITE,
@@ -53,7 +53,7 @@ impl Debugger {
 
         ui.push_text(TextSection {
             position: vec2::new(10., 82.),
-            content: format!("Y: {:.2}", player.position.y),
+            content: format!("Y: {:.2}", transform.position.y),
             font_size: 36.0,
             line_height: 42.0,
             color: Color4::WHITE,
@@ -61,7 +61,7 @@ impl Debugger {
 
         ui.push_text(TextSection {
             position: vec2::new(10., 118.),
-            content: format!("Z: {:.2}", player.position.z),
+            content: format!("Z: {:.2}", transform.position.z),
             font_size: 36.0,
             line_height: 42.0,
             color: Color4::WHITE,

@@ -1,8 +1,8 @@
-use bytemuck::Zeroable;
-use wgpu::Buffer;
-use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use crate::engine::geometry::instance::ArrInstance;
 use crate::engine::gpu::Gpu;
+use bytemuck::Zeroable;
+use wgpu::util::{BufferInitDescriptor, DeviceExt};
+use wgpu::Buffer;
 
 pub trait ChunkMesh {
     fn schedule_update(&mut self);

@@ -1,9 +1,9 @@
 use bytemuck::{Pod, Zeroable};
 use math::matrix::{mat4, mat4f, ArrMat4F32};
 use math::quat::Quat;
+use math::to_no_uninit::ToNoUninit;
 use math::vector::vec3f;
 use wgpu::{vertex_attr_array, BufferAddress, VertexAttribute, VertexBufferLayout, VertexStepMode};
-use math::as_no_uninit::AsNoUninit;
 
 pub struct Instance {
     pub position: vec3f,
@@ -32,10 +32,10 @@ impl Instance {
     }
 }
 
-impl AsNoUninit for Instance {
+impl ToNoUninit for Instance {
     type Output = ArrInstance;
 
-    fn as_no_uninit(&self) -> Self::Output {
+    fn to_no_uninit(&self) -> Self::Output {
         ArrInstance(self.get_model_mat4f().into(), self.texture_index, self.light_level_alpha)
     }
 }

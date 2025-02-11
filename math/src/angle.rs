@@ -23,6 +23,12 @@ impl<T: num::Float> From<Rad<T>> for Deg<T> {
     }
 }
 
+impl<T> From<T> for Deg<T> {
+    fn from(value: T) -> Self {
+        Deg(value)
+    }
+}
+
 #[derive(derive::Scalar, serde::Deserialize, serde::Serialize)]
 pub struct Rad<T>(pub T);
 
@@ -39,5 +45,11 @@ impl<T: num::Float> Angle<T> for Rad<T> {
 impl<T: num::Float> From<Deg<T>> for Rad<T> {
     fn from(deg: Deg<T>) -> Self {
         deg.into_rad()
+    }
+}
+
+impl<T> From<T> for Rad<T> {
+    fn from(value: T) -> Self {
+        Rad(value)
     }
 }

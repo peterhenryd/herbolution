@@ -1,5 +1,6 @@
 #![feature(duration_constants)]
 #![feature(const_trait_impl)]
+#![feature(box_patterns)]
 extern crate herbolution_math as math;
 
 pub mod engine;

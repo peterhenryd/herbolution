@@ -1,8 +1,8 @@
 use crate::engine::binding::Binding;
 use crate::engine::gpu::Gpu;
+use crate::engine::storage::Storage;
 use crate::world::lighting::light::{AmbientLight, DirectionalLight, Light, PointLight};
 use wgpu::ShaderStages;
-use crate::engine::storage::Storage;
 
 pub mod light;
 pub mod level;

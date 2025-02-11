@@ -3,7 +3,7 @@
 extern crate herbolution_math_derive as derive;
 
 pub mod angle;
-pub mod as_no_uninit;
+pub mod to_no_uninit;
 pub mod color;
 pub mod matrix;
 pub mod quat;

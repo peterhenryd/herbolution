@@ -1,12 +1,12 @@
-use std::fmt::Debug;
-use std::ops::Index;
 use bitflags::bitflags;
-use num::{Float, Num};
-use num::traits::ConstZero;
-use num::traits::real::Real;
 use math::angle::Deg;
 use math::quat::Quat;
 use math::vector::{vec3, vec3f, vec3i};
+use num::traits::real::Real;
+use num::traits::ConstZero;
+use num::{Float, Num};
+use std::fmt::Debug;
+use std::ops::{Add, Index};
 
 /// A cuboid in 3D space, also used as an axis-aligned bounding box.
 pub struct Cuboid<T> {
@@ -19,7 +19,10 @@ impl<T> Cuboid<T> {
         Self { min, max }
     }
 
-    pub fn union(slice: &[Self]) -> Self where T: Copy + Real + ConstZero {
+    pub fn union(slice: &[Self]) -> Self
+    where
+        T: Copy + Real + ConstZero,
+    {
         slice.iter()
             .copied()
             .reduce(|lhs, rhs| Self {
@@ -30,45 +33,69 @@ impl<T> Cuboid<T> {
     }
 
     #[inline]
-    pub fn width(&self) -> T where T: Copy + Num {
+    pub fn width(&self) -> T
+    where
+        T: Copy + Num,
+    {
         self.max.x - self.min.x
     }
 
     #[inline]
-    pub fn height(&self) -> T where T: Copy + Num {
+    pub fn height(&self) -> T
+    where
+        T: Copy + Num,
+    {
         self.max.y - self.min.y
     }
 
     #[inline]
-    pub fn depth(&self) -> T where T: Copy + Num {
+    pub fn depth(&self) -> T
+    where
+        T: Copy + Num,
+    {
         self.max.z - self.min.z
     }
 
     #[inline]
-    pub fn length_squared(&self) -> T where T: Copy + Float {
+    pub fn length_squared(&self) -> T
+    where
+        T: Copy + Float,
+    {
         self.width().powi(2) + self.height().powi(2) + self.depth().powi(2)
     }
 
     #[inline]
-    pub fn length(&self) -> T where T: Copy + Float {
+    pub fn length(&self) -> T
+    where
+        T: Copy + Float,
+    {
         self.length_squared().sqrt()
     }
 
-    pub fn set_position(&mut self, position: vec3<T>) where T: Copy + Num {
+    pub fn set_position(&mut self, position: vec3<T>)
+    where
+        T: Copy + Num,
+    {
         self.max.x = position.x + self.width();
         self.max.y = position.y + self.height();
         self.max.z = position.z + self.depth();
         self.min = position;
     }
 
-    pub fn intersect(&self, other: &Cuboid<T>) -> Self where T: Copy + Num {
+    pub fn intersect(&self, other: &Cuboid<T>) -> Self
+    where
+        T: Copy + Num,
+    {
         Self {
             min: self.min - other.min,
             max: self.max - other.max,
         }
     }
 
-    pub fn intersects(&self, other: &Cuboid<T>) -> bool where T: Copy + PartialOrd {
+    pub fn intersects(&self, other: &Cuboid<T>) -> bool
+    where
+        T: Copy + PartialOrd,
+    {
         self.min.x < other.max.x
             && self.max.x > other.min.x
             && self.min.y < other.max.y
@@ -77,7 +104,10 @@ impl<T> Cuboid<T> {
             && self.max.z > other.min.z
     }
 
-    pub fn is_touching(&self, other: &Cuboid<T>) -> bool where T: Copy + Num {
+    pub fn is_touching(&self, other: &Cuboid<T>) -> bool
+    where
+        T: Copy + Num,
+    {
         let intersection = self.intersect(other);
         intersection.width() == T::zero() || intersection.height() == T::zero() || intersection.depth() == T::zero()
     }
@@ -121,6 +151,17 @@ impl From<Faces> for Cuboid<f32> {
         }
 
         Self { min, max }
+    }
+}
+
+impl<T: Copy + Add<Output=T>> Add<vec3<T>> for Cuboid<T> {
+    type Output = Self;
+
+    fn add(self, rhs: vec3<T>) -> Self::Output {
+        Self {
+            min: self.min + rhs,
+            max: self.max + rhs,
+        }
     }
 }
 
@@ -306,7 +347,9 @@ impl<T> Index<usize> for PerFace<T> {
 
 impl<T> PerFace<T> {
     pub const fn splat(value: T) -> Self
-    where T: Copy {
+    where
+        T: Copy,
+    {
         Self {
             top: value,
             bottom: value,

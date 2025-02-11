@@ -1,7 +1,7 @@
 use bytemuck::{Pod, Zeroable};
+use math::to_no_uninit::ToNoUninit;
 use math::vector::{vec3f, ArrVec3F32};
 use wgpu::{vertex_attr_array, BufferAddress, VertexAttribute, VertexBufferLayout, VertexStepMode};
-use math::as_no_uninit::AsNoUninit;
 
 pub struct Vertex {
     pub position: vec3f,
@@ -20,10 +20,10 @@ impl Vertex {
     ];
 }
 
-impl AsNoUninit for Vertex {
+impl ToNoUninit for Vertex {
     type Output = ArrVertex;
 
-    fn as_no_uninit(&self) -> Self::Output {
+    fn to_no_uninit(&self) -> Self::Output {
         ArrVertex(self.position.into(), self.normal.into())
     }
 }

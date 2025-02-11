@@ -1,9 +1,9 @@
 #![allow(non_camel_case_types)]
 
-use crate::as_no_uninit::AsNoUninit;
+use crate::to_no_uninit::ToNoUninit;
 use num::traits::real::Real;
 use num::traits::ConstZero;
-use std::ops::{Index, IndexMut};
+use std::ops::{Div, Index, IndexMut, MulAssign};
 
 #[derive(derive::Vector, serde::Deserialize, serde::Serialize)]
 pub struct vec2<T> {
@@ -19,7 +19,10 @@ pub struct vec3<T> {
 }
 
 impl<T> vec3<T> {
-    pub fn with_component_of_index(index: usize, value: T) -> Option<Self> where T: ConstZero {
+    pub fn with_component_of_index(index: usize, value: T) -> Option<Self>
+    where
+        T: ConstZero,
+    {
         match index {
             0 => Some(Self { x: value, ..Self::ZERO }),
             1 => Some(Self { y: value, ..Self::ZERO }),
@@ -49,7 +52,9 @@ impl<T> vec3<T> {
     }
 
     pub fn min(self, other: Self) -> Self
-    where T: Real {
+    where
+        T: Real,
+    {
         Self {
             x: self.x.min(other.x),
             y: self.y.min(other.y),
@@ -58,7 +63,9 @@ impl<T> vec3<T> {
     }
 
     pub fn max(self, other: Self) -> Self
-    where T: Real {
+    where
+        T: Real,
+    {
         Self {
             x: self.x.max(other.x),
             y: self.y.max(other.y),
@@ -117,7 +124,15 @@ impl<T> IndexMut<usize> for vec3<T> {
     }
 }
 
-impl<T: std::ops::Div<Output=T>> std::ops::Div for vec2<T> {
+impl<T: MulAssign> MulAssign for vec3<T> {
+    fn mul_assign(&mut self, rhs: Self) {
+        self.x *= rhs.x;
+        self.y *= rhs.y;
+        self.z *= rhs.z;
+    }
+}
+
+impl<T: Div<Output=T>> Div for vec2<T> {
     type Output = Self;
 
     fn div(self, rhs: Self) -> Self::Output {
@@ -430,10 +445,10 @@ macro impl_vec_2($arr_name:ident => $name:ident) {
         }
     }
 
-    impl AsNoUninit for $name {
+    impl ToNoUninit for $name {
         type Output = $arr_name;
 
-        fn as_no_uninit(&self) -> Self::Output {
+        fn to_no_uninit(&self) -> Self::Output {
             self.into_arr()
         }
     }
@@ -468,10 +483,10 @@ macro impl_vec_3($arr_name:ident => $name:ident) {
         }
     }
 
-    impl AsNoUninit for $name {
+    impl ToNoUninit for $name {
         type Output = $arr_name;
 
-        fn as_no_uninit(&self) -> Self::Output {
+        fn to_no_uninit(&self) -> Self::Output {
             self.into_arr()
         }
     }
@@ -506,10 +521,10 @@ macro impl_vec_4($arr_name:ident => $name:ident) {
         }
     }
 
-    impl AsNoUninit for $name {
+    impl ToNoUninit for $name {
         type Output = $arr_name;
 
-        fn as_no_uninit(&self) -> Self::Output {
+        fn to_no_uninit(&self) -> Self::Output {
             self.into_arr()
         }
     }

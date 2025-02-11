@@ -1,8 +1,8 @@
 use crate::engine::gpu::Gpu;
+use math::to_no_uninit::ToNoUninit;
 use std::ops::Deref;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::{Buffer, BufferUsages, Device, Queue};
-use math::as_no_uninit::AsNoUninit;
 
 pub struct Storage<O> {
     device: Device,
@@ -11,10 +11,10 @@ pub struct Storage<O> {
     objects: Vec<O>,
 }
 
-impl<O: AsNoUninit> Storage<O> {
+impl<O: ToNoUninit> Storage<O> {
     pub fn create(gpu: &Gpu, name: &str, objects: Vec<O>) -> Self {
         let byte_objects = objects.iter()
-            .map(|x| x.as_no_uninit())
+            .map(|x| x.to_no_uninit())
             .collect::<Vec<_>>();
         let buffer = gpu.device
             .create_buffer_init(&BufferInitDescriptor {
@@ -34,7 +34,7 @@ impl<O: AsNoUninit> Storage<O> {
     pub fn edit(&mut self, mut f: impl FnMut(&mut Vec<O>)) {
         f(&mut self.objects);
         let byte_objects = self.objects.iter()
-            .map(|x| x.as_no_uninit())
+            .map(|x| x.to_no_uninit())
             .collect::<Vec<_>>();
         if self.buffer.size() < (byte_objects.len() * size_of::<O>()) as u64 {
             self.buffer = self.device

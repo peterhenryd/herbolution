@@ -23,6 +23,39 @@ impl ChunkMap {
         }
     }
 
+    pub fn get_near_colliders(&mut self, cuboid: Cuboid<f32>) -> Vec<Cuboid<f32>> {
+        let min = vec3::new(
+            cuboid.min.x.floor(),
+            cuboid.min.y.floor(),
+            cuboid.min.z.floor(),
+        );
+        let max = vec3::new(
+            cuboid.max.x.ceil(),
+            cuboid.max.y.ceil(),
+            cuboid.max.z.ceil(),
+        );
+
+        let mut colliders = Vec::new();
+        for x in min.x as i32..max.x as i32 {
+            for y in min.y as i32..max.y as i32 {
+                for z in min.z as i32..max.z as i32 {
+                    if let Some(material) =
+                        self.get_cube(CubePosition(vec3::new(x, y, z)))
+                    {
+                        if material.can_collide() {
+                            colliders.push(Cuboid::new(
+                                vec3::new(x as f32, y as f32, z as f32),
+                                vec3::new(x as f32 + 1.0, y as f32 + 1.0, z as f32 + 1.0),
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+
+        colliders
+    }
+
     pub fn get_chunk(&self, position: vec3i) -> Option<&Chunk<InstanceMesh>> {
         self.map.get(&position)
     }

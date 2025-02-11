@@ -1,8 +1,9 @@
 use math::angle::Rad;
 use math::vector::{vec3, vec3d, vec3f};
 use serde::{Deserialize, Serialize};
+use std::ops::{AddAssign, Mul, MulAssign, SubAssign};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Transform {
     pub position: vec3f,
     pub rotation: Rotation,
@@ -14,15 +15,15 @@ impl Transform {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Rotation {
     pub yaw: Rad<f64>,
     pub pitch: Rad<f64>,
 }
 
 impl Rotation {
-    pub const fn new(yaw: Rad<f64>, pitch: Rad<f64>) -> Self {
-        Self { yaw, pitch }
+    pub fn new(yaw: impl Into<Rad<f64>>, pitch: impl Into<Rad<f64>>) -> Self {
+        Self { yaw: yaw.into(), pitch: pitch.into() }
     }
 }
 
@@ -43,8 +44,34 @@ impl Rotation {
     }
 }
 
-impl Default for Rotation {
-    fn default() -> Self {
-        Self::new(Rad(0.0), Rad(-90.0))
+impl AddAssign for Rotation {
+    fn add_assign(&mut self, rhs: Self) {
+        self.yaw += rhs.yaw;
+        self.pitch += rhs.pitch;
+    }
+}
+
+impl SubAssign for Rotation {
+    fn sub_assign(&mut self, rhs: Self) {
+        self.yaw -= rhs.yaw;
+        self.pitch -= rhs.pitch;
+    }
+}
+
+impl Mul<f64> for Rotation {
+    type Output = Self;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        Self {
+            yaw: self.yaw * rhs,
+            pitch: self.pitch * rhs,
+        }
+    }
+}
+
+impl MulAssign<f64> for Rotation {
+    fn mul_assign(&mut self, rhs: f64) {
+        self.yaw *= rhs;
+        self.pitch *= rhs;
     }
 }

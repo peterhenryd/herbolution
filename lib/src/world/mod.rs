@@ -3,11 +3,12 @@ pub mod chunk;
 pub mod debugger;
 pub mod entity;
 pub mod lighting;
-pub mod player;
 pub mod position;
 pub mod renderer;
 pub mod transform;
+pub mod observer;
 
+use crate::engine::geometry::cuboid::Cuboid;
 use crate::engine::Engine;
 use crate::game::fps::Fps;
 use crate::listener::{InputEvent, Listener};
@@ -15,24 +16,27 @@ use crate::ui::Ui;
 use crate::world::camera::frustum::Frustum;
 use crate::world::chunk::map::ChunkMap;
 use crate::world::debugger::Debugger;
+use crate::world::entity::data::player::PlayerEntityData;
+use crate::world::entity::data::EntityData;
+use crate::world::entity::physics::{EntityGravity, EntityPhysics};
 use crate::world::entity::set::EntitySet;
+use crate::world::entity::{Entity, EntityAbilities};
 use crate::world::lighting::light::PointLight;
-use crate::world::player::Player;
+use crate::world::observer::{Abilities, Observer};
 use crate::world::renderer::Renderer;
+use crate::world::transform::{Rotation, Transform};
 use math::color::Color3;
 use math::vector::vec3;
 use std::time::Duration;
 use wgpu::RenderPass;
 use winit::dpi::PhysicalSize;
-use winit::event::{ElementState, MouseButton};
-use winit::keyboard::KeyCode;
 
 pub struct World {
     pub(crate) renderer: Renderer,
     chunk_map: ChunkMap,
     entity_set: EntitySet,
-    player: Player,
     debugger: Debugger,
+    observer: Observer,
 }
 
 impl Listener for World {
@@ -44,34 +48,8 @@ impl Listener for World {
     fn on_input(&mut self, event: &InputEvent) {
         self.debugger.on_input(event);
 
-        match event {
-            InputEvent::Key { code, state } => {
-                let f = if state.is_pressed() { 1.0 } else { 0.0 };
-
-                match code {
-                    KeyCode::KeyW => self.player.motion.forward = f,
-                    KeyCode::KeyS => self.player.motion.backward = f,
-                    KeyCode::KeyA => self.player.motion.leftward = f,
-                    KeyCode::KeyD => self.player.motion.rightward = f,
-                    KeyCode::Space => self.player.motion.upward = f,
-                    KeyCode::ShiftLeft => self.player.motion.downward = f,
-                    _ => {}
-                }
-            }
-            &InputEvent::MouseMoving { dx, dy } => {
-                if self.player.motion.rotation.is_none() {
-                    return self.player.motion.rotation = Some((dx, dy));
-                }
-
-                let (x, y) = self.player.motion.rotation.as_mut().unwrap();
-                *x += dx;
-                *y += dy;
-            }
-            InputEvent::MouseClick {
-                button: MouseButton::Left,
-                state: ElementState::Pressed,
-            } => self.player.break_cube += 1,
-            _ => {}
+        if let Some(Entity { data: box EntityData::Player(data), .. }) = self.entity_set.get_mut(self.observer.entity_id) {
+            data.controller.on_input(event);
         }
     }
 }
@@ -97,16 +75,35 @@ impl World {
             }
         }
 
-        let player = Player::new(vec3::new(0., 128., 0.));
-        let entity_set = EntitySet::new();
+        let mut entity_set = EntitySet::new();
+        let entity_id = entity_set.add(Entity {
+            physics: EntityPhysics {
+                transform: Transform {
+                    position: vec3::new(0., 128., 0.),
+                    rotation: Rotation::default(),
+                },
+                bounding_box: Cuboid::new(vec3::new(-0.5, -1.0, -0.5), vec3::new(0.5, 1.0, 0.5)),
+                eye_offset: vec3::ZERO,
+                gravity: EntityGravity {
+                    fall_acceleration: -9.81,
+                    fall_speed: 0.0,
+                    max_fall_speed: 16.0,
+                },
+            },
+            data: Box::new(PlayerEntityData::default().into()),
+            abilities: EntityAbilities {
+                is_affected_by_gravity: true,
+            },
+        });
+        let observer = Observer { entity_id, abilities: Abilities { accepts_input: true } };
         let debugger = Debugger::create();
 
         Self {
             chunk_map,
             renderer,
-            player,
             entity_set,
             debugger,
+            observer,
         }
     }
 
@@ -120,24 +117,20 @@ impl World {
         &mut self.chunk_map
     }
 
-    fn reset_input_trackers(&mut self) {
-        self.player.motion.reset();
-    }
+    fn reset_input_trackers(&mut self) {}
 
     pub fn update(&mut self, dt: Duration, engine: &Engine, ui: &mut Ui, fps: &Fps) {
         if !engine.is_focused {
             self.reset_input_trackers();
         }
 
-        self.player
-            .update(dt, &mut self.chunk_map, &mut self.renderer.camera);
-        self.debugger.update(ui, fps, &self.player);
+        self.entity_set.update(dt, &mut self.chunk_map);
+        self.observer.update(&mut self.entity_set, &mut self.renderer.camera);
+        self.debugger.update(ui, fps, self.entity_set.get(self.observer.entity_id).unwrap().physics.transform);
 
         for chunk in self.chunk_map.iter_mut() {
             chunk.update(&self.renderer.gpu);
         }
-
-        self.entity_set.tick_all();
     }
 
     pub fn render(&self, render_pass: &mut RenderPass<'_>) {

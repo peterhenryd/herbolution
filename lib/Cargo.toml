@@ -7,6 +7,7 @@ edition = "2024"
 bitflags = "2.8.0"
 bytemuck = "1.21.0"
 cached = "0.54.0"
+generational-arena = "0.2.9"
 glyphon = "0.8.0"
 hashbrown = "0.15.2"
 herbolution-math = { path = "../math" }

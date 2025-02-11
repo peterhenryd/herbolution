@@ -59,7 +59,7 @@ mod builder {
             visibility: ShaderStages,
             ty: BindingType,
             count: Option<NonZeroU32>,
-            resource: BindingResource<'a>
+            resource: BindingResource<'a>,
         ) -> Self {
             self.entries.push(BindingEntry { visibility, ty, count, resource });
             self

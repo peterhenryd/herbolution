@@ -9,7 +9,7 @@ pub struct Frustum([Plane<f32>; 6]);
 
 impl Frustum {
     pub fn new(camera: &Camera<Perspective>) -> Self {
-        Self(get_planes(camera.as_mat4f()))
+        Self(get_planes(camera.to_mat4f()))
     }
 
     pub fn contains_chunk(&self, chunk_pos: vec3i) -> bool {

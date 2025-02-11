@@ -3,12 +3,11 @@ use crate::world::chunk::material::Material;
 use crate::world::chunk::{Chunk, ChunkMesh};
 use cached::proc_macro::cached;
 use math::vector::{vec2, vec2i, vec3u8};
-use std::hash::Hash;
 use noise::{NoiseFn, PerlinSurflet, Seedable};
+use std::hash::Hash;
 
 #[derive(Debug)]
 pub struct ChunkGenerator {
-    seed: u32,
     noise: PerlinSurflet,
 }
 
@@ -17,7 +16,7 @@ impl ChunkGenerator {
     const MAX_HEIGHT: i32 = 80;
 
     pub fn new(seed: u32) -> Self {
-        Self { seed, noise: PerlinSurflet::new(seed) }
+        Self { noise: PerlinSurflet::new(seed) }
     }
 
     pub fn generate<A: ChunkMesh>(&self, chunk: &mut Chunk<A>) {

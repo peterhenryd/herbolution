@@ -75,7 +75,6 @@ impl Listener for Renderer {
 }
 
 
-
 fn build_textures(gpu: &Gpu, builder: BindingBuilder) -> Binding {
     let entries = Material::entries()
         .map(Material::id)
