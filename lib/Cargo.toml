@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bitflags = "2.9.0"
+bitflags.workspace = true
+bytemuck.workspace = true
+lazy_static.workspace = true
 math = { package = "herbolution-math", path = "../math" }
-serde = { version = "1.0.218", features = ["derive"] }
-bytemuck = "1.22.0"
-lazy_static = "1.5.0"
+serde = { workspace = true, features = ["derive"] }

@@ -767,15 +767,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aa9a19cbb55df58761df49b23516a86d432839add4af60fc256da840f66ed35b"
 
 [[package]]
-name = "generational-arena"
-version = "0.2.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "877e94aff08e743b651baaea359664321055749b398adff8740a7399af7796e7"
-dependencies = [
- "cfg-if 1.0.0",
-]
-
-[[package]]
 name = "gethostname"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -963,13 +954,13 @@ name = "herbolution-engine"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
- "generational-arena",
  "glyphon",
  "herbolution-lib",
  "herbolution-math",
  "image",
  "image-atlas",
  "pollster",
+ "pulz-arena",
  "smallvec",
  "thiserror 2.0.12",
  "wgpu",
@@ -982,10 +973,10 @@ version = "0.1.0"
 dependencies = [
  "bytemuck",
  "cached",
- "generational-arena",
  "hashbrown 0.15.2",
  "herbolution-lib",
  "herbolution-math",
+ "pulz-arena",
  "simdnoise",
  "tokio",
 ]
@@ -1955,6 +1946,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "pulz-arena"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "67e6caa222a0aff05f2be5e49d91420320cfae8ee04e4129edb3c235779f6e45"
+
+[[package]]
 name = "qoi"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2253,18 +2250,18 @@ checksum = "c2fdfc24bc566f839a2da4c4295b82db7d25a24253867d5c64355abb5799bdbe"
 
 [[package]]
 name = "serde"
-version = "1.0.218"
+version = "1.0.219"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8dfc9d19bdbf6d17e22319da49161d5d0108e4188e8b680aef6299eed22df60"
+checksum = "5f0e2c6ed6606019b4e29e69dbaba95b11854410e5347d525002456dbbb786b6"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.218"
+version = "1.0.219"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f09503e191f4e797cb8aac08e9a4a4695c5edf6a2e70e376d961ddd5c969f82b"
+checksum = "5b0276cf7f2c73365f7157c8123c21cd9a50fbbd844757af28ca1f5925fc2a00"
 dependencies = [
  "proc-macro2",
  "quote",

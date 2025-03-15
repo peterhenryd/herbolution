@@ -1,8 +1,8 @@
-use generational_arena::{Arena, Index, Iter, IterMut};
+use std::fmt::{Debug, Formatter};
+use pulz_arena::{Arena, Index, Iter, IterMut};
 use crate::world::chunk::map::ChunkMap;
 use crate::world::entity::Entity;
 
-#[derive(Debug)]
 pub struct EntitySet {
     arena: Arena<Entity>,
 }
@@ -35,8 +35,17 @@ impl EntitySet {
     pub fn get_mut(&mut self, id: EntityId) -> Option<&mut Entity> {
         self.arena.get_mut(id.0)
     }
+
+    pub fn iter(&self) -> EntityIter<'_> {
+        self.into_iter()
+    }
 }
 
+impl Debug for EntitySet {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_map().entries(self.into_iter()).finish()
+    }
+}
 
 impl<'a> IntoIterator for &'a EntitySet {
     type Item = (EntityId, &'a Entity);

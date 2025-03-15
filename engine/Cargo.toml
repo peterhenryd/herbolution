@@ -5,14 +5,14 @@ edition = "2024"
 
 [dependencies]
 bytemuck.workspace = true
-image-atlas = "0.4.1"
+glyphon.workspace = true
+image-atlas.workspace = true
 image.workspace = true
 lib = { package = "herbolution-lib", path = "../lib" }
 math = { package = "herbolution-math", path = "../math" }
 pollster.workspace = true
+pulz-arena.workspace = true
 smallvec.workspace = true
 thiserror.workspace = true
-wgpu = "24.0.1"
+wgpu.workspace = true
 winit.workspace = true
-glyphon = "0.8.0"
-generational-arena = "0.2.9"

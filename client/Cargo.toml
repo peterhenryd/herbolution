@@ -8,6 +8,6 @@ engine = { package = "herbolution-engine", path = "../engine" }
 game = { package = "herbolution-game", path = "../game" }
 lib = { package = "herbolution-lib", path = "../lib" }
 math = { package = "herbolution-math", path = "../math" }
-num = "0.4.3"
-winit.workspace = true
+num.workspace = true
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "sync"] }
+winit.workspace = true

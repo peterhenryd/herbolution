@@ -1,10 +1,11 @@
-use generational_arena::{Arena, Index};
+use std::fmt::{Debug, Formatter};
 use crate::gpu::handle::Handle;
 use glyphon::cosmic_text::CacheKeyFlags;
 use glyphon::{
     Attrs, Buffer, Cache, Color, Family, FontSystem, Metrics, Resolution, Shaping, Stretch, Style,
     SwashCache, TextArea, TextAtlas, TextBounds, Viewport, Weight,
 };
+use pulz_arena::{Arena, Index};
 use math::color::Rgba;
 use math::size::Size2;
 use math::vector::vec2f;
@@ -61,7 +62,7 @@ impl TextRenderer {
             line_height,
             color: c,
             ..
-        }) in &frame.sections
+        }) in frame.sections.iter()
         {
             let mut buffer = Buffer::new(
                 &mut self.font_system,
@@ -145,9 +146,15 @@ pub struct TextSection {
     pub color: Rgba<u8>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct TextFrame {
     pub sections: Arena<TextSection>,
+}
+
+impl Debug for TextFrame {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_list().entries(self.sections.iter().map(|(_, x)| x)).finish()
+    }
 }
 
 pub struct TextId(pub(super) Index);
