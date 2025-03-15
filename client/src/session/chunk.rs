@@ -1,22 +1,21 @@
-use std::collections::HashMap;
-use std::ops::Mul;
-use tokio::sync::mpsc::Receiver;
 use engine::gpu::handle::Handle;
 use engine::gpu::mem::model::InstanceGroup;
 use engine::gpu::mem::payload::ShaderPayload;
 use engine::renderer_3d::vertex::Instance;
-use game::world::chunk::ChunkUpdate;
 use game::world::chunk::cube::Cube;
 use game::world::chunk::material::Material;
-use lib::geometry::cuboid::face::Face;
-use lib::geometry::InstanceShaderPayload;
+use game::world::chunk::ChunkUpdate;
+use engine::renderer_3d::vertex::InstanceShaderPayload;
 use math::color::Rgba;
 use math::vector::{vec3i, vec3u5};
+use std::collections::HashMap;
+use std::ops::Mul;
+use tokio::sync::mpsc::Receiver;
 
 pub struct SessionChunk {
     position: vec3i,
     mesh: InstanceGroup,
-    cubes: HashMap<vec3u5, Cube<Option<Material>>>,
+    cubes: HashMap<vec3u5, Cube<Material>>,
     receiver: Receiver<ChunkUpdate>
 }
 
@@ -34,26 +33,34 @@ impl SessionChunk {
         let mut is_dirty = false;
 
         while let Ok(update) = self.receiver.try_recv() {
-            if !update.cubes.is_empty() {
-                is_dirty = true;
-            } else {
+            if update.cubes.is_empty() {
                 continue;
             }
 
-            self.cubes.extend(update.cubes);
+            for (pos, cube) in update.cubes {
+                let Some(material) = cube.material else {
+                    self.cubes.remove(&pos);
+                    continue;
+                };
+
+                self.cubes.insert(pos, Cube {
+                    material,
+                    dependent_data: cube.dependent_data,
+                });
+            }
+
+            is_dirty = true;
         }
 
         if is_dirty {
             let chunk_position = self.position.mul(32).cast::<f32>().unwrap();
             let mut instances = vec![];
             for (&pos, cube) in &self.cubes {
-                let Some(material) = cube.material else { continue };
-
-                for rotation in cube.faces().map(Face::into_quat) {
+                for face in cube.faces() {
                     instances.push(Instance {
                         position: chunk_position + pos.cast().unwrap(),
-                        rotation,
-                        texture_index: material.texture_index(),
+                        rotation: face.variant().into_quat(),
+                        texture_index: cube.material.texture_index(),
                         color: Rgba::TRANSPARENT,
                     }.payload());
                 }

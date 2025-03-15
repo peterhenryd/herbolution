@@ -1,7 +1,7 @@
 use std::iter::once;
 use wgpu::{RenderPass, ShaderStages, TextureFormat};
 use lib::geometry::cuboid::face::Faces;
-use lib::geometry::InstanceShaderPayload;
+use vertex::InstanceShaderPayload;
 use math::color::{ColorConsts, Rgb, Rgba};
 use math::projection::perspective::Perspective;
 use math::size::Size2;
@@ -61,14 +61,17 @@ impl Renderer3D {
             return;
         };
 
-        self.highlight_tile.write(handle, &Faces::all().map(|face| {
-            Instance {
-                position: position.cast().unwrap(),
-                rotation: face.into_quat(),
+        let position = position.cast().unwrap();
+        let instances = Faces::all().iter()
+            .map(|x| x.variant().into_quat())
+            .map(|rotation| Instance {
+                position,
+                rotation,
                 texture_index: 0,
                 color: Rgba::BLACK,
-            }.payload()
-        }));
+            }.payload())
+            .collect::<Vec<_>>();
+        self.highlight_tile.write(handle, &instances);
     }
 
     pub fn render(&self, render_pass: &mut RenderPass, chunk_meshes: impl Iterator<Item = (vec3i, &InstanceGroup)>) {

@@ -2,12 +2,8 @@ use crate::world::chunk::cube::{Cube, CubePosition};
 use crate::world::chunk::material::{Material, OptionMaterialExt};
 use hashbrown::HashMap;
 use lib::geometry::cuboid::face::{Face, Faces};
-use lib::geometry::InstanceShaderPayload;
-use math::color::Rgba;
-use math::matrix::Mat4;
 use math::vector::{vec3i, vec3u5, Vec3};
-use std::iter::StepBy;
-use std::ops::{Mul, Not, Range};
+use std::ops::{Not, Range};
 use tokio::sync::mpsc::Sender;
 
 pub mod cube;
@@ -59,15 +55,17 @@ impl Chunk {
         for (x1, x2) in this_matrix.x.zip(that_matrix.x) {
             for (y1, y2) in this_matrix.y.clone().zip(that_matrix.y.clone()) {
                 for (z1, z2) in this_matrix.z.clone().zip(that_matrix.z.clone()) {
-                    let this = &mut self.data[x1 + y1 + z1];
-                    let that = &mut other.data[x2 + y2 + z2];
-
-                    self.dirtied_positions.push(vec3u5::new(x1 as u8, (y1  / LENGTH) as u8, (z1 / LENGTH.pow(2)) as u8));
-                    other.dirtied_positions.push(vec3u5::new(x2 as u8, (y2 / LENGTH) as u8, (z2 / LENGTH.pow(2)) as u8));
+                    let position1 = vec3u5::new(x1, y1, z1);
+                    let position2 = vec3u5::new(x2, y2, z2);
+                    let this = &mut self.data[linearize(position1)];
+                    let that = &mut other.data[linearize(position2)];
 
                     if this.material.is_face_culled() && that.material.is_face_culled() {
                         this.remove_faces(Faces::from(shared_face.inverse()));
                         that.remove_faces(Faces::from(shared_face));
+
+                        self.dirtied_positions.push(position1);
+                        other.dirtied_positions.push(position2);
                     }
                 }
             }
@@ -98,14 +96,14 @@ impl Chunk {
     fn remove_neighboring_faces(&mut self, faces: Faces, position: vec3u5) {
         let i = linearize(position);
         faces
-            .map(|f| (f, f.into_vec3i()))
-            .into_iter()
+            .map(|f| (f, f.into_vec3()))
             .map(|(f, v)| (f, position.cast::<i32>().unwrap() + v))
-            .filter(|(_, x)| in_bounds(*x))
-            .map(|(f, v)| (f, v.cast::<u8>().unwrap()))
+            //.filter(|(_, x)| in_bounds(*x))
+            .filter_map(|(f, v)| v.cast::<u8>().map(|x| (f, x)))
+            .filter_map(|(f, v)| vec3u5::try_new(v.x, v.y, v.z).map(|x| (f, x)))
             .for_each(|(f, v)| {
                 let index = v.cast().unwrap().linearize(LENGTH);
-                self.dirtied_positions.push(vec3u5::new(v.x, v.y, v.z));
+                self.dirtied_positions.push(v);
 
                 if self.data[index].material.is_face_culled() {
                     self.data[i].remove_faces(Faces::from(f));
@@ -113,60 +111,26 @@ impl Chunk {
 
                 self.data[index].remove_faces(Faces::from(f.inverse()));
             });
-
-        self.dirtied_positions.push(position);
     }
 
     fn add_neighboring_faces(&mut self, faces: Faces, position: vec3u5) {
+        let position = position.cast::<i32>().unwrap();
         faces
             // Get the faces that are not present on the cube.
             .not()
             // Get the corresponding cube offset vectors for each face
-            .map(|f| (f, f.into_vec3i()))
-            .into_iter()
-            // Offset vectors by cube local position
-            .map(|(f, v)| (f, position.cast::<i32>().unwrap() + v))
+            .map(|f| (f, f.into_vec3() + position))
             // Filter positions that exist outside the current chunk
             // TODO: these should be returned to the caller so they can be used to cull faces on
             // neighboring chunks.
-            .filter(|&(_, x)| in_bounds(x))
-            .map(|(f, v)| (f, v.cast::<u8>().unwrap()))
+            .filter_map(|(f, v)| v.cast::<u8>().map(|x| (f, x)))
+            .filter_map(|(f, v)| vec3u5::try_new(v.x, v.y, v.z).map(|x| (f, x)))
             // Add the inverse of the removed face to the neighboring cube.
             .for_each(|(f, v)| {
                 let i = v.cast().unwrap().linearize(LENGTH);
-                self.dirtied_positions.push(vec3u5::new(v.x, v.y, v.z));
+                self.dirtied_positions.push(v);
                 self.data[i].insert_faces(Faces::from(f.inverse()));
             });
-    }
-
-    fn add_quads(&self, quads: &mut Vec<InstanceShaderPayload>, position: vec3u5) {
-        let i = linearize(position);
-        let cube = &self.data[i];
-        let Some(material) = cube.material else { return };
-
-        let chunk_position = self.position.mul(LENGTH as i32).cast::<f32>().unwrap();
-        let position = position.cast::<f32>().unwrap();
-        for rotation in cube.faces().map(|f| f.into_quat()) {
-            quads.push(InstanceShaderPayload {
-                model_matrix: Mat4::from_translation(position + chunk_position) * Mat4::from(rotation),
-                texture_index: material.texture_index(),
-                color: Rgba::TRANSPARENT,
-            });
-        }
-    }
-
-    pub fn get_quad_instances(&self) -> Vec<InstanceShaderPayload> {
-        let mut vec = vec![];
-
-        for x in 0..LENGTH as u8 {
-            for y in 0..LENGTH as u8 {
-                for z in 0..LENGTH as u8 {
-                    self.add_quads(&mut vec, vec3u5::new(x, y, z));
-                }
-            }
-        }
-
-        vec
     }
 
     fn send_update(&mut self) {
@@ -189,7 +153,42 @@ impl Chunk {
     }
 }
 
-fn facial_chunk_boundary_slice(face: Face) -> Vec3<StepBy<Range<usize>>> {
+fn facial_chunk_boundary_slice(face: Face) -> Vec3<Range<u8>> {
+    // Recreate the commented section except don't linearize
+    match face {
+        Face::Top => Vec3::new(
+            0..LENGTH as u8,
+            (LENGTH as u8 - 1)..LENGTH as u8,
+            0..LENGTH as u8,
+        ),
+        Face::Bottom => Vec3::new(
+            0..LENGTH as u8,
+            0..1,
+            0..LENGTH as u8,
+        ),
+        Face::Left => Vec3::new(
+            0..1,
+            0..LENGTH as u8,
+            0..LENGTH as u8,
+        ),
+        Face::Right => Vec3::new(
+            (LENGTH as u8 - 1)..LENGTH as u8,
+            0..LENGTH as u8,
+            0..LENGTH as u8,
+        ),
+        Face::Front => Vec3::new(
+            0..LENGTH as u8,
+            0..LENGTH as u8,
+            (LENGTH as u8 - 1)..LENGTH as u8,
+        ),
+        Face::Back => Vec3::new(
+            0..LENGTH as u8,
+            0..LENGTH as u8,
+            0..1,
+        ),
+    }
+    
+        /*
     let full_x = (0..LENGTH).step_by(1);
     let full_y = (0..LENGTH.pow(2)).step_by(LENGTH);
     let full_z = (0..LENGTH.pow(3)).step_by(LENGTH.pow(2));
@@ -218,10 +217,8 @@ fn facial_chunk_boundary_slice(face: Face) -> Vec3<StepBy<Range<usize>>> {
             (0..LENGTH.pow(2)).step_by(LENGTH.pow(2)),
         ),
     }
-}
-
-fn in_bounds(Vec3 { x, y, z }: vec3i) -> bool {
-    x >= 0 && y >= 0 && z >= 0 && x < LENGTH as i32 && y < LENGTH as i32 && z < LENGTH as i32
+    
+         */
 }
 
 fn linearize(position: vec3u5) -> usize {
@@ -240,9 +237,9 @@ impl From<CubePosition> for ChunkLocalPosition {
         let chunk_y = pos.0.y.div_euclid(LENGTH as i32);
         let chunk_z = pos.0.z.div_euclid(LENGTH as i32);
 
-        let local_x = pos.0.x.rem_euclid(LENGTH as i32) as u8;
-        let local_y = pos.0.y.rem_euclid(LENGTH as i32) as u8;
-        let local_z = pos.0.z.rem_euclid(LENGTH as i32) as u8;
+        let local_x = (pos.0.x & (LENGTH as i32 - 1)) as u8;
+        let local_y = (pos.0.y & (LENGTH as i32 - 1)) as u8;
+        let local_z = (pos.0.z & (LENGTH as i32 - 1)) as u8;
 
         ChunkLocalPosition {
             chunk: Vec3::new(chunk_x, chunk_y, chunk_z),

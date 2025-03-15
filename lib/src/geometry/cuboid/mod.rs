@@ -162,7 +162,7 @@ impl From<Faces> for Cuboid<f32> {
         let mut min = Vec3::splat(f32::MAX);
         let mut max = Vec3::splat(f32::MIN);
 
-        for corner in faces.map(Face::into_corners).into_flattened() {
+        for corner in faces.map(Face::into_corners).flatten() {
             min = min.min(corner);
             max = max.max(corner);
         }

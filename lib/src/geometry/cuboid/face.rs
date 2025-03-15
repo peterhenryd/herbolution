@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use std::marker::PhantomData;
 use std::ops::Index;
 use bitflags::bitflags;
 use lazy_static::lazy_static;
@@ -52,7 +53,19 @@ impl Face {
         }
     }
 
-    pub fn into_vec3i(self) -> vec3i {
+    pub fn from_u8(value: u8) -> Option<Self> {
+        match value {
+            0 => Some(Face::Top),
+            1 => Some(Face::Bottom),
+            2 => Some(Face::Left),
+            3 => Some(Face::Right),
+            4 => Some(Face::Front),
+            5 => Some(Face::Back),
+            _ => None,
+        }
+    }
+
+    pub fn into_vec3(self) -> vec3i {
         match self {
             Face::Top => vec3i::new(0, 1, 0),
             Face::Bottom => vec3i::new(0, -1, 0),
@@ -130,12 +143,12 @@ impl From<vec3i> for Face {
 
 impl Into<vec3i> for Face {
     fn into(self) -> vec3i {
-        self.into_vec3i()
+        self.into_vec3()
     }
 }
 
 bitflags! {
-    #[derive(Debug, Copy, Clone)]
+    #[derive(Debug, Copy, Clone, Eq, PartialEq)]
     pub struct Faces: u8 {
         const TOP = 0b00000001;
         const BOTTOM = 0b00000010;
@@ -147,27 +160,57 @@ bitflags! {
 }
 
 impl Faces {
-    pub fn map<T>(self, f: impl Fn(Face) -> T) -> Vec<T> {
-        let mut values = Vec::with_capacity(6);
-        if self.contains(Faces::TOP) {
-            values.push(f(Face::Top));
+    pub fn variant(self) -> Face {
+        if self == Faces::TOP {
+            Face::Top
+        } else if self == Faces::BOTTOM {
+            Face::Bottom
+        } else if self == Faces::LEFT {
+            Face::Left
+        } else if self == Faces::RIGHT {
+            Face::Right
+        } else if self == Faces::FRONT {
+            Face::Front
+        } else if self == Faces::BACK {
+            Face::Back
+        } else {
+            panic!("Invalid face");
         }
-        if self.contains(Faces::BOTTOM) {
-            values.push(f(Face::Bottom));
+    }
+}
+
+pub struct FacesIter<F, T> {
+    faces: Faces,
+    function: F,
+    _marker: PhantomData<T>,
+    index: u8,
+}
+
+impl<F, T> Iterator for FacesIter<F, T>
+where F: Fn(Face) -> T {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while self.index < 6 {
+            let face = Face::from_u8(self.index).unwrap();
+            self.index += 1;
+            if self.faces.contains(face.into()) {
+                return Some((self.function)(face));
+            }
         }
-        if self.contains(Faces::LEFT) {
-            values.push(f(Face::Left));
+        None
+    }
+}
+
+impl Faces {
+    pub fn map<T, F>(self, function: F) -> FacesIter<F, T>
+    where F: Fn(Face) -> T {
+        FacesIter {
+            faces: self,
+            function,
+            _marker: PhantomData,
+            index: 0,
         }
-        if self.contains(Faces::RIGHT) {
-            values.push(f(Face::Right));
-        }
-        if self.contains(Faces::FRONT) {
-            values.push(f(Face::Front));
-        }
-        if self.contains(Faces::BACK) {
-            values.push(f(Face::Back));
-        }
-        values
     }
 }
 

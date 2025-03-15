@@ -59,9 +59,9 @@ impl InstanceGroup {
     pub fn write<T: NoUninit + Zeroable>(&mut self, handle: &Handle, instances: &[T]) {
         if instances.len() as u32 > self.count {
             self.buffer = handle.create_vertex_buffer(&instances);
-            self.count = instances.len() as u32;
         } else {
             handle.write_buffer(&self.buffer, 0, &instances);
         }
+        self.count = instances.len() as u32;
     }
 }

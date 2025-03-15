@@ -66,7 +66,7 @@ impl Meshes {
     fn create(handle: &Handle) -> Self {
         Self {
             tile_quad: create_tile_quad_mesh(handle),
-            tile_highlight: create_tile_highlight_mesh(handle, 0.01),
+            tile_highlight: create_tile_highlight_mesh(handle, 0.005),
         }
     }
 }

@@ -42,10 +42,12 @@ impl SessionPlayer {
     }
 
     pub(super) fn update(&mut self, handle: &Handle, render: &mut Renderer3D, frame_input: &InputFrame, input: &Input, is_focused: bool) {
-        if !is_focused && self.prev_forces != Vec3::ZERO {
-            self.prev_forces = Vec3::ZERO;
-            self.send_action(ActionImpulse::Move { forces: Vec3::ZERO });
-            return
+        if !is_focused {
+            if self.prev_forces != Vec3::ZERO {
+                self.prev_forces = Vec3::ZERO;
+                self.send_action(ActionImpulse::Move { forces: Vec3::ZERO });
+            }
+            return;
         }
 
         let Some(player_handle) = &mut self.handle else { return };

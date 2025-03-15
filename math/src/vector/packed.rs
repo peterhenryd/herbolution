@@ -20,6 +20,14 @@ impl vec3u5 {
         Self((x as u16) << 10 | (y as u16) << 5 | z as u16)
     }
 
+    pub const fn try_new(x: u8, y: u8, z: u8) -> Option<Self> {
+        if x < 32 && y < 32 && z < 32 {
+            Some(Self::new(x, y, z))
+        } else {
+            None
+        }
+    }
+
     #[inline]
     pub const fn x(self) -> u8 {
         ((self.0 >> 10) & 31) as u8

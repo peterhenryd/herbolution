@@ -3,7 +3,7 @@ use crate::world::chunk::generator::ChunkGenerator;
 use crate::world::chunk::material::Material;
 use crate::world::chunk::{linearize, Chunk, ChunkLocalPosition};
 use crate::Response;
-use lib::geometry::cuboid::face::Faces;
+use lib::geometry::cuboid::face::{Face, Faces};
 use lib::geometry::cuboid::Cuboid;
 use math::vector::{vec3f, vec3i, vec3u5, Vec3};
 use std::collections::HashMap;
@@ -76,12 +76,11 @@ impl ChunkMap {
         }
         self.generator.generate(&mut chunk);
 
-        for p in Faces::all().map(|x| x.into_vec3i()) {
+        for p in Faces::all().map(Face::into_vec3) {
             let Some(other) = self.get_chunk_mut(position + p) else {
                 continue;
             };
             chunk.cull_shared_faces(other);
-            other.cull_shared_faces(&mut chunk);
         }
 
         self.map.insert(position, chunk);
@@ -97,45 +96,40 @@ impl ChunkMap {
 
     pub fn set_cube(&mut self, position: impl Into<CubePosition>, material: Option<Material>) {
         let position = ChunkLocalPosition::from(position.into());
-        self.chunk(position.chunk).set(position.local, material);
 
         if position.local.x() == 0 {
             let chunk = self.chunk(position.chunk + vec3i::new(-1, 0, 0));
             let position = vec3u5::new(31, position.local.y(), position.local.z());
-            let index = linearize(position);
-            chunk.data[index].insert_faces(Faces::RIGHT);
+            chunk.data[linearize(position)].insert_faces(Faces::RIGHT);
             chunk.dirtied_positions.push(position);
         } else if position.local.x() == 31 {
             let chunk = self.chunk(position.chunk + vec3i::new(1, 0, 0));
             let position = vec3u5::new(0, position.local.y(), position.local.z());
-            let index = linearize(position);
-            chunk.data[index].insert_faces(Faces::LEFT);
+            chunk.data[linearize(position)].insert_faces(Faces::LEFT);
             chunk.dirtied_positions.push(position);
         } else if position.local.y() == 0 {
             let chunk = self.chunk(position.chunk + vec3i::new(0, -1, 0));
             let position = vec3u5::new(position.local.x(), 31, position.local.z());
-            let index = linearize(position);
-            chunk.data[index].insert_faces(Faces::TOP);
+            chunk.data[linearize(position)].insert_faces(Faces::TOP);
             chunk.dirtied_positions.push(position);
         } else if position.local.y() == 31 {
             let chunk = self.chunk(position.chunk + vec3i::new(0, 1, 0));
             let position = vec3u5::new(position.local.x(), 0, position.local.z());
-            let index = linearize(position);
-            chunk.data[index].insert_faces(Faces::BOTTOM);
+            chunk.data[linearize(position)].insert_faces(Faces::BOTTOM);
             chunk.dirtied_positions.push(position);
         } else if position.local.z() == 0 {
             let chunk = self.chunk(position.chunk + vec3i::new(0, 0, -1));
             let position = vec3u5::new(position.local.x(), position.local.y(), 31);
-            let index = linearize(position);
-            chunk.data[index].insert_faces(Faces::FRONT);
+            chunk.data[linearize(position)].insert_faces(Faces::FRONT);
             chunk.dirtied_positions.push(position);
         } else if position.local.z() == 31 {
             let chunk = self.chunk(position.chunk + vec3i::new(0, 0, 1));
             let position = vec3u5::new(position.local.x(), position.local.y(), 0);
-            let index = linearize(position);
-            chunk.data[index].insert_faces(Faces::BACK);
+            chunk.data[linearize(position)].insert_faces(Faces::BACK);
             chunk.dirtied_positions.push(position);
         }
+
+        self.chunk(position.chunk).set(position.local, material);
     }
 
     pub fn get_cube(&mut self, position: impl Into<CubePosition>) -> Option<Material> {

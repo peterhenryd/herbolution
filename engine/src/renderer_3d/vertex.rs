@@ -1,7 +1,6 @@
 use bytemuck::{Pod, Zeroable};
 use math::vector::vec3f;
 use wgpu::{vertex_attr_array, BufferAddress, VertexAttribute, VertexBufferLayout, VertexStepMode};
-use lib::geometry::InstanceShaderPayload;
 use math::color::Rgba;
 use math::matrix::{mat4f, Mat4};
 use math::rotation::Quat;
@@ -78,4 +77,12 @@ impl ShaderPayload for Instance {
             color: self.color,
         }
     }
+}
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
+pub struct InstanceShaderPayload {
+    pub model_matrix: mat4f,
+    pub texture_index: u32,
+    pub color: Rgba<f32>,
 }

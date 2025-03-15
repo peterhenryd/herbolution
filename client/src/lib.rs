@@ -1,6 +1,7 @@
 #![feature(duration_constants)]
 #![feature(const_trait_impl)]
 #![feature(box_patterns)]
+#![feature(random)]
 
 use winit::error::EventLoopError;
 use winit::event_loop::EventLoop;
