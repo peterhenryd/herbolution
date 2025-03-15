@@ -1,20 +1,50 @@
 #![feature(duration_constants)]
-#![feature(const_trait_impl)]
-#![feature(box_patterns)]
-extern crate herbolution_math as math;
 
-pub mod engine;
-pub mod game;
-pub mod handler;
-pub mod listener;
-pub mod ui;
-pub mod world;
+use std::mem::take;
+use std::ops::{Deref, DerefMut};
 
-pub fn start(options: Options) -> Result<(), winit::error::EventLoopError> {
-    use lazy_winit::EventLoopExt;
+pub mod counter;
+pub mod display;
+pub mod fps;
+pub mod geometry;
+pub mod light;
+pub mod time;
 
-    winit::event_loop::EventLoop::new()?
-        .run_lazy_app::<handler::Handler>(options)
+pub struct Modify<T> {
+    value: T,
+    is_dirty: bool,
 }
 
-pub struct Options {}
+impl<T> Modify<T> {
+    pub fn new(value: T) -> Self {
+        Self {
+            value,
+            is_dirty: true,
+        }
+    }
+
+    pub fn take_modified(&mut self) -> Option<&T> {
+        take(&mut self.is_dirty).then(|| &self.value)
+    }
+}
+
+impl<T> Deref for Modify<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.value
+    }
+}
+
+impl<T> DerefMut for Modify<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.is_dirty = true;
+        &mut self.value
+    }
+}
+
+impl<T> From<T> for Modify<T> {
+    fn from(value: T) -> Self {
+        Self::new(value)
+    }
+}

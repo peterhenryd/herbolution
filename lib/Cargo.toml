@@ -4,20 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bitflags = "2.8.0"
-bytemuck = "1.21.0"
-cached = "0.54.0"
-generational-arena = "0.2.9"
-glyphon = "0.8.0"
-hashbrown = "0.15.2"
-herbolution-math = { path = "../math" }
-image = "0.25.5"
-image-atlas = "0.4.1"
-lazy_winit = "0.1.1"
-noise = "0.9.0"
-num = "0.4.3"
-pollster = "0.4.0"
-serde = { version = "1.0.217", features = ["derive"] }
-thiserror = "2.0.11"
-wgpu = { version = "24.0.1" }
-winit = "0.30.9"
+bitflags = "2.9.0"
+math = { package = "herbolution-math", path = "../math" }
+serde = { version = "1.0.218", features = ["derive"] }
+bytemuck = "1.22.0"
+lazy_static = "1.5.0"

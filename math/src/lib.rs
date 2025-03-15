@@ -1,10 +1,13 @@
-#![feature(decl_macro)]
-#![feature(slice_concat_trait)]
-extern crate herbolution_math_derive as derive;
+#![feature(const_precise_live_drops)]
+#![feature(const_trait_impl)]
+#![feature(const_ops)]
+pub extern crate num;
 
 pub mod angle;
-pub mod to_no_uninit;
 pub mod color;
 pub mod matrix;
-pub mod quat;
+pub mod rotation;
+pub mod size;
+pub mod transform;
 pub mod vector;
+pub mod projection;
