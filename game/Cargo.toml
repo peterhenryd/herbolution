@@ -4,11 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bytemuck.workspace = true
 cached.workspace = true
 hashbrown.workspace = true
+kanal.workspace = true
 lib = { package = "herbolution-lib", path = "../lib" }
+line_drawing.workspace = true
 math = { package = "herbolution-math", path = "../math" }
 pulz-arena.workspace = true
 simdnoise.workspace = true
-tokio = { workspace = true, features = ["rt", "sync"] }
+tinyvec.workspace = true
+tokio = { workspace = true, features = ["rt"] }

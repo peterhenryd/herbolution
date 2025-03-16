@@ -8,7 +8,6 @@ use crate::geometry::cuboid::face::{Face, Faces};
 
 pub mod face;
 
-/// A cuboid in 3D space, also used as an axis-aligned bounding box.
 pub struct Cuboid<T> {
     pub min: Vec3<T>,
     pub max: Vec3<T>,

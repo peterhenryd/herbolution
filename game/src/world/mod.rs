@@ -3,7 +3,7 @@ pub mod entity;
 pub mod map;
 
 use std::borrow::Borrow;
-use tokio::sync::mpsc::Sender;
+use kanal::Sender;
 use math::vector::Vec3;
 use crate::Response;
 use crate::world::chunk::map::ChunkMap;

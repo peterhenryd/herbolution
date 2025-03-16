@@ -1,5 +1,5 @@
 use hashbrown::HashMap;
-use tokio::sync::mpsc::Sender;
+use kanal::Sender;
 use crate::Response;
 use crate::world::{World, WorldId};
 

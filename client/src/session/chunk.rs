@@ -10,7 +10,7 @@ use math::color::Rgba;
 use math::vector::{vec3i, vec3u5};
 use std::collections::HashMap;
 use std::ops::Mul;
-use tokio::sync::mpsc::Receiver;
+use kanal::Receiver;
 
 pub struct SessionChunk {
     position: vec3i,
@@ -32,24 +32,20 @@ impl SessionChunk {
     pub fn update(&mut self, handle: &Handle) {
         let mut is_dirty = false;
 
-        while let Ok(update) = self.receiver.try_recv() {
-            if update.cubes.is_empty() {
-                continue;
-            }
+        while let Ok(Some(update)) = self.receiver.try_recv() {
+            for (position, cube) in update.cubes {
+                is_dirty = true;
 
-            for (pos, cube) in update.cubes {
                 let Some(material) = cube.material else {
-                    self.cubes.remove(&pos);
+                    self.cubes.remove(&position);
                     continue;
                 };
 
-                self.cubes.insert(pos, Cube {
+                self.cubes.insert(position, Cube {
                     material,
                     dependent_data: cube.dependent_data,
                 });
             }
-
-            is_dirty = true;
         }
 
         if is_dirty {

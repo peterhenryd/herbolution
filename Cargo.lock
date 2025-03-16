@@ -767,6 +767,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aa9a19cbb55df58761df49b23516a86d432839add4af60fc256da840f66ed35b"
 
 [[package]]
+name = "futures-core"
+version = "0.3.31"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "05f29059c0c2090612e8d742178b0580d2dc940c837851ad723096f87af6663e"
+
+[[package]]
 name = "gethostname"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -944,6 +950,7 @@ dependencies = [
  "herbolution-game",
  "herbolution-lib",
  "herbolution-math",
+ "kanal",
  "num",
  "tokio",
  "winit",
@@ -971,13 +978,15 @@ dependencies = [
 name = "herbolution-game"
 version = "0.1.0"
 dependencies = [
- "bytemuck",
  "cached",
  "hashbrown 0.15.2",
  "herbolution-lib",
  "herbolution-math",
+ "kanal",
+ "line_drawing",
  "pulz-arena",
  "simdnoise",
+ "tinyvec",
  "tokio",
 ]
 
@@ -1146,6 +1155,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "kanal"
+version = "0.1.0-pre8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b05d55519627edaf7fd0f29981f6dc03fb52df3f5b257130eb8d0bf2801ea1d7"
+dependencies = [
+ "futures-core",
+ "lock_api",
+]
+
+[[package]]
 name = "khronos-egl"
 version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1215,6 +1234,15 @@ dependencies = [
  "bitflags 2.9.0",
  "libc",
  "redox_syscall 0.5.8",
+]
+
+[[package]]
+name = "line_drawing"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b5f309016f7f96b0147c6f223d5a8c4e678bf13ae8fb4f85f60c3bb5e0598ea8"
+dependencies = [
+ "num-traits",
 ]
 
 [[package]]
@@ -1490,6 +1518,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
 dependencies = [
  "autocfg",
+ "libm",
 ]
 
 [[package]]
@@ -2577,9 +2606,9 @@ dependencies = [
 
 [[package]]
 name = "tinyvec"
-version = "1.8.1"
+version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "022db8904dfa342efe721985167e9fcd16c29b226db4397ed752a761cfce81e8"
+checksum = "09b3661f17e86524eccd4371ab0429194e0d7c008abb45f7a7495b1719463c71"
 dependencies = [
  "tinyvec_macros",
 ]

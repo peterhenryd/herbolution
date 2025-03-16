@@ -1,5 +1,5 @@
+use kanal::{bounded, Sender};
 use num::traits::ConstZero;
-use tokio::sync::mpsc::{channel, Sender};
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
 use engine::gpu::handle::Handle;
@@ -12,7 +12,6 @@ use math::transform::Transform;
 use math::vector::{vec3f, vec3i, Vec3};
 
 pub struct SessionPlayer {
-    pub(super) transform: Transform,
     action_sender: Sender<ActionImpulse>,
     pub(super) handle: Option<PlayerHandle>,
     prev_forces: vec3f,
@@ -22,11 +21,10 @@ pub struct SessionPlayer {
 
 impl SessionPlayer {
     pub fn new(handle: &GameHandle) -> Self {
-        let (action_sender, action_receiver) = channel(256);
+        let (action_sender, action_receiver) = bounded(256);
         handle.request_player(action_receiver);
 
         Self {
-            transform: Transform::default(),
             action_sender,
             handle: None,
             prev_forces: Vec3::ZERO,
@@ -58,10 +56,8 @@ impl SessionPlayer {
             self.prev_target = player_handle.target;
         }
 
-        self.transform = player_handle.transform.clone();
-
-        render.camera.transform.position = self.transform.position + Vec3::new(0., 0.9, 0.);
-        render.camera.transform.rotation = self.transform.rotation;
+        render.camera.transform.position = player_handle.transform.position + Vec3::new(0., 0.9, 0.);
+        render.camera.transform.rotation = player_handle.transform.rotation;
 
         for click_event in &frame_input.click_events {
             if click_event.button != MouseButton::Left {
@@ -95,5 +91,9 @@ impl SessionPlayer {
             self.send_action(ActionImpulse::Rotate { delta_rotation });
             self.prev_delta_rotation = delta_rotation;
         }
+    }
+
+    pub fn transform(&self) -> Transform {
+        self.handle.as_ref().map(|x| x.transform.clone()).unwrap_or_default()
     }
 }

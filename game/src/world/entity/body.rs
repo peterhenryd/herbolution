@@ -5,7 +5,6 @@ use math::vector::vec3f;
 use std::time::Duration;
 use lib::geometry::cuboid::Cuboid;
 
-/// The physical properties of an entity.
 #[derive(Debug, Clone)]
 pub struct EntityBody {
     pub transform: Transform,

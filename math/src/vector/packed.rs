@@ -62,3 +62,19 @@ impl vec3u5 {
         (self.x(), self.y(), self.z())
     }
 }
+
+impl<T: NumCast> From<Vec3<T>> for vec3u5 {
+    fn from(vec: Vec3<T>) -> Self {
+        Self::new(
+            NumCast::from(vec.x).unwrap(),
+            NumCast::from(vec.y).unwrap(),
+            NumCast::from(vec.z).unwrap(),
+        )
+    }
+}
+
+impl Default for vec3u5 {
+    fn default() -> Self {
+        Self::ZERO
+    }
+}

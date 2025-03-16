@@ -1,10 +1,10 @@
 use crate::world::chunk::cube::{Cube, CubePosition};
 use crate::world::chunk::material::{Material, OptionMaterialExt};
-use hashbrown::HashMap;
+use kanal::Sender;
 use lib::geometry::cuboid::face::{Face, Faces};
 use math::vector::{vec3i, vec3u5, Vec3};
-use std::ops::{Not, Range};
-use tokio::sync::mpsc::Sender;
+use std::ops::{BitAnd, Not, Range};
+use tinyvec::TinyVec;
 
 pub mod cube;
 pub mod generator;
@@ -113,24 +113,22 @@ impl Chunk {
             });
     }
 
-    fn add_neighboring_faces(&mut self, faces: Faces, position: vec3u5) {
+    fn add_neighboring_faces(&mut self, faces: Faces, position: vec3u5) -> Vec<(Face, Vec3<i32>)> {
         let position = position.cast::<i32>().unwrap();
-        faces
-            // Get the faces that are not present on the cube.
-            .not()
-            // Get the corresponding cube offset vectors for each face
+
+        let (in_chunk, out_chunk) = faces.not()
             .map(|f| (f, f.into_vec3() + position))
-            // Filter positions that exist outside the current chunk
-            // TODO: these should be returned to the caller so they can be used to cull faces on
-            // neighboring chunks.
-            .filter_map(|(f, v)| v.cast::<u8>().map(|x| (f, x)))
-            .filter_map(|(f, v)| vec3u5::try_new(v.x, v.y, v.z).map(|x| (f, x)))
-            // Add the inverse of the removed face to the neighboring cube.
-            .for_each(|(f, v)| {
-                let i = v.cast().unwrap().linearize(LENGTH);
-                self.dirtied_positions.push(v);
-                self.data[i].insert_faces(Faces::from(f.inverse()));
-            });
+            .partition::<Vec<_>, _>(|&(_, position)| in_bounds(position));
+
+        for (f, Vec3 { x, y, z }) in in_chunk {
+            let position = vec3u5::new(x as u8, y as u8, z as u8);
+            let index = linearize(position);
+
+            self.dirtied_positions.push(position);
+            self.data[index].insert_faces(Faces::from(f.inverse()));
+        }
+
+        out_chunk
     }
 
     fn send_update(&mut self) {
@@ -138,9 +136,9 @@ impl Chunk {
             return;
         }
 
-        let mut cubes = HashMap::with_capacity(self.dirtied_positions.len());
-        for i in self.dirtied_positions.drain(..) {
-            cubes.insert(i, self.data[linearize(i)]);
+        let mut cubes = TinyVec::new();
+        for position in self.dirtied_positions.drain(..) {
+            cubes.push((position, self.data[linearize(position)]));
         }
 
         if let Err(e) = self.sender.try_send(ChunkUpdate { cubes }) {
@@ -154,7 +152,6 @@ impl Chunk {
 }
 
 fn facial_chunk_boundary_slice(face: Face) -> Vec3<Range<u8>> {
-    // Recreate the commented section except don't linearize
     match face {
         Face::Top => Vec3::new(
             0..LENGTH as u8,
@@ -187,38 +184,12 @@ fn facial_chunk_boundary_slice(face: Face) -> Vec3<Range<u8>> {
             0..1,
         ),
     }
-    
-        /*
-    let full_x = (0..LENGTH).step_by(1);
-    let full_y = (0..LENGTH.pow(2)).step_by(LENGTH);
-    let full_z = (0..LENGTH.pow(3)).step_by(LENGTH.pow(2));
+}
 
-    match face {
-        Face::Top => Vec3::new(
-            full_x.clone(),
-            ((LENGTH - 1) * LENGTH..LENGTH * LENGTH).step_by(LENGTH),
-            full_z.clone(),
-        ),
-        Face::Bottom => Vec3::new(full_x.clone(), (0..LENGTH).step_by(LENGTH), full_z.clone()),
-        Face::Left => Vec3::new((0..1).step_by(1), full_y.clone(), full_z.clone()),
-        Face::Right => Vec3::new(
-            (LENGTH - 1..LENGTH).step_by(1),
-            full_y.clone(),
-            full_z.clone(),
-        ),
-        Face::Front => Vec3::new(
-            full_x.clone(),
-            full_y.clone(),
-            ((LENGTH - 1) * LENGTH.pow(2)..LENGTH.pow(3)).step_by(LENGTH.pow(2)),
-        ),
-        Face::Back => Vec3::new(
-            full_x.clone(),
-            full_y.clone(),
-            (0..LENGTH.pow(2)).step_by(LENGTH.pow(2)),
-        ),
-    }
-    
-         */
+fn in_bounds(position: vec3i) -> bool {
+    position.x >= 0 && position.x < LENGTH as i32
+        && position.y >= 0 && position.y < LENGTH as i32
+        && position.z >= 0 && position.z < LENGTH as i32
 }
 
 fn linearize(position: vec3u5) -> usize {
@@ -233,21 +204,13 @@ pub struct ChunkLocalPosition {
 
 impl From<CubePosition> for ChunkLocalPosition {
     fn from(pos: CubePosition) -> Self {
-        let chunk_x = pos.0.x.div_euclid(LENGTH as i32);
-        let chunk_y = pos.0.y.div_euclid(LENGTH as i32);
-        let chunk_z = pos.0.z.div_euclid(LENGTH as i32);
-
-        let local_x = (pos.0.x & (LENGTH as i32 - 1)) as u8;
-        let local_y = (pos.0.y & (LENGTH as i32 - 1)) as u8;
-        let local_z = (pos.0.z & (LENGTH as i32 - 1)) as u8;
-
         ChunkLocalPosition {
-            chunk: Vec3::new(chunk_x, chunk_y, chunk_z),
-            local: vec3u5::new(local_x, local_y, local_z),
+            chunk: pos.0 >> 5,
+            local: pos.0.bitand(LENGTH as i32 - 1).into()
         }
     }
 }
 
 pub struct ChunkUpdate {
-    pub cubes: HashMap<vec3u5, Cube<Option<Material>>>,
+    pub cubes: TinyVec<[(vec3u5, Cube<Option<Material>>); 256]>,
 }

@@ -5,10 +5,7 @@ use num::traits::{ConstOne, ConstZero};
 use num::{NumCast, One, Signed, ToPrimitive, Zero};
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
-use std::ops::{
-    Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Not, Rem, RemAssign, Sub,
-    SubAssign,
-};
+use std::ops::{Add, AddAssign, BitAnd, BitAndAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign};
 
 #[repr(C)]
 #[derive(
@@ -880,6 +877,66 @@ impl<T: Not<Output = T>> Not for Vec3<T> {
             y: !self.y,
             z: !self.z,
         }
+    }
+}
+
+impl<T: Shl<usize, Output = T>> Shl<usize> for Vec3<T> {
+    type Output = Self;
+
+    fn shl(self, other: usize) -> Self {
+        Self {
+            x: self.x << other,
+            y: self.y << other,
+            z: self.z << other,
+        }
+    }
+}
+
+impl<T: ShlAssign<usize>> ShlAssign<usize> for Vec3<T> {
+    fn shl_assign(&mut self, other: usize) {
+        self.x <<= other;
+        self.y <<= other;
+        self.z <<= other;
+    }
+}
+
+impl<T: Shr<usize, Output = T>> Shr<usize> for Vec3<T> {
+    type Output = Self;
+
+    fn shr(self, other: usize) -> Self {
+        Self {
+            x: self.x >> other,
+            y: self.y >> other,
+            z: self.z >> other,
+        }
+    }
+}
+
+impl<T: ShrAssign<usize>> ShrAssign<usize> for Vec3<T> {
+    fn shr_assign(&mut self, other: usize) {
+        self.x >>= other;
+        self.y >>= other;
+        self.z >>= other;
+    }
+}
+
+impl<T: Copy + BitAnd<Output = T>> BitAnd<T> for Vec3<T> {
+    type Output = Self;
+
+    fn bitand(self, other: T) -> Self {
+        Self {
+            x: self.x & other,
+            y: self.y & other,
+            z: self.z & other,
+        }
+    }
+}
+
+impl<T: Copy + BitAndAssign> BitAndAssign<T> for Vec3<T> {
+    fn bitand_assign(&mut self, other: T) {
+        self.x &= other;
+        self.y &= other;
+        self.z &= other;
     }
 }
 

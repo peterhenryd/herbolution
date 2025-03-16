@@ -55,7 +55,7 @@ impl GameSession {
 
         self.player.update(&engine.gpu.handle, &mut engine.renderer_3d, &frame.input, &engine.input, self.is_focused);
         self.fps.update(dt);
-        self.debugger.update(frame, &mut engine.renderer_2d, &self.fps, self.player.transform.position);
+        self.debugger.update(frame, &mut engine.renderer_2d, &self.fps, self.player.transform().position);
     }
 
     pub fn set_size(&mut self, size: Size2<u32>) {

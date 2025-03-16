@@ -1,15 +1,15 @@
+use std::f32::consts::FRAC_PI_2;
 use crate::world::chunk::map::ChunkMap;
 use crate::world::entity::body::EntityBody;
 use crate::world::entity::logic::EntityLogic;
 use crate::world::entity::{EntityAbilities, EntityData};
 use crate::{ActionImpulse, ActionState, Hand};
+use kanal::Sender;
 use math::angle::Rad;
 use math::num::traits::ConstZero;
 use math::rotation::Euler;
 use math::transform::Transform;
 use math::vector::{vec3f, vec3i, Vec3};
-use std::f32::consts::FRAC_PI_2;
-use tokio::sync::mpsc::Sender;
 
 #[derive(Debug)]
 pub struct PlayerLogic {
@@ -28,6 +28,7 @@ impl EntityLogic for PlayerLogic {
             }
             ActionImpulse::Rotate { delta_rotation } => {
                 self.controller.rotation -= delta_rotation;
+                self.controller.rotation.pitch = self.controller.rotation.pitch.0.clamp(-FRAC_PI_2, FRAC_PI_2).into();
             }
             ActionImpulse::Interact { hand: Hand::Left, state: ActionState::Once } => {
                 self.controller.is_left_hand_active = true;
@@ -63,17 +64,18 @@ impl PlayerController {
         body: &mut EntityBody,
         abilities: &EntityAbilities,
     ) {
+        self.apply_target(body, chunk_map);
         self.apply_translation(chunk_map, body, abilities);
         self.apply_rotation(&mut body.transform);
+    }
 
-        let origin = body.get_eye_position();
+    fn apply_target(&mut self, body: &EntityBody, chunk_map: &mut ChunkMap) {
+        let origin = body.transform.position;
         let direction = body
             .transform
             .rotation
-            .into_view_center()
-            .cast()
-            .unwrap();
-        let pos = chunk_map.cast_ray(origin, direction);
+            .into_view_center();
+        let pos = chunk_map.cast_ray(origin, direction, 5.0);
 
         if pos != self.prev_target {
             let _ = self.target_tx.try_send(pos);
@@ -89,6 +91,7 @@ impl PlayerController {
         self.is_left_hand_active = false;
 
         chunk_map.set_cube(pos, None);
+
     }
 
     fn apply_translation(
@@ -115,6 +118,5 @@ impl PlayerController {
 
     fn apply_rotation(&mut self, transform: &mut Transform) {
         transform.rotation = self.rotation;
-        transform.rotation.pitch = Rad(transform.rotation.pitch.0.clamp(-FRAC_PI_2, FRAC_PI_2));
     }
 }

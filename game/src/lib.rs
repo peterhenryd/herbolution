@@ -1,3 +1,7 @@
+#![feature(iter_array_chunks)]
+
+use std::f32::consts::FRAC_PI_2;
+use kanal::{bounded, Receiver, Sender};
 use crate::world::entity::body::{EntityBody, EntityGravity};
 use crate::world::entity::logic::player::{PlayerController, PlayerLogic};
 use crate::world::entity::set::EntityId;
@@ -10,7 +14,6 @@ use math::rotation::Euler;
 use math::transform::Transform;
 use math::vector::{vec3f, vec3i, Vec3};
 use tokio::spawn;
-use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tokio::task::AbortHandle;
 use crate::world::chunk::ChunkUpdate;
 
@@ -29,8 +32,8 @@ pub struct Game {
 
 impl Game {
     pub fn spawn() -> GameHandle {
-        let (request_sender, request_receiver) = channel(64);
-        let (response_sender, response_receiver) = channel(64);
+        let (request_sender, request_receiver) = bounded(64);
+        let (response_sender, response_receiver) = bounded(64);
 
         let abort_handle = spawn(async move {
             let mut game = Game::new(request_receiver, response_sender);
@@ -53,9 +56,9 @@ impl Game {
         let transform = Transform::new(Vec3::new(0., 128., 0.0));
 
         // Channels are sized 1 to ensure that only the most recent message is queued.
-        let (position_tx, position_rx) = channel(1);
-        let (rotation_tx, rotation_rx) = channel(1);
-        let (target_tx, target_rx) = channel(1);
+        let (position_tx, position_rx) = bounded(1);
+        let (rotation_tx, rotation_rx) = bounded(1);
+        let (target_tx, target_rx) = bounded(1);
 
         let id = world.entity_set.add(Entity {
             data: EntityData {
@@ -100,7 +103,7 @@ impl Game {
     }
 
     fn update(&mut self) {
-        while let Ok(request) = self.request_receiver.try_recv() {
+        while let Ok(Some(request)) = self.request_receiver.try_recv() {
             self.handle_request(request);
         }
 
@@ -129,11 +132,12 @@ impl Game {
         for player in &mut self.players {
             let Some(entity) = self.world_map.primary().entities_mut().get_mut(player.id) else { continue };
 
-            while let Ok(action_impulse) = player.action_receiver.try_recv() {
+            while let Ok(Some(action_impulse)) = player.action_receiver.try_recv() {
                 entity.logic.on_action_impulse(action_impulse);
             }
 
-            let transform = &entity.data.body.transform;
+            let transform = &mut entity.data.body.transform;
+            transform.rotation.pitch = Rad(transform.rotation.pitch.0.clamp(-FRAC_PI_2 + 0.001, FRAC_PI_2 - 0.001));
 
             // Errors are ignored as the intent is to replace the previously queued message,
             // which will almost always return an error.
@@ -182,7 +186,7 @@ impl GameHandle {
     }
 
     pub fn receive_response(&mut self) -> Option<Response> {
-        self.response_receiver.try_recv().ok()
+        self.response_receiver.try_recv().ok().flatten()
     }
 }
 
@@ -223,15 +227,15 @@ pub struct PlayerHandle {
 
 impl PlayerHandle {
     pub fn update(&mut self) {
-        if let Ok(position) = self.position_rx.try_recv() {
+        if let Ok(Some(position)) = self.position_rx.try_recv() {
             self.transform.position = position;
         }
 
-        if let Ok(rotation) = self.rotation_rx.try_recv() {
+        if let Ok(Some(rotation)) = self.rotation_rx.try_recv() {
             self.transform.rotation = rotation;
         }
 
-        if let Ok(target) = self.target_rx.try_recv() {
+        if let Ok(Some(target)) = self.target_rx.try_recv() {
             self.target = target;
         }
     }

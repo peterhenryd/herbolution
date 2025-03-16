@@ -3,11 +3,12 @@ use crate::world::chunk::generator::ChunkGenerator;
 use crate::world::chunk::material::Material;
 use crate::world::chunk::{linearize, Chunk, ChunkLocalPosition};
 use crate::Response;
+use kanal::{bounded, Sender};
 use lib::geometry::cuboid::face::{Face, Faces};
 use lib::geometry::cuboid::Cuboid;
+use line_drawing::{VoxelOrigin, WalkVoxels};
 use math::vector::{vec3f, vec3i, vec3u5, Vec3};
 use std::collections::HashMap;
-use tokio::sync::mpsc::{channel, Sender};
 
 #[derive(Debug)]
 pub struct ChunkMap {
@@ -33,7 +34,7 @@ impl ChunkMap {
         for x in min.x as i32..max.x as i32 {
             for y in min.y as i32..max.y as i32 {
                 for z in min.z as i32..max.z as i32 {
-                    if let Some(material) = self.get_cube(CubePosition(Vec3::new(x, y, z))) {
+                    if let Some(material) = self.cube_material(CubePosition(Vec3::new(x, y, z))) {
                         if material.can_collide() {
                             colliders.push(Cuboid::new(
                                 Vec3::new(x as f32 - 0.5, y as f32 - 0.5, z as f32 - 0.5),
@@ -69,7 +70,7 @@ impl ChunkMap {
             return;
         }
 
-        let (sender, receiver) = channel(16);
+        let (sender, receiver) = bounded(4);
         let mut chunk = Chunk::new(position, sender);
         if let Err(e) = self.sender.try_send(Response::LoadChunk { position, receiver }) {
             eprintln!("Failed to send load chunk request: {:?}", e);
@@ -77,9 +78,7 @@ impl ChunkMap {
         self.generator.generate(&mut chunk);
 
         for p in Faces::all().map(Face::into_vec3) {
-            let Some(other) = self.get_chunk_mut(position + p) else {
-                continue;
-            };
+            let Some(other) = self.get_chunk_mut(position + p) else { continue };
             chunk.cull_shared_faces(other);
         }
 
@@ -100,12 +99,12 @@ impl ChunkMap {
         if position.local.x() == 0 {
             let chunk = self.chunk(position.chunk + vec3i::new(-1, 0, 0));
             let position = vec3u5::new(31, position.local.y(), position.local.z());
-            chunk.data[linearize(position)].insert_faces(Faces::RIGHT);
+            chunk.data[linearize(position)].insert_faces(Faces::LEFT);
             chunk.dirtied_positions.push(position);
         } else if position.local.x() == 31 {
             let chunk = self.chunk(position.chunk + vec3i::new(1, 0, 0));
             let position = vec3u5::new(0, position.local.y(), position.local.z());
-            chunk.data[linearize(position)].insert_faces(Faces::LEFT);
+            chunk.data[linearize(position)].insert_faces(Faces::RIGHT);
             chunk.dirtied_positions.push(position);
         } else if position.local.y() == 0 {
             let chunk = self.chunk(position.chunk + vec3i::new(0, -1, 0));
@@ -132,25 +131,29 @@ impl ChunkMap {
         self.chunk(position.chunk).set(position.local, material);
     }
 
-    pub fn get_cube(&mut self, position: impl Into<CubePosition>) -> Option<Material> {
+    pub fn get_cube_material(&self, position: impl Into<CubePosition>) -> Option<Material> {
+        let position = ChunkLocalPosition::from(position.into());
+        self.get_chunk(position.chunk).map(|x| x.get(position.local)).flatten()
+    }
+
+    pub fn cube_material(&mut self, position: impl Into<CubePosition>) -> Option<Material> {
         let position = ChunkLocalPosition::from(position.into());
         self.chunk(position.chunk).get(position.local)
     }
 
-    pub fn cast_ray(&mut self, origin: vec3f, direction: vec3f) -> Option<vec3i> {
-        let mut position = origin;
-        let step = direction.normalize() * 0.01;
-        let dist_step = step.length();
-        let mut distance: f32 = 0.0;
+    pub fn cast_ray(&mut self, mut origin: vec3f, direction: vec3f, range: f32) -> Option<vec3i> {
+        origin += 0.5;
+        let end = origin + direction * range;
 
-        while distance < 10.0 {
-            distance += dist_step;
-            position += step;
+        let origin = origin.into_array().into();
+        let dest = end.into_array().into();
+        for (x, y, z) in WalkVoxels::new(origin, dest, &VoxelOrigin::Corner) {
+            let pos = vec3i::new(x, y, z);
 
-            let Some(cube) = self.get_cube(position.cast().unwrap()) else { continue };
-
-            if cube.can_collide() {
-                return Some(position.cast().unwrap());
+            if let Some(material) = self.get_cube_material(pos) {
+                if material.can_collide() {
+                    return Some(pos);
+                }
             }
         }
 

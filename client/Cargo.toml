@@ -6,8 +6,9 @@ edition = "2024"
 [dependencies]
 engine = { package = "herbolution-engine", path = "../engine" }
 game = { package = "herbolution-game", path = "../game" }
+kanal.workspace = true
 lib = { package = "herbolution-lib", path = "../lib" }
 math = { package = "herbolution-math", path = "../math" }
 num.workspace = true
-tokio = { workspace = true, features = ["macros", "rt-multi-thread", "sync"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 winit.workspace = true
