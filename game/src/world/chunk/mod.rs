@@ -3,7 +3,7 @@ use crate::world::chunk::material::{Material, OptionMaterialExt};
 use kanal::Sender;
 use lib::geometry::cuboid::face::{Face, Faces};
 use math::vector::{vec3i, vec3u5, Vec3};
-use std::ops::{BitAnd, Not, Range};
+use std::ops::{BitAnd, Not};
 use tinyvec::TinyVec;
 
 pub mod cube;
@@ -49,8 +49,8 @@ impl Chunk {
         };
 
         // Get the slices of cubes that are shared between the two chunks.
-        let this_matrix = facial_chunk_boundary_slice(shared_face.inverse());
-        let that_matrix = facial_chunk_boundary_slice(shared_face);
+        let this_matrix = shared_face.inverse().sized_boundary_slice(LENGTH as u8);
+        let that_matrix = shared_face.sized_boundary_slice(LENGTH as u8);
 
         for (x1, x2) in this_matrix.x.zip(that_matrix.x) {
             for (y1, y2) in this_matrix.y.clone().zip(that_matrix.y.clone()) {
@@ -148,41 +148,6 @@ impl Chunk {
 
     pub fn tick(&mut self) {
         self.send_update();
-    }
-}
-
-fn facial_chunk_boundary_slice(face: Face) -> Vec3<Range<u8>> {
-    match face {
-        Face::Top => Vec3::new(
-            0..LENGTH as u8,
-            (LENGTH as u8 - 1)..LENGTH as u8,
-            0..LENGTH as u8,
-        ),
-        Face::Bottom => Vec3::new(
-            0..LENGTH as u8,
-            0..1,
-            0..LENGTH as u8,
-        ),
-        Face::Left => Vec3::new(
-            0..1,
-            0..LENGTH as u8,
-            0..LENGTH as u8,
-        ),
-        Face::Right => Vec3::new(
-            (LENGTH as u8 - 1)..LENGTH as u8,
-            0..LENGTH as u8,
-            0..LENGTH as u8,
-        ),
-        Face::Front => Vec3::new(
-            0..LENGTH as u8,
-            0..LENGTH as u8,
-            (LENGTH as u8 - 1)..LENGTH as u8,
-        ),
-        Face::Back => Vec3::new(
-            0..LENGTH as u8,
-            0..LENGTH as u8,
-            0..1,
-        ),
     }
 }
 

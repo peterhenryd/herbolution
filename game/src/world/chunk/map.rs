@@ -27,8 +27,8 @@ impl ChunkMap {
     }
 
     pub fn get_near_colliders(&mut self, cuboid: Cuboid<f32>) -> Vec<Cuboid<f32>> {
-        let min = cuboid.min.floor() - cuboid.min.signum();
-        let max = cuboid.max.ceil() + cuboid.max.signum();
+        let min = cuboid.min.floor() - 1.0;
+        let max = cuboid.max.ceil() + 1.0;
 
         let mut colliders = Vec::new();
         for x in min.x as i32..max.x as i32 {
@@ -99,12 +99,12 @@ impl ChunkMap {
         if position.local.x() == 0 {
             let chunk = self.chunk(position.chunk + vec3i::new(-1, 0, 0));
             let position = vec3u5::new(31, position.local.y(), position.local.z());
-            chunk.data[linearize(position)].insert_faces(Faces::LEFT);
+            chunk.data[linearize(position)].insert_faces(Faces::RIGHT);
             chunk.dirtied_positions.push(position);
         } else if position.local.x() == 31 {
             let chunk = self.chunk(position.chunk + vec3i::new(1, 0, 0));
             let position = vec3u5::new(0, position.local.y(), position.local.z());
-            chunk.data[linearize(position)].insert_faces(Faces::RIGHT);
+            chunk.data[linearize(position)].insert_faces(Faces::LEFT);
             chunk.dirtied_positions.push(position);
         } else if position.local.y() == 0 {
             let chunk = self.chunk(position.chunk + vec3i::new(0, -1, 0));

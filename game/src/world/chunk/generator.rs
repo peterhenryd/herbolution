@@ -51,9 +51,9 @@ impl ChunkGenerator {
 #[cached]
 fn generate_noise(position: vec2i, seed: i32) -> Vec<f32> {
     let offset = position.mul(chunk::LENGTH as i32).cast().unwrap();
-    NoiseBuilder::fbm_2d_offset(offset.x, chunk::LENGTH, offset.y, chunk::LENGTH)
+    let noise_type = NoiseBuilder::fbm_2d_offset(offset.x, chunk::LENGTH, offset.y, chunk::LENGTH)
         .with_seed(seed)
         .with_freq(0.1)
-        .generate()
-        .0
+        .wrap();
+    unsafe { simdnoise::sse2::get_2d_noise(&noise_type).0 }
 }

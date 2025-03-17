@@ -8,5 +8,5 @@ pub mod player;
 pub trait EntityLogic: Debug {
     fn tick(&mut self, data: &mut EntityData, chunk_map: &mut ChunkMap);
 
-    fn on_action_impulse(&mut self, action_impulse: ActionImpulse);
+    fn on_action_impulse(&mut self, data: &mut EntityData, action_impulse: ActionImpulse);
 }

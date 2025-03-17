@@ -15,6 +15,7 @@ use math::transform::Transform;
 use math::vector::{vec3f, vec3i, Vec3};
 use tokio::spawn;
 use tokio::task::AbortHandle;
+use math::num::traits::ConstZero;
 use crate::world::chunk::ChunkUpdate;
 
 pub mod world;
@@ -64,8 +65,9 @@ impl Game {
             data: EntityData {
                 body: EntityBody {
                     transform: transform.clone(),
+                    forces: Vec3::ZERO,
                     bounding_box: Cuboid::from_half(Vec3::new(0.4, 0.9, 0.4)),
-                    eye_offset: Vec3::new(0., 0.9, 0.),
+                    eye_offset: Vec3::new(0., 1.4, 0.),
                     gravity: EntityGravity {
                         fall_acceleration: -9.81,
                         fall_speed: 0.0,
@@ -127,22 +129,21 @@ impl Game {
     }
 
     fn tick(&mut self) {
-        self.world_map.tick();
-
         for player in &mut self.players {
             let Some(entity) = self.world_map.primary().entities_mut().get_mut(player.id) else { continue };
 
             while let Ok(Some(action_impulse)) = player.action_receiver.try_recv() {
-                entity.logic.on_action_impulse(action_impulse);
+                entity.logic.on_action_impulse(&mut entity.data, action_impulse);
             }
 
+            let eye_position = entity.data.body.get_eye_position();
             let transform = &mut entity.data.body.transform;
-            transform.rotation.pitch = Rad(transform.rotation.pitch.0.clamp(-FRAC_PI_2 + 0.001, FRAC_PI_2 - 0.001));
+            transform.rotation.pitch = Rad(transform.rotation.pitch.0.clamp(-FRAC_PI_2 + 0.00001, FRAC_PI_2 - 0.00001));
 
             // Errors are ignored as the intent is to replace the previously queued message,
             // which will almost always return an error.
             if transform.position != player.prev_position {
-                let _ = player.position_tx.try_send(transform.position);
+                let _ = player.position_tx.try_send(eye_position);
                 player.prev_position = transform.position;
             }
 
@@ -151,6 +152,8 @@ impl Game {
                 player.prev_rotation = transform.rotation;
             }
         }
+
+        self.world_map.tick();
     }
 }
 

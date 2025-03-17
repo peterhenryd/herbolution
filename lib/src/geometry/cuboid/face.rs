@@ -1,9 +1,10 @@
 use std::fmt::Debug;
 use std::marker::PhantomData;
-use std::ops::Index;
+use std::ops::{Index, Range, Sub};
 use bitflags::bitflags;
 use lazy_static::lazy_static;
 use math::angle::Deg;
+use math::num::traits::{ConstOne, ConstZero};
 use math::rotation::{Euler, Quat};
 use math::vector::{vec3f, vec3i, Vec3};
 
@@ -125,6 +126,42 @@ impl Face {
             Face::Right => Face::Left,
             Face::Front => Face::Back,
             Face::Back => Face::Front,
+        }
+    }
+    
+    pub fn sized_boundary_slice<T>(self, length: T) -> Vec3<Range<T>>
+    where T: Copy + ConstZero + ConstOne + Sub<Output = T> {
+        match self {
+            Face::Top => Vec3::new(
+                T::ZERO..length,
+                length - T::ONE..length,
+                T::ZERO..length,
+            ),
+            Face::Bottom => Vec3::new(
+                T::ZERO..length,
+                T::ZERO..T::ONE,
+                T::ZERO..length,
+            ),
+            Face::Left => Vec3::new(
+                T::ZERO..T::ONE,
+                T::ZERO..length,
+                T::ZERO..length,
+            ),
+            Face::Right => Vec3::new(
+                length - T::ONE..length,
+                T::ZERO..length,
+                T::ZERO..length,
+            ),
+            Face::Front => Vec3::new(
+                T::ZERO..length,
+                T::ZERO..length,
+                length - T::ONE..length,
+            ),
+            Face::Back => Vec3::new(
+                T::ZERO..length,
+                T::ZERO..length,
+                T::ZERO..T::ONE,
+            ),
         }
     }
 }

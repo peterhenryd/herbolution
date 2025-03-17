@@ -56,7 +56,7 @@ impl SessionPlayer {
             self.prev_target = player_handle.target;
         }
 
-        render.camera.transform.position = player_handle.transform.position + Vec3::new(0., 0.9, 0.);
+        render.camera.transform.position = player_handle.transform.position;
         render.camera.transform.rotation = player_handle.transform.rotation;
 
         for click_event in &frame_input.click_events {

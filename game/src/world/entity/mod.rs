@@ -21,6 +21,7 @@ pub struct EntityData {
 impl Entity {
     pub fn tick(&mut self, chunk_map: &mut ChunkMap) {
         self.logic.tick(&mut self.data, chunk_map);
+        self.data.body.update(chunk_map, self.data.abilities);
     }
 }
 

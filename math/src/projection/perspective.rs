@@ -42,7 +42,7 @@ impl Projection for Perspective {
 impl From<Size2<u32>> for Perspective {
     fn from(Size2 { width, height }: Size2<u32>) -> Self {
         Self::new(
-            Deg(90.0),
+            Deg(70.0),
             width as f32 / height as f32,
             0.001,
             500.0,

@@ -86,7 +86,7 @@ pub struct CubeDependentData {
 impl CubeDependentData {
     pub const fn new() -> Self {
         Self {
-            value: 0
+            value: 0,
         }
     }
 
