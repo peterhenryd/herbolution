@@ -1,5 +1,8 @@
+use crate::angle::Angle;
+use crate::rotation::Euler;
 use crate::vector::{Vec3, Vec4};
 use bytemuck::{Pod, Zeroable};
+use num::traits::real::Real;
 use num::traits::{ConstOne, ConstZero};
 use serde::{Deserialize, Serialize};
 use std::ops::{Add, Mul};
@@ -30,6 +33,25 @@ impl<T> Mat4<T> {
             z: Vec4::Z,
             w: translation.extend(T::ONE),
         }
+    }
+
+    pub fn view(position: Vec3<T>, rotation: Euler<impl Angle<Comp = T>>) -> Self
+    where T: Real + ConstZero + ConstOne {
+        let f = -rotation.into_view_center().cast().unwrap();
+        let s = f.cross(Vec3::Y).normalize();
+        let u = s.cross(f);
+
+        Mat4::new(
+            Vec4::new(s.x, u.x, -f.x, T::ZERO),
+            Vec4::new(s.y, u.y, -f.y, T::ZERO),
+            Vec4::new(s.z, u.z, -f.z, T::ZERO),
+            Vec4::new(
+                -position.dot(s),
+                -position.dot(u),
+                position.dot(f),
+                T::ONE,
+            ),
+        )
     }
 }
 

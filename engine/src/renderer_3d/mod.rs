@@ -3,9 +3,9 @@ use wgpu::{RenderPass, ShaderStages, TextureFormat};
 use lib::geometry::cuboid::face::Faces;
 use vertex::InstanceShaderPayload;
 use math::color::{ColorConsts, Rgb, Rgba};
+use math::num::traits::ConstZero;
 use math::projection::perspective::Perspective;
 use math::size::Size2;
-use math::transform::Transform;
 use math::vector::{vec3i, Vec3};
 use crate::camera::Camera;
 use crate::camera::frustum::Frustum;
@@ -30,7 +30,7 @@ pub struct Renderer3D {
 
 impl Renderer3D {
     pub fn create(handle: &Handle, size: Size2<u32>, format: TextureFormat) -> Self {
-        let camera = Camera::new(Transform::default(), Perspective::from(size));
+        let camera = Camera::new(Vec3::ZERO, Perspective::from(size));
         let camera = handle.create_unary_buffer(camera, ShaderStages::VERTEX_FRAGMENT);
         let mut lighting = Lighting::create(handle);
         lighting.point_light_set.push(PointLight {

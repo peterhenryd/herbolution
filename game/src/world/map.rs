@@ -1,5 +1,5 @@
+use crossbeam::channel::Sender;
 use hashbrown::HashMap;
-use kanal::Sender;
 use crate::Response;
 use crate::world::{World, WorldId};
 
@@ -18,7 +18,7 @@ impl WorldMap {
 
     pub fn primary(&mut self) -> &mut World {
         if !self.map.contains_key("world") {
-            self.insert(World::create(WorldId("world".to_string()), self.sender.clone()));
+            self.insert(World::create("world", self.sender.clone()));
         }
 
         self.map.get_mut("world").unwrap()
@@ -29,7 +29,7 @@ impl WorldMap {
     }
 
     pub fn tick(&mut self) {
-        for (_, world) in self.map.iter_mut() {
+        for (_, world) in &mut self.map {
             world.tick();
         }
     }

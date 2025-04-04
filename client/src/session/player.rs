@@ -1,99 +1,98 @@
-use kanal::{bounded, Sender};
-use num::traits::ConstZero;
-use winit::event::MouseButton;
-use winit::keyboard::KeyCode;
 use engine::gpu::handle::Handle;
 use engine::input::{Input, InputFrame};
 use engine::renderer_3d::Renderer3D;
-use game::{ActionImpulse, ActionState, GameHandle, Hand, PlayerHandle};
-use math::angle::Rad;
-use math::rotation::Euler;
-use math::transform::Transform;
-use math::vector::{vec3f, vec3i, Vec3};
+use game::client::input::{client_input_channel, ClientInputSender};
+use game::handle::GameHandle;
+use game::world::entity::logic::player::ActionState;
+use math::vector::{vec3i, vec3i8};
+use num::traits::ConstZero;
+use winit::event::MouseButton;
+use winit::keyboard::KeyCode;
+use game::client::output::ClientOutputReceiver;
+use game::world::entity::EntityTarget;
 
 pub struct SessionPlayer {
-    action_sender: Sender<ActionImpulse>,
-    pub(super) handle: Option<PlayerHandle>,
-    prev_forces: vec3f,
-    prev_delta_rotation: Euler<Rad<f32>>,
+    input_sender: ClientInputSender,
+    pub(super) output_receiver: Option<ClientOutputReceiver>,
     prev_target: Option<vec3i>,
 }
 
 impl SessionPlayer {
     pub fn new(handle: &GameHandle) -> Self {
-        let (action_sender, action_receiver) = bounded(256);
-        handle.request_player(action_receiver);
+        let (input_sender, input_receiver) = client_input_channel();
+        handle.request_player(input_receiver);
 
         Self {
-            action_sender,
-            handle: None,
-            prev_forces: Vec3::ZERO,
-            prev_delta_rotation: Euler::IDENTITY,
+            input_sender,
+            output_receiver: None,
             prev_target: None,
         }
     }
 
-    fn send_action(&self, action_impulse: ActionImpulse) {
-        if let Err(e) = self.action_sender.try_send(action_impulse) {
-            eprintln!("Failed to send player action impulse: {}", e);
+
+    pub(super) fn update(&mut self, handle: &Handle, renderer: &mut Renderer3D, input: (&InputFrame, &Input), is_focused: bool) {
+        let Some(output_receiver) = &mut self.output_receiver else { return };
+
+        if let Some(position) = output_receiver.receive_camera_position() {
+            renderer.camera.position = position;
+        }
+
+        if let Some(rotation) = output_receiver.receive_camera_rotation() {
+            renderer.camera.rotation = rotation;
+        }
+
+        match output_receiver.receive_target() {
+            Some(Some(EntityTarget::Cube(position))) => {
+                if self.prev_target != Some(position) {
+                    renderer.set_highlighted_tile(&handle, Some(position));
+                    self.prev_target = Some(position);
+                }
+            }
+            Some(Some(EntityTarget::Entity(_))) => {}
+            Some(None) => {
+                if self.prev_target.is_some() {
+                    renderer.set_highlighted_tile(&handle, None);
+                    self.prev_target = None;
+                }
+            }
+            None => {}
+        }
+
+        if is_focused {
+            self.dequeue_input(input);
         }
     }
 
-    pub(super) fn update(&mut self, handle: &Handle, render: &mut Renderer3D, frame_input: &InputFrame, input: &Input, is_focused: bool) {
-        if !is_focused {
-            if self.prev_forces != Vec3::ZERO {
-                self.prev_forces = Vec3::ZERO;
-                self.send_action(ActionImpulse::Move { forces: Vec3::ZERO });
+    fn dequeue_input(&mut self, (frame, input): (&InputFrame, &Input)) {
+        // Mouse buttons
+        let mut action_state = ActionState::default();
+        for click_event in &frame.click_events {
+            match click_event.button {
+                MouseButton::Left => action_state.is_left_hand_active = true,
+                MouseButton::Right => action_state.is_right_hand_active = true,
+                _ => {}
             }
-            return;
         }
 
-        let Some(player_handle) = &mut self.handle else { return };
-        player_handle.update();
-
-        if player_handle.target != self.prev_target {
-            render.set_highlighted_tile(&handle, player_handle.target);
-            self.prev_target = player_handle.target;
+        if action_state.is_left_hand_active || action_state.is_right_hand_active {
+            self.input_sender.set_action_state(action_state);
         }
 
-        render.camera.transform.position = player_handle.transform.position;
-        render.camera.transform.rotation = player_handle.transform.rotation;
+        // Keyboard
+        let mut forces = vec3i8::ZERO;
+        if input.is_key_active(KeyCode::KeyW) { forces.x += 1; }
+        if input.is_key_active(KeyCode::KeyS) { forces.x -= 1; }
+        if input.is_key_active(KeyCode::KeyA) { forces.z += 1; }
+        if input.is_key_active(KeyCode::KeyD) { forces.z -= 1; }
+        if input.is_key_active(KeyCode::Space) { forces.y += 1; }
+        if input.is_key_active(KeyCode::ShiftLeft) { forces.y -= 1; }
 
-        for click_event in &frame_input.click_events {
-            if click_event.button != MouseButton::Left {
-                continue;
-            }
+        self.input_sender.set_movement_command(forces);
 
-            self.send_action(ActionImpulse::Interact { hand: Hand::Left, state: ActionState::Once });
+        // Mouse movement
+        let movement = frame.mouse_movement;
+        if movement.x != 0.0 || movement.y != 0.0 {
+            self.input_sender.add_mouse_movement(movement);
         }
-
-        let mut forces = Vec3::ZERO;
-        if input.is_key_active(KeyCode::KeyW) { forces.x += 1.0; }
-        if input.is_key_active(KeyCode::KeyS) { forces.x -= 1.0; }
-        if input.is_key_active(KeyCode::KeyA) { forces.z += 1.0; }
-        if input.is_key_active(KeyCode::KeyD) { forces.z -= 1.0; }
-        if input.is_key_active(KeyCode::Space) { forces.y += 1.0; }
-        if input.is_key_active(KeyCode::ShiftLeft) { forces.y -= 1.0; }
-
-        if forces != self.prev_forces {
-            self.send_action(ActionImpulse::Move { forces });
-            self.prev_forces = forces;
-        }
-
-        let mouse_movement = frame_input.mouse_movement;
-        let delta_rotation = Euler::new(
-            Rad(mouse_movement.x.to_radians() as f32),
-            Rad(mouse_movement.y.to_radians() as f32),
-            Rad(0.0)
-        );
-
-        if self.prev_delta_rotation != delta_rotation {
-            self.send_action(ActionImpulse::Rotate { delta_rotation });
-            self.prev_delta_rotation = delta_rotation;
-        }
-    }
-
-    pub fn transform(&self) -> Transform {
-        self.handle.as_ref().map(|x| x.transform.clone()).unwrap_or_default()
     }
 }

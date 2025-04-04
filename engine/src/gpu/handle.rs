@@ -28,7 +28,7 @@ impl Handle {
                     label: Some("Herbolution GPU Device"),
                     required_features: Self::FEATURES,
                     required_limits: Limits::default(),
-                    memory_hints: MemoryHints::MemoryUsage,
+                    memory_hints: MemoryHints::Performance,
                 },
                 None,
             )

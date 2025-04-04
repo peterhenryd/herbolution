@@ -3,12 +3,13 @@ use crate::world::chunk::material::Material;
 use crate::world::chunk::Chunk;
 use math::vector::{vec2i, vec3u5};
 use std::ops::Mul;
-use cached::proc_macro::cached;
+use hashbrown::HashMap;
 use simdnoise::NoiseBuilder;
 
 #[derive(Debug)]
 pub struct ChunkGenerator {
     seed: i32,
+    noise_cache: HashMap<vec2i, Vec<f32>>,
 }
 
 impl ChunkGenerator {
@@ -16,11 +17,11 @@ impl ChunkGenerator {
     const MAX_HEIGHT: i32 = 96;
 
     pub fn new(seed: i32) -> Self {
-        Self { seed }
+        Self { seed, noise_cache: HashMap::new() }
     }
 
-    pub fn generate(&self, chunk: &mut Chunk) {
-        let noise = generate_noise(chunk.position.xz(), self.seed);
+    pub fn generate(&mut self, chunk: &mut Chunk) {
+        let noise = self.get_noise(chunk.position.xz());
         for x in 0..chunk::LENGTH {
             for z in 0..chunk::LENGTH {
                 let f = noise[x + z * chunk::LENGTH];
@@ -46,9 +47,16 @@ impl ChunkGenerator {
             }
         }
     }
+
+    fn get_noise(&mut self, position: vec2i) -> &[f32] {
+        if !self.noise_cache.contains_key(&position) {
+            self.noise_cache.insert(position, generate_noise(position, self.seed));
+        }
+
+        self.noise_cache.get(&position).unwrap()
+    }
 }
 
-#[cached]
 fn generate_noise(position: vec2i, seed: i32) -> Vec<f32> {
     let offset = position.mul(chunk::LENGTH as i32).cast().unwrap();
     let noise_type = NoiseBuilder::fbm_2d_offset(offset.x, chunk::LENGTH, offset.y, chunk::LENGTH)

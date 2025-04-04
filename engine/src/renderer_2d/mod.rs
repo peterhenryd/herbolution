@@ -1,13 +1,14 @@
-use wgpu::{RenderPass, ShaderStages, TextureFormat};
-use lib::Modify;
-use math::projection::orthographic::Orthographic;
-use math::size::Size2;
-use math::transform::Transform;
 use crate::camera::Camera;
 use crate::gpu::handle::Handle;
 use crate::gpu::mem::buffer::UnaryBuffer;
 use crate::renderer_2d::pipeline::Pipeline2D;
 use crate::renderer_2d::text::{TextFrame, TextId, TextRenderer, TextSection};
+use lib::Modify;
+use math::num::traits::ConstZero;
+use math::projection::orthographic::Orthographic;
+use math::size::Size2;
+use math::vector::Vec3;
+use wgpu::{RenderPass, ShaderStages, TextureFormat};
 
 pub mod pipeline;
 pub mod vertex;
@@ -22,7 +23,7 @@ pub struct Renderer2D {
 
 impl Renderer2D {
     pub fn create(handle: &Handle, size: Size2<u32>, format: TextureFormat) -> Self {
-        let camera = Camera::new(Transform::default(), Orthographic::from(size));
+        let camera = Camera::new(Vec3::ZERO, Orthographic::from(size));
         let camera = handle.create_unary_buffer(camera, ShaderStages::VERTEX_FRAGMENT);
         let pipeline = Pipeline2D::create(handle, &camera, format);
         let text_renderer = TextRenderer::create(handle, size, format);
@@ -36,6 +37,10 @@ impl Renderer2D {
         }
     }
 
+    pub fn set_size(&mut self, handle: &Handle, size: Size2<u32>) {
+        self.text_renderer.set_size(handle, size);
+    }
+
     pub fn update(&mut self, handle: &Handle) {
         self.camera.submit(handle);
 
@@ -45,6 +50,7 @@ impl Renderer2D {
     }
 
     pub fn render(&self, render_pass: &mut RenderPass) {
+        self.pipeline.render(render_pass);
         self.text_renderer.render(render_pass);
     }
 

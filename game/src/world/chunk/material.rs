@@ -1,4 +1,5 @@
 use std::array::IntoIter;
+use lib::geometry::cuboid::face::Face;
 
 #[repr(u16)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -13,11 +14,15 @@ impl Material {
         true
     }
 
-    pub fn texture_index(self) -> u32 {
+    pub fn texture_index(self, face: Face) -> u32 {
         match self {
             Self::Stone => 0,
             Self::Dirt => 1,
-            Self::Grass => 2,
+            Self::Grass => match face {
+                Face::Top => 2,
+                Face::Bottom => 1,
+                _ => 3,
+            },
         }
     }
 

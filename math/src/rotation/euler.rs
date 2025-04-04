@@ -21,14 +21,15 @@ impl<A> Euler<A> {
     pub fn into_view_center(self) -> Vec3<A::Comp>
     where
         A: Angle,
-        A::Comp: Real,
+        A::Comp: Real + ConstZero,
     {
         let (sin_pitch, cos_pitch) = self.pitch.into_rad().0.sin_cos();
         let (sin_yaw, cos_yaw) = self.yaw.into_rad().0.sin_cos();
         Vec3::new(cos_pitch * cos_yaw, sin_pitch, cos_pitch * sin_yaw).normalize()
     }
 
-    pub fn into_view_directions(self) -> (Vec3<A::Comp>, Vec3<A::Comp>)
+    /// Returns the parallel and perpendicular directions to the yaw of the rotation.
+    pub fn yaw_directions(self) -> (Vec3<A::Comp>, Vec3<A::Comp>)
     where
         A: Angle,
         A::Comp: Real + ConstZero,
@@ -42,18 +43,23 @@ impl<A> Euler<A> {
     }
 }
 
-impl<A: Angle + ConstZero> Euler<A>
-{
+impl<A> Euler<A>
+where
+    A: Angle + ConstZero {
     pub const IDENTITY: Self = Self::new(A::ZERO, A::ZERO, A::ZERO);
 }
 
-impl<A: Angle + ConstZero> Default for Euler<A> {
+impl<A> Default for Euler<A>
+where
+    A: Angle + ConstZero {
     fn default() -> Self {
         Self::IDENTITY
     }
 }
 
-impl<A: Add<Output = A>> Add for Euler<A> {
+impl<A> Add for Euler<A>
+where
+    A: Add<Output = A> {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -65,7 +71,9 @@ impl<A: Add<Output = A>> Add for Euler<A> {
     }
 }
 
-impl<A: Add<Output = A> + Copy> Add<A> for Euler<A> {
+impl<A> Add<A> for Euler<A>
+where
+    A: Add<Output = A> + Copy {
     type Output = Self;
 
     fn add(self, rhs: A) -> Self::Output {
@@ -73,7 +81,9 @@ impl<A: Add<Output = A> + Copy> Add<A> for Euler<A> {
     }
 }
 
-impl<A: AddAssign> AddAssign for Euler<A> {
+impl<A> AddAssign for Euler<A>
+where
+    A: AddAssign {
     fn add_assign(&mut self, rhs: Self) {
         self.yaw += rhs.yaw;
         self.pitch += rhs.pitch;
@@ -81,7 +91,9 @@ impl<A: AddAssign> AddAssign for Euler<A> {
     }
 }
 
-impl<A: AddAssign + Copy> AddAssign<A> for Euler<A> {
+impl<A> AddAssign<A> for Euler<A>
+where
+    A: AddAssign + Copy {
     fn add_assign(&mut self, rhs: A) {
         self.yaw += rhs;
         self.pitch += rhs;
@@ -89,7 +101,9 @@ impl<A: AddAssign + Copy> AddAssign<A> for Euler<A> {
     }
 }
 
-impl<A: Sub<Output = A>> Sub for Euler<A> {
+impl<A> Sub for Euler<A>
+where
+    A: Sub<Output = A> {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
@@ -101,7 +115,9 @@ impl<A: Sub<Output = A>> Sub for Euler<A> {
     }
 }
 
-impl<A: Sub<Output = A> + Copy> Sub<A> for Euler<A> {
+impl<A> Sub<A> for Euler<A>
+where
+    A: Sub<Output = A> + Copy {
     type Output = Self;
 
     fn sub(self, rhs: A) -> Self::Output {
@@ -109,7 +125,9 @@ impl<A: Sub<Output = A> + Copy> Sub<A> for Euler<A> {
     }
 }
 
-impl<A: SubAssign> SubAssign for Euler<A> {
+impl<A> SubAssign for Euler<A>
+where
+    A: SubAssign {
     fn sub_assign(&mut self, rhs: Self) {
         self.yaw -= rhs.yaw;
         self.pitch -= rhs.pitch;
@@ -117,7 +135,9 @@ impl<A: SubAssign> SubAssign for Euler<A> {
     }
 }
 
-impl<A: SubAssign + Copy> SubAssign<A> for Euler<A> {
+impl<A> SubAssign<A> for Euler<A>
+where
+    A: SubAssign + Copy {
     fn sub_assign(&mut self, rhs: A) {
         self.yaw -= rhs;
         self.pitch -= rhs;
@@ -125,7 +145,9 @@ impl<A: SubAssign + Copy> SubAssign<A> for Euler<A> {
     }
 }
 
-impl<A: Mul<Output = A>> Mul for Euler<A> {
+impl<A> Mul for Euler<A>
+where
+    A: Mul<Output = A> {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self::Output {
@@ -137,7 +159,9 @@ impl<A: Mul<Output = A>> Mul for Euler<A> {
     }
 }
 
-impl<A: Mul<Output = A> + Copy> Mul<A> for Euler<A> {
+impl<A> Mul<A> for Euler<A>
+where
+    A: Mul<Output = A> + Copy {
     type Output = Self;
 
     fn mul(self, rhs: A) -> Self::Output {
@@ -161,7 +185,9 @@ impl<A: MulAssign + Copy> MulAssign<A> for Euler<A> {
     }
 }
 
-impl<A: Div<Output = A>> Div for Euler<A> {
+impl<A> Div for Euler<A>
+where
+    A: Div<Output = A> {
     type Output = Self;
 
     fn div(self, rhs: Self) -> Self::Output {
@@ -173,7 +199,10 @@ impl<A: Div<Output = A>> Div for Euler<A> {
     }
 }
 
-impl<A: Div<Output = A> + Copy> Div<A> for Euler<A> {
+impl<A> Div<A> for Euler<A>
+where
+    A: Div<Output = A> + Copy
+{
     type Output = Self;
 
     fn div(self, rhs: A) -> Self::Output {
@@ -181,7 +210,10 @@ impl<A: Div<Output = A> + Copy> Div<A> for Euler<A> {
     }
 }
 
-impl<A: DivAssign> DivAssign for Euler<A> {
+impl<A> DivAssign for Euler<A>
+where
+    A: DivAssign
+{
     fn div_assign(&mut self, rhs: Self) {
         self.yaw /= rhs.yaw;
         self.pitch /= rhs.pitch;
@@ -189,7 +221,10 @@ impl<A: DivAssign> DivAssign for Euler<A> {
     }
 }
 
-impl<A: DivAssign + Copy> DivAssign<A> for Euler<A> {
+impl<A> DivAssign<A> for Euler<A>
+where
+    A: DivAssign + Copy
+{
     fn div_assign(&mut self, rhs: A) {
         self.yaw /= rhs;
         self.pitch /= rhs;

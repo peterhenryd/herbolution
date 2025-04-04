@@ -44,6 +44,8 @@ impl Engine {
 
     pub fn set_size(&mut self, size: Size2<u32>) {
         self.gpu.set_size(size);
+        self.renderer_2d.set_size(&self.gpu.handle, size);
+        self.renderer_3d.set_size(size);
     }
 
     pub fn create_frame(&mut self) -> Result<EngineFrame, GpuError> {

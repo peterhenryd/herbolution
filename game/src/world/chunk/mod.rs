@@ -1,10 +1,10 @@
 use crate::world::chunk::cube::{Cube, CubePosition};
 use crate::world::chunk::material::{Material, OptionMaterialExt};
-use kanal::Sender;
+use crossbeam::channel::Sender;
+use hashbrown::HashMap;
 use lib::geometry::cuboid::face::{Face, Faces};
 use math::vector::{vec3i, vec3u5, Vec3};
 use std::ops::{BitAnd, Not};
-use tinyvec::TinyVec;
 
 pub mod cube;
 pub mod generator;
@@ -37,18 +37,11 @@ impl Chunk {
         self.data[linearize(position)].material
     }
 
-    // The basic idea here is to find the 32x32x1 slice of cubes on which faces are shared between two
-    // chunks, and then to iterate over each cube and its corresponding cube, and cull their
-    // shared faces if possible.
     pub fn cull_shared_faces(&mut self, other: &mut Chunk) {
-        // The difference in position between the two chunks, this is a unit component vector.
-        let dp = self.position - other.position;
-        // Get the face that is shared between the two chunks.
-        let Some(shared_face) = Face::from_vec3i(dp) else {
+        let Some(shared_face) = Face::from_vec3(self.position - other.position) else {
             return;
         };
 
-        // Get the slices of cubes that are shared between the two chunks.
         let this_matrix = shared_face.inverse().sized_boundary_slice(LENGTH as u8);
         let that_matrix = shared_face.sized_boundary_slice(LENGTH as u8);
 
@@ -94,7 +87,6 @@ impl Chunk {
     }
 
     fn remove_neighboring_faces(&mut self, faces: Faces, position: vec3u5) {
-        let i = linearize(position);
         faces
             .map(|f| (f, f.into_vec3()))
             .map(|(f, v)| (f, position.cast::<i32>().unwrap() + v))
@@ -106,7 +98,7 @@ impl Chunk {
                 self.dirtied_positions.push(v);
 
                 if self.data[index].material.is_face_culled() {
-                    self.data[i].remove_faces(Faces::from(f));
+                    self.data[linearize(position)].remove_faces(Faces::from(f));
                 }
 
                 self.data[index].remove_faces(Faces::from(f.inverse()));
@@ -131,23 +123,20 @@ impl Chunk {
         out_chunk
     }
 
-    fn send_update(&mut self) {
-        if self.dirtied_positions.is_empty() {
-            return;
-        }
-
-        let mut cubes = TinyVec::new();
+    fn send_overwrite_update(&mut self) {
+        let mut overwrites = HashMap::new();
         for position in self.dirtied_positions.drain(..) {
-            cubes.push((position, self.data[linearize(position)]));
+            let index = linearize(position);
+            let cube = self.data[index];
+            overwrites.insert(position, cube);
         }
-
-        if let Err(e) = self.sender.try_send(ChunkUpdate { cubes }) {
-            eprintln!("Failed to send chunk update: {:?}", e);
-        }
+        let _ = self.sender.send(ChunkUpdate { overwrites });
     }
 
     pub fn tick(&mut self) {
-        self.send_update();
+        if !self.dirtied_positions.is_empty() {
+            self.send_overwrite_update();
+        }
     }
 }
 
@@ -157,7 +146,7 @@ fn in_bounds(position: vec3i) -> bool {
         && position.z >= 0 && position.z < LENGTH as i32
 }
 
-fn linearize(position: vec3u5) -> usize {
+pub fn linearize(position: vec3u5) -> usize {
     position.cast().unwrap().linearize(LENGTH)
 }
 
@@ -177,5 +166,5 @@ impl From<CubePosition> for ChunkLocalPosition {
 }
 
 pub struct ChunkUpdate {
-    pub cubes: TinyVec<[(vec3u5, Cube<Option<Material>>); 256]>,
+    pub overwrites: HashMap<vec3u5, Cube<Option<Material>>>,
 }

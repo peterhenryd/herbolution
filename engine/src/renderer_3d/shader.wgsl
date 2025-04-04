@@ -101,7 +101,7 @@ fn fs(frag: Fragment) -> @location(0) vec4f {
         let diffuse_strength = max(dot(frag.world_normal, light_dir), 0.0);
         let diffuse_color = light.color * diffuse_strength;
 
-        color = vec4f((ambient_color + diffuse_color + specular_color) * color.xyz, color.a);
+        color = vec4f((ambient_color + diffuse_color /*+ specular_color*/) * color.xyz, color.a);
     }
 
     return color;

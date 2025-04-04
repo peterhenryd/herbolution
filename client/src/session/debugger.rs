@@ -8,39 +8,47 @@ use winit::keyboard::KeyCode;
 use math::size::Size2;
 
 pub struct Debugger {
-    is_init: bool,
+    is_resized: bool,
     is_enabled: bool,
     size: Size2<u32>,
-    text_ids: Vec<TextId>,
+    crosshair_id: Option<TextId>,
+    text_ids: Option<[TextId; 4]>,
 }
 
 impl Debugger {
     pub fn create(size: Size2<u32>) -> Self {
-        Self { is_init: false, is_enabled: false, size, text_ids: vec![] }
+        Self { is_resized: true, is_enabled: false, size, crosshair_id: None, text_ids: None }
     }
 
     pub fn set_size(&mut self, size: Size2<u32>) {
         self.size = size;
+        self.is_resized = true;
     }
 
     pub fn update(&mut self, frame: &EngineFrame, renderer_2d: &mut Renderer2D, fps: &Fps, position: vec3f) {
-        if !self.is_init {
-            renderer_2d.add_text(TextSection {
-                position: Vec2::new(self.size.width as f32 / 2.0 - 1.5, self.size.height as f32 / 2.0 - 1.5),
+        if self.is_resized {
+            if let Some(id) = self.crosshair_id.take() {
+                renderer_2d.remove_text(id);
+            }
+
+            self.crosshair_id = Some(renderer_2d.add_text(TextSection {
+                position: Vec2::new(self.size.width as f32 / 2.0, self.size.height as f32 / 2.0),
                 content: "+".to_string(),
                 font_size: 24.0,
                 line_height: 24.0,
                 color: Rgba::WHITE,
-            });
-            self.is_init = true;
+            }));
+            self.is_resized = false;
         }
 
         if frame.input.key_events.contains(&KeyCode::Backslash) {
             self.is_enabled = !self.is_enabled;
         }
 
-        for id in self.text_ids.drain(..) {
-            renderer_2d.remove_text(id);
+        if let Some(ids) = self.text_ids.take() {
+            for id in ids {
+                renderer_2d.remove_text(id);
+            }
         }
 
         if !self.is_enabled {
@@ -79,6 +87,6 @@ impl Debugger {
             color: Rgba::WHITE,
         });
 
-        self.text_ids = vec![fps, x, y, z];
+        self.text_ids = Some([fps, x, y, z]);
     }
 }

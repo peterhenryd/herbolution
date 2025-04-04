@@ -5,7 +5,7 @@ use crate::vector::{vec4f, Vec4};
 use bytemuck::{Pod, Zeroable};
 use serde::{Deserialize, Serialize};
 
-#[repr(C)]
+#[repr(transparent)]
 #[derive(
     Debug, Default, Copy, Clone, PartialEq, PartialOrd, Deserialize, Serialize, Pod, Zeroable,
 )]

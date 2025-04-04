@@ -99,11 +99,6 @@ fn create_tile_highlight_mesh(handle: &Handle, width: f32) -> Mesh {
         1, 3, 7, 7, 5, 1,
         3, 2, 6, 6, 7, 3,
         2, 0, 4, 4, 6, 2,
-        /*
-        0, 2, 1, 3, 1, 2,
-        4, 5, 6, 7, 6, 5,
-
-         */
     ];
 
     Mesh::create(handle, vertices, INDICES)
@@ -111,7 +106,7 @@ fn create_tile_highlight_mesh(handle: &Handle, width: f32) -> Mesh {
 
 fn build_textures(handle: &Handle) -> BindGroup {
     // TODO: fix
-    let entries = ["stone", "dirt", "grass"].into_iter()
+    let entries = ["stone", "dirt", "grass", "grass_side"].into_iter()
         .map(|name| image::open(format!("assets/texture/{name}.png")).unwrap())
         .map(|image| AtlasEntry { texture: image, mip: Default::default() })
         .collect::<Vec<_>>();

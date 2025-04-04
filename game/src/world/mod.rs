@@ -3,9 +3,9 @@ pub mod entity;
 pub mod map;
 
 use std::borrow::Borrow;
-use kanal::Sender;
-use math::vector::Vec3;
-use crate::Response;
+use std::random::random;
+use crossbeam::channel::Sender;
+use crate::handle::Response;
 use crate::world::chunk::map::ChunkMap;
 use crate::world::entity::set::EntitySet;
 
@@ -16,19 +16,10 @@ pub struct World {
 }
 
 impl World {
-    pub fn create(id: WorldId, sender: Sender<Response>) -> Self {
-        let mut chunk_map = ChunkMap::new(48323, sender);
-        for x in -2..2 {
-            for y in 0..3 {
-                for z in -2..2 {
-                    chunk_map.load_chunk(Vec3::new(x, y, z));
-                }
-            }
-        }
-
+    pub fn create(id: impl Into<WorldId>, sender: Sender<Response>) -> Self {
         Self {
-            id,
-            chunk_map,
+            id: id.into(),
+            chunk_map: ChunkMap::new(random(), sender),
             entity_set: EntitySet::new(),
         }
     }
@@ -65,5 +56,11 @@ pub struct WorldId(String);
 impl Borrow<str> for WorldId {
     fn borrow(&self) -> &str {
         &self.0
+    }
+}
+
+impl<'a> From<&'a str> for WorldId {
+    fn from(value: &'a str) -> Self {
+        Self(value.to_owned())
     }
 }

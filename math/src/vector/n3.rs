@@ -108,7 +108,6 @@ impl<T> Vec3<T> {
     #[inline(always)]
     pub fn length(self) -> T
     where
-        T: Copy,
         T: Real,
     {
         self.length_squared().sqrt()
@@ -117,10 +116,14 @@ impl<T> Vec3<T> {
     #[inline(always)]
     pub fn normalize(self) -> Self
     where
-        T: Copy,
         T: Real,
+        T: ConstZero
     {
         let length = self.length();
+        if length == T::ZERO {
+            return Self::ZERO;
+        }
+
         Self {
             x: self.x / length,
             y: self.y / length,
@@ -147,7 +150,7 @@ impl<T> Vec3<T> {
         T: Mul<Output = T>,
         T: Add<Output = T>,
     {
-        self.z * n * n + self.y * n + self.x
+        self.z * n * n + self.x * n + self.y
     }
 
     #[inline(always)]
@@ -166,6 +169,19 @@ impl<T> Vec3<T> {
         T: Copy + PartialEq + ConstZero,
     {
         std::mem::replace(self, Self::ZERO)
+    }
+
+    pub fn zero_inequalities(&mut self, other: &Vec3<T>)
+    where T: PartialEq + ConstZero {
+        if self.x != other.x {
+            self.x = T::ZERO;
+        }
+        if self.y != other.y {
+            self.y = T::ZERO;
+        }
+        if self.z != other.z {
+            self.z = T::ZERO;
+        }
     }
 }
 
@@ -211,23 +227,6 @@ impl<T: Copy + PartialEq + One> One for Vec3<T> {
 
 impl<T: Copy + PartialEq + ConstOne> ConstOne for Vec3<T> {
     const ONE: Self = Self::splat(T::ONE);
-}
-
-impl<T: Zero + One> Vec3<T> {
-    #[inline(always)]
-    pub fn x() -> Self {
-        Self::new(T::one(), T::zero(), T::zero())
-    }
-
-    #[inline(always)]
-    pub fn y() -> Self {
-        Self::new(T::zero(), T::one(), T::zero())
-    }
-
-    #[inline(always)]
-    pub fn z() -> Self {
-        Self::new(T::zero(), T::zero(), T::one())
-    }
 }
 
 impl<T: ConstZero + ConstOne> Vec3<T> {
@@ -978,6 +977,12 @@ impl<'a, T: Copy> IntoIterator for &'a Vec3<T> {
 
     fn into_iter(self) -> Self::IntoIter {
         self.into_array().into_iter()
+    }
+}
+
+impl<T> From<(T, T, T)> for Vec3<T> {
+    fn from((x, y, z): (T, T, T)) -> Self {
+        Self::new(x, y, z)
     }
 }
 

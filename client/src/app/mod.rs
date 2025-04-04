@@ -28,7 +28,7 @@ impl App {
             .expect("Failed to create window");
 
         let window = Arc::new(window);
-        let engine = Engine::create(window.clone()).expect("Failed to create engine");
+        let engine = Engine::create(window).expect("Failed to create engine");
 
         Self { engine, session: None }
     }

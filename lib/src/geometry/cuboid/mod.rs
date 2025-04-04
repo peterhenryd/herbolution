@@ -1,10 +1,9 @@
 use std::fmt::Debug;
-use std::ops::{Add, Neg};
+use std::ops::{Add, AddAssign, Neg};
 use math::num::{Float, Num, NumCast};
 use math::num::traits::ConstZero;
 use math::num::traits::real::Real;
 use math::vector::Vec3;
-use crate::geometry::cuboid::face::{Face, Faces};
 
 pub mod face;
 
@@ -84,12 +83,12 @@ impl<T> Cuboid<T> {
 
     pub fn center(&self) -> Vec3<T>
     where
-        T: Copy + Num + NumCast,
+        T: Copy + Num + NumCast
     {
         (self.min + self.max) / T::from(2).unwrap()
     }
 
-    pub fn set_position(&mut self, position: Vec3<T>)
+    pub fn set_pos(&mut self, position: Vec3<T>)
     where
         T: Copy + Num,
     {
@@ -97,6 +96,30 @@ impl<T> Cuboid<T> {
         self.max.y = position.y + self.height();
         self.max.z = position.z + self.depth();
         self.min = position;
+    }
+
+    pub fn add_x(&mut self, x: T)
+    where
+        T: Copy + AddAssign
+    {
+        self.min.x += x;
+        self.max.x += x;
+    }
+
+    pub fn add_y(&mut self, y: T)
+    where
+        T: Copy + AddAssign
+    {
+        self.min.y += y;
+        self.max.y += y;
+    }
+
+    pub fn add_z(&mut self, z: T)
+    where
+        T: Copy + AddAssign
+    {
+        self.min.z += z;
+        self.max.z += z;
     }
 
     pub fn intersect(&self, other: &Cuboid<T>) -> Self
@@ -129,93 +152,14 @@ impl<T> Cuboid<T> {
         intersection.width() == T::zero() || intersection.height() == T::zero() || intersection.depth() == T::zero()
     }
 
-    /*
-
-    public float clipXCollide(Cuboid other, float v) {
-        if (!(other.y1 > this.y0) || !(other.y0 < this.y1)) {
-            return v;
-        }
-        if (!(other.z1 > this.z0) || !(other.z0 < this.z1)) {
-            return v;
-        }
-        float max;
-        if (v > 0.0F && other.x1 <= this.x0) {
-            max = this.x0 - other.x1;
-            if (max < v) {
-                v = max;
-            }
-        }
-
-        if (v < 0.0F && other.x0 >= this.x1) {
-            max = this.x1 - other.x0;
-            if (max > v) {
-                v = max;
-            }
-        }
-
-        return v;
+    pub fn clip_collision(&self, other: &Cuboid<T>, velocity: &mut Vec3<T>)
+    where T: Copy + ConstZero + Real + PartialOrd + NumCast {
+        velocity.x = self.clip_dx_collision(other, velocity.x);
+        velocity.y = self.clip_dy_collision(other, velocity.y);
+        velocity.z = self.clip_dz_collision(other, velocity.z);
     }
 
-    public float clipYCollide(Cuboid other, float v) {
-        if (!(other.x1 > this.x0) || !(other.x0 < this.x1)) {
-            return v;
-        }
-        if (!(other.z1 > this.z0) || !(other.z0 < this.z1)) {
-            return v;
-        }
-        float max;
-        if (v > 0.0F && other.y1 <= this.y0) {
-            max = this.y0 - other.y1;
-            if (max < v) {
-                v = max;
-            }
-        }
-
-        if (v < 0.0F && other.y0 >= this.y1) {
-            max = this.y1 - other.y0;
-            if (max > v) {
-                v = max;
-            }
-        }
-
-        return v;
-    }
-
-    public float clipZCollide(Cuboid other, float v) {
-        if (!(other.x1 > this.x0) || !(other.x0 < this.x1)) {
-            return v;
-        }
-        if (!(other.y1 > this.y0) || !(other.y0 < this.y1)) {
-            return v;
-        }
-        float max;
-
-        if (v > 0.0F && other.z1 <= this.z0) {
-            max = this.z0 - other.z1;
-            if (max < v) {
-                v = max;
-            }
-        }
-
-        if (v < 0.0F && other.z0 >= this.z1) {
-            max = this.z1 - other.z0;
-            if (max > v) {
-                v = max;
-            }
-        }
-
-        return v;
-    }
-     */
-
-    pub fn clamp_collision_velocity(&self, other: &Cuboid<T>, velocity: &mut Vec3<T>)
-    where T: Copy + ConstZero + Num + PartialOrd {
-        velocity.x = self.clamp_collision_dx(other, velocity.x);
-        velocity.y = self.clamp_collision_dy(other, velocity.y);
-        velocity.z = self.clamp_collision_dz(other, velocity.z);
-    }
-
-    pub fn clamp_collision_dx(&self, other: &Cuboid<T>, mut dx: T) -> T
+    pub fn clip_dx_collision(&self, other: &Cuboid<T>, mut dx: T) -> T
     where T: Copy + ConstZero + Num + PartialOrd {
         if other.min.y >= self.max.y || other.max.y <= self.min.y {
             return dx;
@@ -226,23 +170,23 @@ impl<T> Cuboid<T> {
         }
 
         if dx > T::ZERO && other.max.x <= self.min.x {
-            let max = self.min.x - other.max.x;
-            if max < dx {
-                dx = max;
+            let clip = self.min.x - other.max.x;
+            if clip < dx {
+                dx = clip;
             }
         }
 
         if dx < T::ZERO && other.min.x >= self.max.x {
-            let max = self.max.x - other.min.x;
-            if max > dx {
-                dx = max;
+            let clip = self.max.x - other.min.x;
+            if clip > dx {
+                dx = clip;
             }
         }
 
         dx
     }
 
-    pub fn clamp_collision_dy(&self, other: &Cuboid<T>, mut dy: T) -> T
+    pub fn clip_dy_collision(&self, other: &Cuboid<T>, mut dy: T) -> T
     where T: Copy + ConstZero + Num + PartialOrd {
         if other.min.x >= self.max.x || other.max.x <= self.min.x {
             return dy;
@@ -253,23 +197,23 @@ impl<T> Cuboid<T> {
         }
 
         if dy > T::ZERO && other.max.y <= self.min.y {
-            let max = self.min.y - other.max.y;
-            if max < dy {
-                dy = max;
+            let clip = self.min.y - other.max.y;
+            if clip < dy {
+                dy = clip;
             }
         }
 
         if dy < T::ZERO && other.min.y >= self.max.y {
-            let max = self.max.y - other.min.y;
-            if max > dy {
-                dy = max;
+            let clip = self.max.y - other.min.y;
+            if clip > dy {
+                dy = clip;
             }
         }
 
         dy
     }
 
-    pub fn clamp_collision_dz(&self, other: &Cuboid<T>, mut dz: T) -> T
+    pub fn clip_dz_collision(&self, other: &Cuboid<T>, mut dz: T) -> T
     where T: Copy + ConstZero + Num + PartialOrd {
         if other.min.x >= self.max.x || other.max.x <= self.min.x {
             return dz;
@@ -280,20 +224,35 @@ impl<T> Cuboid<T> {
         }
 
         if dz > T::ZERO && other.max.z <= self.min.z {
-            let max = self.min.z - other.max.z;
-            if max < dz {
-                dz = max;
+            let clip = self.min.z - other.max.z;
+            if clip < dz {
+                dz = clip;
             }
         }
 
         if dz < T::ZERO && other.min.z >= self.max.z {
-            let max = self.max.z - other.min.z;
-            if max > dz {
-                dz = max;
+            let clip = self.max.z - other.min.z;
+            if clip > dz {
+                dz = clip;
             }
         }
 
         dz
+    }
+
+    pub fn x(&self) -> T
+    where T: Real {
+        (self.min.x + self.max.x) * T::from(0.5).unwrap()
+    }
+
+    pub fn y(&self) -> T
+    where T: Real {
+        (self.min.y + self.max.y) * T::from(0.5).unwrap()
+    }
+
+    pub fn z(&self) -> T
+    where T: Real {
+        (self.min.z + self.max.z) * T::from(0.5).unwrap()
     }
 }
 
@@ -304,20 +263,6 @@ impl<T: ConstZero + Copy + PartialEq> Cuboid<T> {
     };
 }
 
-impl From<Faces> for Cuboid<f32> {
-    fn from(faces: Faces) -> Self {
-        let mut min = Vec3::splat(f32::MAX);
-        let mut max = Vec3::splat(f32::MIN);
-
-        for corner in faces.map(Face::into_corners).flatten() {
-            min = min.min(corner);
-            max = max.max(corner);
-        }
-
-        Self { min, max }
-    }
-}
-
 impl<T: Copy + Add<Output=T>> Add<Vec3<T>> for Cuboid<T> {
     type Output = Self;
 
@@ -326,5 +271,12 @@ impl<T: Copy + Add<Output=T>> Add<Vec3<T>> for Cuboid<T> {
             min: self.min + rhs,
             max: self.max + rhs,
         }
+    }
+}
+
+impl<T: Copy + AddAssign> AddAssign<Vec3<T>> for Cuboid<T> {
+    fn add_assign(&mut self, rhs: Vec3<T>) {
+        self.min += rhs;
+        self.max += rhs;
     }
 }

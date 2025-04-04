@@ -1,13 +1,14 @@
 use crate::session::debugger::Debugger;
 use engine::gpu::handle::Handle;
 use engine::{Engine, EngineFrame};
-use game::{Game, GameHandle, Response};
 use lib::fps::Fps;
 use lib::time::DeltaTime;
 use math::size::Size2;
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
 use winit::window::CursorGrabMode;
+use game::Game;
+use game::handle::{GameHandle, Response};
 use crate::session::chunk::SessionChunk;
 use crate::session::player::SessionPlayer;
 use crate::session::world::SessionWorld;
@@ -53,9 +54,9 @@ impl GameSession {
 
         let dt = self.delta_time.next();
 
-        self.player.update(&engine.gpu.handle, &mut engine.renderer_3d, &frame.input, &engine.input, self.is_focused);
+        self.player.update(&engine.gpu.handle, &mut engine.renderer_3d, (&frame.input, &engine.input), self.is_focused);
         self.fps.update(dt);
-        self.debugger.update(frame, &mut engine.renderer_2d, &self.fps, self.player.transform().position);
+        self.debugger.update(frame, &mut engine.renderer_2d, &self.fps, engine.renderer_3d.camera.position);
     }
 
     pub fn set_size(&mut self, size: Size2<u32>) {
@@ -68,11 +69,14 @@ impl GameSession {
 
     fn process_response(&mut self, response: Response, handle: &Handle) {
         match response {
-            Response::PlayerCreated(player_handle) => {
-                self.player.handle = Some(player_handle);
+            Response::ClientAdded(output_receiver) => {
+                self.player.output_receiver = Some(output_receiver);
             }
             Response::LoadChunk { position, receiver } => {
                 self.world.chunk_map.insert(SessionChunk::create(position, handle, receiver));
+            }
+            Response::UnloadChunk { position } => {
+                self.world.chunk_map.remove(position);
             }
         }
     }

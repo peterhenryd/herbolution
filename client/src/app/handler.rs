@@ -25,9 +25,9 @@ impl ApplicationHandler for Handler {
             WindowEvent::Resized(PhysicalSize { width, height }) => {
                 app.set_size(Size2::new(width, height));
             }
-            WindowEvent::CloseRequested => {
-                event_loop.exit();
+            WindowEvent::CloseRequested | WindowEvent::Destroyed => {
                 app.exit();
+                event_loop.exit();
             }
             WindowEvent::CursorMoved { position: PhysicalPosition { x, y }, .. } => {
                 app.engine.input.set_mouse_position(Vec2::new(x, y));
@@ -39,12 +39,11 @@ impl ApplicationHandler for Handler {
                 app.engine.input.add_mouse_scroll(delta.y as f32);
             }
             WindowEvent::KeyboardInput {
-                event:
-                    KeyEvent {
-                        physical_key: PhysicalKey::Code(code),
-                        state,
-                        ..
-                    },
+                event: KeyEvent {
+                    physical_key: PhysicalKey::Code(code),
+                    state,
+                    ..
+                },
                 ..
             } => {
                 app.engine.input.set_key_activity(code, state.is_pressed());

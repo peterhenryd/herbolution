@@ -1,21 +1,24 @@
-use bytemuck::{Pod, Zeroable};
-use math::matrix::mat4f;
-use math::projection::Projection;
-use math::transform::Transform;
-use math::vector::vec3f;
 use crate::gpu::mem::payload::ShaderPayload;
+use bytemuck::{Pod, Zeroable};
+use math::angle::Rad;
+use math::matrix::{mat4f, Mat4};
+use math::projection::Projection;
+use math::rotation::Euler;
+use math::vector::vec3f;
 
 pub mod frustum;
 
 pub struct Camera<P> {
-    pub transform: Transform,
+    pub position: vec3f,
+    pub rotation: Euler<Rad<f32>>,
     pub projection: P,
 }
 
 impl<P> Camera<P> {
-    pub fn new(view: Transform, proj: P) -> Self {
+    pub fn new(position: vec3f, proj: P) -> Self {
         Self {
-            transform: view,
+            position,
+            rotation: Euler::IDENTITY,
             projection: proj,
         }
     }
@@ -23,7 +26,7 @@ impl<P> Camera<P> {
 
 impl<P: Projection> Camera<P> {
     pub fn view_projection_matrix(&self) -> mat4f {
-        self.projection.to_matrix() * self.transform.to_view_matrix()
+        self.projection.to_matrix() * Mat4::view(self.position, self.rotation)
     }
 }
 
@@ -33,7 +36,7 @@ impl<P: Projection> ShaderPayload for Camera<P> {
     fn payload(&self) -> Self::Output<'_> {
         CameraShaderPayload {
             view_projection_matrix: self.view_projection_matrix(),
-            world_position: self.transform.position,
+            world_position: self.position,
             _padding: 0,
         }
     }

@@ -2,25 +2,38 @@ use crate::world::chunk::map::ChunkMap;
 use crate::world::entity::EntityAbilities;
 use lib::geometry::cuboid::Cuboid;
 use math::num::traits::ConstZero;
-use math::transform::Transform;
-use math::vector::{vec3f, Vec3};
+use math::vector::{vec3f, vec3i8, Vec3};
+use std::ops::Add;
+use math::angle::Rad;
+use math::rotation::Euler;
+use crate::DELTA_TIME;
 
 #[derive(Debug, Clone)]
 pub struct EntityBody {
-    pub transform: Transform,
-    pub(crate) forces: vec3f,
-    pub bounding_box: Cuboid<f32>,
-    pub eye_offset: vec3f,
-    pub gravity: EntityGravity,
+    /// The position of the entity in the world.
+    pub(crate) pos: vec3f,
+    delta_pos: vec3f,
+    pub(crate) rotation: Euler<Rad<f32>>,
+    boundary: Boundary,
+    motion: vec3f,
+    is_on_ground: bool,
+    near_colliders: Vec<Cuboid<f32>>,
 }
 
 impl EntityBody {
-    pub fn update(&mut self, chunk_map: &mut ChunkMap, abilities: EntityAbilities) {
-        if abilities.is_affected_by_gravity {
-            self.gravity.update();
-            self.apply_gravity(chunk_map);
+    pub fn new(position: vec3f, boundary: Boundary) -> Self {
+        Self {
+            pos: position,
+            delta_pos: Vec3::ZERO,
+            rotation: Euler::IDENTITY,
+            boundary,
+            motion: Vec3::ZERO,
+            is_on_ground: false,
+            near_colliders: vec![],
         }
+    }
 
+    pub fn update(&mut self, chunk_map: &mut ChunkMap, abilities: EntityAbilities) {
         self.apply_translation(chunk_map, &abilities);
     }
 
@@ -29,60 +42,72 @@ impl EntityBody {
         chunk_map: &mut ChunkMap,
         _: &EntityAbilities,
     ) {
-        let (straight, side) = self.transform.rotation.into_view_directions();
-        let (straight, side) = (straight.cast::<f32>().unwrap(), side.cast::<f32>().unwrap());
-        let up = Vec3::Y;
+        let (parallel, perpendicular) = self.rotation.yaw_directions();
+        let motion = self.motion.take();
+        let direction = vec3f::ZERO
+            .add(parallel * motion.x)
+            .add(perpendicular * motion.z)
+            .normalize();
+        let speed = if self.is_on_ground { 2.0 } else { 0.5 } * DELTA_TIME;
 
-        let mut velocity = Vec3::ZERO;
-        velocity += straight * self.forces.x;
-        velocity += side * self.forces.z;
-        velocity += up * self.forces.y;
-
-        if velocity != Vec3::ZERO {
-            velocity = velocity.normalize() * 0.5;
+        self.delta_pos += direction * speed;
+        if self.is_on_ground {
+            self.delta_pos.y = motion.y / 3.0;
         }
 
-        let bounds = self.bounds();
-        for collider in chunk_map.get_near_colliders(bounds) {
-            collider.clamp_collision_velocity(&bounds, &mut velocity);
+        self.delta_pos.y -= 1.8 * DELTA_TIME;
+
+        let mut clipped_delta_pos = self.delta_pos;
+        let mut bounds = self.bounds();
+
+        chunk_map.get_near_colliders(bounds, &mut self.near_colliders);
+        for collider in &self.near_colliders {
+            collider.clip_collision(&bounds, &mut clipped_delta_pos);
         }
 
-        self.transform.position += velocity;
+        bounds += clipped_delta_pos;
+
+        self.is_on_ground = clipped_delta_pos.y != self.delta_pos.y && self.delta_pos.y < 0.0;
+
+        self.delta_pos.zero_inequalities(&clipped_delta_pos);
+
+        self.pos = bounds.center();
+        self.pos.y = bounds.min.y + self.boundary.eye_offset.y;
+
+        self.delta_pos.x *= 0.95;
+        self.delta_pos.z *= 0.95;
+
+        if self.is_on_ground {
+            self.delta_pos.x *= 0.8;
+            self.delta_pos.z *= 0.8;
+        }
     }
 
-    fn apply_gravity(&mut self, chunk_map: &mut ChunkMap) {
-        let dy = self.gravity.fall_speed;
-        let new_position = self.transform.position + vec3f::new(0.0, dy, 0.0);
-        let new_bounding_box = self.bounding_box + new_position;
+    fn bounds(&self) -> Cuboid<f32> {
+        self.boundary.cuboid + self.pos
+    }
 
-        for collider in chunk_map.get_near_colliders(new_bounding_box) {
-            if new_bounding_box.intersects(&collider) {
-                return;
-            }
+    pub fn eye_position(&self) -> vec3f {
+        self.boundary.eye_offset + self.pos
+    }
+
+    pub fn apply_motion_command(&mut self, command: vec3i8) {
+        if command.x != 0 {
+            self.motion.x = command.x as f32;
         }
 
-        self.transform.position = new_position;
-    }
+        if command.y != 0 {
+            self.motion.y = command.y as f32;
+        }
 
-    pub fn bounds(&self) -> Cuboid<f32> {
-        self.bounding_box + self.transform.position
-    }
-
-    pub fn get_eye_position(&self) -> vec3f {
-        self.transform.position + self.eye_offset
+        if command.z != 0 {
+            self.motion.z = command.z as f32;
+        }
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct EntityGravity {
-    pub(crate) fall_acceleration: f32,
-    pub(crate) fall_speed: f32,
-    pub(crate) max_fall_speed: f32,
-}
-
-impl EntityGravity {
-    pub fn update(&mut self) {
-        self.fall_speed += self.fall_acceleration;
-        self.fall_speed = self.fall_speed.min(self.max_fall_speed);
-    }
+pub struct Boundary {
+    pub cuboid: Cuboid<f32>,
+    pub eye_offset: vec3f,
 }

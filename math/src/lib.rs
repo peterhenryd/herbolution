@@ -8,6 +8,5 @@ pub mod color;
 pub mod matrix;
 pub mod rotation;
 pub mod size;
-pub mod transform;
 pub mod vector;
 pub mod projection;

@@ -1,12 +1,13 @@
-use std::fmt::Debug;
-use std::marker::PhantomData;
-use std::ops::{Index, Range, Sub};
 use bitflags::bitflags;
 use lazy_static::lazy_static;
 use math::angle::Deg;
 use math::num::traits::{ConstOne, ConstZero};
 use math::rotation::{Euler, Quat};
-use math::vector::{vec3f, vec3i, Vec3};
+use math::vector::{vec3i, Vec3};
+use std::array::IntoIter;
+use std::fmt::Debug;
+use std::marker::PhantomData;
+use std::ops::{Index, Range, Sub};
 
 #[repr(u8)]
 #[derive(Debug, Copy, Clone)]
@@ -31,6 +32,10 @@ lazy_static! {
 }
 
 impl Face {
+    pub fn entries() -> IntoIter<Self, 6> {
+        [Face::Top, Face::Bottom, Face::Left, Face::Right, Face::Front, Face::Back].into_iter()
+    }
+
     pub fn into_quat(self) -> Quat {
         match self {
             Face::Top => ROTATIONS[0],
@@ -42,7 +47,7 @@ impl Face {
         }
     }
 
-    pub fn from_vec3i(pos: vec3i) -> Option<Self> {
+    pub fn from_vec3(pos: vec3i) -> Option<Self> {
         match pos {
             Vec3 { x: 0, y: 1, z: 0 } => Some(Face::Top),
             Vec3 { x: 0, y: -1, z: 0 } => Some(Face::Bottom),
@@ -74,47 +79,6 @@ impl Face {
             Face::Right => vec3i::new(1, 0, 0),
             Face::Front => vec3i::new(0, 0, 1),
             Face::Back => vec3i::new(0, 0, -1),
-        }
-    }
-
-    pub fn into_corners(self) -> [vec3f; 4] {
-        match self {
-            Face::Top => [
-                Vec3::new(0., 1., 0.),
-                Vec3::new(0., 1., 1.),
-                Vec3::new(1., 1., 1.),
-                Vec3::new(1., 1., 0.),
-            ],
-            Face::Bottom => [
-                Vec3::new(0., 0., 0.),
-                Vec3::new(0., 0., 1.),
-                Vec3::new(1., 0., 1.),
-                Vec3::new(1., 0., 0.),
-            ],
-            Face::Left => [
-                Vec3::new(0., 0., 0.),
-                Vec3::new(0., 0., 1.),
-                Vec3::new(0., 1., 1.),
-                Vec3::new(0., 1., 0.),
-            ],
-            Face::Right => [
-                Vec3::new(1., 0., 0.),
-                Vec3::new(1., 0., 1.),
-                Vec3::new(1., 1., 1.),
-                Vec3::new(1., 1., 0.),
-            ],
-            Face::Front => [
-                Vec3::new(0., 0., 1.),
-                Vec3::new(0., 1., 1.),
-                Vec3::new(1., 1., 1.),
-                Vec3::new(1., 0., 1.),
-            ],
-            Face::Back => [
-                Vec3::new(0., 0., 0.),
-                Vec3::new(0., 1., 0.),
-                Vec3::new(1., 1., 0.),
-                Vec3::new(1., 0., 0.),
-            ],
         }
     }
 
@@ -174,7 +138,7 @@ impl Into<Quat> for Face {
 
 impl From<vec3i> for Face {
     fn from(pos: vec3i) -> Self {
-        Face::from_vec3i(pos).unwrap()
+        Face::from_vec3(pos).unwrap()
     }
 }
 
@@ -198,32 +162,26 @@ bitflags! {
 
 impl Faces {
     pub fn variant(self) -> Face {
-        if self == Faces::TOP {
-            Face::Top
-        } else if self == Faces::BOTTOM {
-            Face::Bottom
-        } else if self == Faces::LEFT {
-            Face::Left
-        } else if self == Faces::RIGHT {
-            Face::Right
-        } else if self == Faces::FRONT {
-            Face::Front
-        } else if self == Faces::BACK {
-            Face::Back
-        } else {
-            panic!("Invalid face");
+        match self {
+            Faces::TOP => Face::Top,
+            Faces::BOTTOM => Face::Bottom,
+            Faces::LEFT => Face::Left,
+            Faces::RIGHT => Face::Right,
+            Faces::FRONT => Face::Front,
+            Faces::BACK => Face::Back,
+            _ => panic!("Cannot select a variant from multiple faces"),
         }
     }
 }
 
-pub struct FacesIter<F, T> {
+pub struct MapFaces<F, T> {
     faces: Faces,
     function: F,
     _marker: PhantomData<T>,
     index: u8,
 }
 
-impl<F, T> Iterator for FacesIter<F, T>
+impl<F, T> Iterator for MapFaces<F, T>
 where F: Fn(Face) -> T {
     type Item = T;
 
@@ -240,9 +198,9 @@ where F: Fn(Face) -> T {
 }
 
 impl Faces {
-    pub fn map<T, F>(self, function: F) -> FacesIter<F, T>
+    pub fn map<T, F>(self, function: F) -> MapFaces<F, T>
     where F: Fn(Face) -> T {
-        FacesIter {
+        MapFaces {
             faces: self,
             function,
             _marker: PhantomData,
