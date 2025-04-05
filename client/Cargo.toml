@@ -4,11 +4,14 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow.workspace = true
 crossbeam.workspace = true
 engine = { package = "herbolution-engine", path = "../engine" }
 game = { package = "herbolution-game", path = "../game" }
 lib = { package = "herbolution-lib", path = "../lib" }
 math = { package = "herbolution-math", path = "../math" }
 num.workspace = true
+rayon.workspace = true
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "sync"] }
+tracing-subscriber.workspace = true
 winit.workspace = true

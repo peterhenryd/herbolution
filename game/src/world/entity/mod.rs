@@ -2,7 +2,6 @@ use hashbrown::HashSet;
 use math::num::traits::ConstZero;
 use math::vector::{vec3f, vec3i, Vec3};
 use crate::world::chunk;
-use crate::world::chunk::map::ChunkMap;
 use crate::world::entity::body::EntityBody;
 use crate::world::entity::logic::EntityLogic;
 use crate::world::entity::logic::player::PlayerLogic;
@@ -19,7 +18,7 @@ pub struct Entity {
 }
 
 impl Entity {
-    pub fn tick(&mut self, chunk_map: &mut ChunkMap) {
+    pub fn tick(&mut self, chunk_map: &mut chunk::Map) {
         self.data.tick(chunk_map);
         self.logic.tick(&mut self.data, chunk_map);
     }
@@ -33,7 +32,7 @@ pub struct EntityData {
 }
 
 impl EntityData {
-    pub fn tick(&mut self, chunk_map: &mut ChunkMap) {
+    pub fn tick(&mut self, chunk_map: &mut chunk::Map) {
         if let Some(chunk_loader) = &mut self.chunk_loader {
             chunk_loader.reload_radial_chunks(self.body.pos, chunk_map);
         }
@@ -49,7 +48,7 @@ pub enum EntityLogicVariant {
 }
 
 impl EntityLogicVariant {
-    pub fn tick(&mut self, data: &mut EntityData, chunk_map: &mut ChunkMap) {
+    pub fn tick(&mut self, data: &mut EntityData, chunk_map: &mut chunk::Map) {
         match self {
             EntityLogicVariant::Player(logic) => logic.tick(data, chunk_map),
             EntityLogicVariant::Custom(logic) => logic.tick(data, chunk_map),
@@ -61,26 +60,31 @@ impl EntityLogicVariant {
 pub struct ChunkLoader {
     pub(crate) prev_chunk_position: vec3i,
     owned_chunk_positions: HashSet<vec3i>,
+    pub(crate) radius: i32,
+    prev_radius: i32,
 }
 
 impl ChunkLoader {
-    pub fn new() -> Self {
+    pub fn new(radius: i32) -> Self {
         Self {
             prev_chunk_position: Vec3::ZERO,
             owned_chunk_positions: HashSet::new(),
+            radius,
+            prev_radius: radius,
         }
     }
 
-    pub fn reload_radial_chunks(&mut self, position: vec3f, chunk_map: &mut ChunkMap) {
+    pub fn reload_radial_chunks(&mut self, position: vec3f, chunk_map: &mut chunk::Map) {
         let chunk_position = position.cast().unwrap() / chunk::LENGTH as i32;
 
-        if chunk_position == self.prev_chunk_position {
+        if chunk_position == self.prev_chunk_position && self.radius == self.prev_radius {
             return;
         } else {
             self.prev_chunk_position = chunk_position;
         }
+        self.prev_radius = self.radius;
 
-        let positions = rhombus(chunk_position, 4);
+        let positions = rhombus(chunk_position, self.radius);
 
         let remove_positions = self.owned_chunk_positions.iter()
             .filter(|&position| !positions.contains(position));
@@ -100,7 +104,7 @@ fn rhombus(center: vec3i, radius: i32) -> HashSet<vec3i> {
     let mut positions = HashSet::new();
 
     for x in -radius..=radius {
-        for y in -radius / 2..=radius / 2 {
+        for y in -1i32..=1 {
             for z in -radius..=radius {
                 if x.abs() + z.abs() <= radius {
                     positions.insert(center + vec3i::new(x, y, z));

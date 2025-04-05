@@ -1,27 +1,82 @@
 use crate::world::chunk;
 use crate::world::chunk::material::Material;
-use crate::world::chunk::Chunk;
-use math::vector::{vec2i, vec3u5};
+use math::vector::{vec2i, vec3i, vec3u5};
 use std::ops::Mul;
-use hashbrown::HashMap;
+use std::sync::Arc;
+use cached::proc_macro::cached;
+use crossbeam::channel::{bounded, Receiver, Sender, TryIter};
+use pollster::FutureExt;
+use rayon::{ThreadPool, ThreadPoolBuilder};
 use simdnoise::NoiseBuilder;
+use crate::world::chunk::material;
+use crate::world::chunk::mesh::Mesh;
 
 #[derive(Debug)]
-pub struct ChunkGenerator {
-    seed: i32,
-    noise_cache: HashMap<vec2i, Vec<f32>>,
+pub struct Channel {
+    thread_pool: ThreadPool,
+    sender: Sender<Mesh>,
+    receiver: Receiver<Mesh>,
+    generator: Arc<Generator>,
+    materials: material::Registry,
 }
 
-impl ChunkGenerator {
+impl Channel {
+    pub fn new(generator: Arc<Generator>, materials: material::Registry) -> Self {
+        let (sender, receiver) = bounded(64);
+
+        Self {
+            thread_pool: ThreadPoolBuilder::new()
+                .num_threads(4)
+                .build()
+                .unwrap(),
+            sender,
+            receiver,
+            generator,
+            materials,
+        }
+    }
+
+    pub fn request_chunk(&self, position: vec3i) {
+        let sender = self.sender.clone();
+        let generator = self.generator.clone();
+        let materials = self.materials.clone();
+
+        self.thread_pool.spawn(move || {
+            let mut mesh = Mesh::new(position);
+
+            if let Err(e) = generator.generate(&mut mesh, &materials).block_on() {
+                eprintln!("Failed to generate chunk at {position}: {e:?}");
+                return;
+            }
+
+            sender.send(mesh).unwrap();
+        });
+    }
+
+    pub fn dequeue(&self) -> TryIter<'_, Mesh> {
+        self.receiver.try_iter()
+    }
+}
+
+#[derive(Debug)]
+pub struct Generator {
+    seed: i32,
+}
+
+impl Generator {
     const MIN_HEIGHT: i32 = 64;
     const MAX_HEIGHT: i32 = 96;
 
     pub fn new(seed: i32) -> Self {
-        Self { seed, noise_cache: HashMap::new() }
+        Self { seed }
     }
 
-    pub fn generate(&mut self, chunk: &mut Chunk) {
-        let noise = self.get_noise(chunk.position.xz());
+    pub async fn generate(&self, mesh: &mut Mesh, materials: &material::Registry) -> Result<(), Error> {
+        let Some(stone) = materials.get("stone").await else { return Err(Error::MissingMaterial) };
+        let Some(dirt) = materials.get("dirt").await else { return Err(Error::MissingMaterial) };
+        let Some(grass) = materials.get("grass").await else { return Err(Error::MissingMaterial) };
+
+        let noise = generate_noise(mesh.position.xz(), self.seed);
         for x in 0..chunk::LENGTH {
             for z in 0..chunk::LENGTH {
                 let f = noise[x + z * chunk::LENGTH];
@@ -29,34 +84,34 @@ impl ChunkGenerator {
                     Self::MIN_HEIGHT + (f * (Self::MAX_HEIGHT - Self::MIN_HEIGHT) as f32) as i32;
 
                 for chunk_y in 0..chunk::LENGTH {
-                    let y = chunk.position.y * chunk::LENGTH as i32 + chunk_y as i32;
+                    let y = mesh.position.y * chunk::LENGTH as i32 + chunk_y as i32;
                     if y < h - 6 {
-                        chunk.set(
+                        mesh.set(
                             vec3u5::new(x as u8, chunk_y as u8, z as u8),
-                            Some(Material::Stone),
+                            Some(&stone),
                         );
                     } else if y < h - 1 {
-                        chunk.set(vec3u5::new(x as u8, chunk_y as u8, z as u8), Some(Material::Dirt));
+                        mesh.set(vec3u5::new(x as u8, chunk_y as u8, z as u8), Some(&dirt));
                     } else if y < h {
-                        chunk.set(
+                        mesh.set(
                             vec3u5::new(x as u8, chunk_y as u8, z as u8),
-                            Some(Material::Grass),
+                            Some(&grass),
                         );
                     }
                 }
             }
         }
-    }
 
-    fn get_noise(&mut self, position: vec2i) -> &[f32] {
-        if !self.noise_cache.contains_key(&position) {
-            self.noise_cache.insert(position, generate_noise(position, self.seed));
-        }
-
-        self.noise_cache.get(&position).unwrap()
+        Ok(())
     }
 }
 
+#[derive(Debug)]
+pub enum Error {
+    MissingMaterial,
+}
+
+#[cached]
 fn generate_noise(position: vec2i, seed: i32) -> Vec<f32> {
     let offset = position.mul(chunk::LENGTH as i32).cast().unwrap();
     let noise_type = NoiseBuilder::fbm_2d_offset(offset.x, chunk::LENGTH, offset.y, chunk::LENGTH)

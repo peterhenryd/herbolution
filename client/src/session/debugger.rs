@@ -1,7 +1,7 @@
 use engine::renderer_2d::text::{TextId, TextSection};
 use engine::renderer_2d::Renderer2D;
 use engine::EngineFrame;
-use lib::fps::Fps;
+use lib::counter::IntervalCounter;
 use math::color::{ColorConsts, Rgba};
 use math::vector::{vec3f, Vec2};
 use winit::keyboard::KeyCode;
@@ -25,7 +25,7 @@ impl Debugger {
         self.is_resized = true;
     }
 
-    pub fn update(&mut self, frame: &EngineFrame, renderer_2d: &mut Renderer2D, fps: &Fps, position: vec3f) {
+    pub fn update(&mut self, frame: &EngineFrame, renderer_2d: &mut Renderer2D, fps: &IntervalCounter, position: vec3f) {
         if self.is_resized {
             if let Some(id) = self.crosshair_id.take() {
                 renderer_2d.remove_text(id);
@@ -57,7 +57,7 @@ impl Debugger {
 
         let fps = renderer_2d.add_text(TextSection {
             position: Vec2::new(10., 10.),
-            content: format!("FPS: {}", fps.get()),
+            content: format!("FPS: {}", fps.avg()),
             font_size: 36.0,
             line_height: 42.0,
             color: Rgba::WHITE,

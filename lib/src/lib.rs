@@ -5,7 +5,6 @@ use std::ops::{Deref, DerefMut};
 
 pub mod counter;
 pub mod display;
-pub mod fps;
 pub mod geometry;
 pub mod light;
 pub mod time;

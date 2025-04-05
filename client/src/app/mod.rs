@@ -67,8 +67,8 @@ impl App {
         self.engine.renderer_2d.cleanup();
     }
 
-    pub fn exit(&self) {
-        if let Some(session) = &self.session {
+    pub fn exit(&mut self) {
+        if let Some(session) = &mut self.session {
             session.exit();
         }
     }

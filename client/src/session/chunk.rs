@@ -1,22 +1,21 @@
-use crossbeam::channel::Receiver;
+use crossbeam::channel::{Receiver, TryRecvError};
 use engine::gpu::handle::Handle;
 use engine::gpu::mem::model::InstanceGroup;
 use engine::gpu::mem::payload::ShaderPayload;
 use engine::renderer_3d::vertex::Instance;
 use engine::renderer_3d::vertex::InstanceShaderPayload;
 use game::world::chunk;
-use game::world::chunk::cube::Cube;
-use game::world::chunk::material::Material;
-use game::world::chunk::ChunkUpdate;
+use game::world::chunk::{ChunkUpdate, Cube};
 use math::color::Rgba;
-use math::vector::{vec3i, vec3u5};
+use math::vector::{vec3i, Vec3};
 use std::collections::HashMap;
+use std::convert::identity;
 use std::ops::Mul;
 
 pub struct SessionChunk {
     position: vec3i,
     mesh: InstanceGroup,
-    data: Box<[Cube<Option<Material>>; chunk::SIZE]>,
+    data: Box<[Cube<>; chunk::SIZE]>,
     receiver: Receiver<ChunkUpdate>
 }
 
@@ -30,10 +29,18 @@ impl SessionChunk {
         }
     }
 
-    pub fn update(&mut self, handle: &Handle) {
+    pub fn update(&mut self, handle: &Handle) -> bool {
         let mut is_dirty = false;
 
-        while let Ok(update) = self.receiver.try_recv() {
+        loop {
+            let update;
+            match self.receiver.try_recv() {
+                Ok(x) => update = x,
+                Err(TryRecvError::Disconnected) => return false,
+                Err(TryRecvError::Empty) => break,
+            }
+
+
             is_dirty = true;
             for (position, cube) in update.overwrites {
                 let index = chunk::linearize(position);
@@ -42,20 +49,20 @@ impl SessionChunk {
         }
 
         if is_dirty {
-            let chunk_position = self.position.mul(32).cast::<f32>().unwrap();
+            let chunk_position = self.position.mul(32);
             let mut instances = vec![];
 
             for x in 0..chunk::LENGTH {
                 for y in 0..chunk::LENGTH {
                     for z in 0..chunk::LENGTH {
-                        let position = vec3u5::new(x as u8, y as u8, z as u8);
-                        let cube = self.data[chunk::linearize(position)];
+                        let position = Vec3::new(x, y, z);
+                        let cube = self.data[position.linearize(chunk::LENGTH)];
                         if let Some(material) = cube.material {
-                            for face in cube.faces() {
+                            for face in cube.faces().map(identity) {
                                 instances.push(Instance {
-                                    position: chunk_position + position.cast().unwrap(),
-                                    rotation: face.variant().into_quat(),
-                                    texture_index: material.texture_index(face.variant()),
+                                    position: (chunk_position + position.cast().unwrap()).cast().unwrap(),
+                                    rotation: face.into_quat(),
+                                    texture_index: material.texture_index(face),
                                     color: Rgba::TRANSPARENT,
                                 }.payload());
                             }
@@ -64,8 +71,10 @@ impl SessionChunk {
                 }
             }
 
-            self.mesh.write(handle, &instances);
+            self.mesh.write(&handle, &instances);
         }
+
+        true
     }
 }
 
@@ -87,8 +96,16 @@ impl SessionChunkMap {
     }
 
     pub fn update(&mut self, handle: &Handle) {
-        for chunk in self.map.values_mut() {
-            chunk.update(handle);
+        let mut to_remove = vec![];
+
+        for (position, chunk) in self.map.iter_mut() {
+            if !chunk.update(handle) {
+                to_remove.push(*position);
+            }
+        }
+
+        for position in to_remove {
+            self.map.remove(&position);
         }
     }
 

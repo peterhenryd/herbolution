@@ -2,24 +2,21 @@ pub mod chunk;
 pub mod entity;
 pub mod map;
 
+use crate::world::entity::set::EntitySet;
 use std::borrow::Borrow;
 use std::random::random;
-use crossbeam::channel::Sender;
-use crate::handle::Response;
-use crate::world::chunk::map::ChunkMap;
-use crate::world::entity::set::EntitySet;
 
 pub struct World {
     id: WorldId,
-    chunk_map: ChunkMap,
+    chunk_map: chunk::Map,
     pub(crate) entity_set: EntitySet,
 }
 
 impl World {
-    pub fn create(id: impl Into<WorldId>, sender: Sender<Response>) -> Self {
+    pub fn create(id: impl Into<WorldId>, clientbound: ClientboundChunks) -> Self {
         Self {
             id: id.into(),
-            chunk_map: ChunkMap::new(random(), sender),
+            chunk_map: chunk::Map::new(random(), clientbound),
             entity_set: EntitySet::new(),
         }
     }
@@ -30,12 +27,12 @@ impl World {
     }
 
     #[inline]
-    pub fn chunks(&self) -> &ChunkMap {
+    pub fn chunks(&self) -> &chunk::Map {
         &self.chunk_map
     }
 
     #[inline]
-    pub fn chunks_mut(&mut self) -> &mut ChunkMap {
+    pub fn chunks_mut(&mut self) -> &mut chunk::Map {
         &mut self.chunk_map
     }
 

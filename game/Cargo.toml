@@ -4,11 +4,17 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+bimap.workspace = true
+cached.workspace = true
 crossbeam.workspace = true
 hashbrown.workspace = true
 lib = { package = "herbolution-lib", path = "../lib" }
 line_drawing.workspace = true
 math = { package = "herbolution-math", path = "../math" }
 pulz-arena.workspace = true
+rayon.workspace = true
 simdnoise.workspace = true
 tokio = { workspace = true, features = ["rt", "sync"] }
+tracing.workspace = true
+pollster.workspace = true
+oneshot.workspace = true

@@ -8,3 +8,4 @@ bitflags.workspace = true
 lazy_static.workspace = true
 math = { package = "herbolution-math", path = "../math" }
 serde = { workspace = true, features = ["derive"] }
+heapless.workspace = true

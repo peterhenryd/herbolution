@@ -1,29 +1,36 @@
+use crate::channel::ClientboundChunks;
 use crate::world::chunk;
 use crate::world::chunk::cube::CubePosition;
-use crate::world::chunk::generator::ChunkGenerator;
 use crate::world::chunk::material::Material;
-use crate::world::chunk::{linearize, Chunk, ChunkLocalPosition};
-use crate::Response;
-use crossbeam::channel::{bounded, Sender};
+use crate::world::chunk::mesh::Mesh;
+use crate::world::chunk::{generator, linearize, material, Chunk, ChunkLocalPosition};
+use crossbeam::channel::bounded;
 use lib::geometry::cuboid::face::{Face, Faces};
 use lib::geometry::cuboid::Cuboid;
 use line_drawing::{VoxelOrigin, WalkVoxels};
 use math::vector::{vec3f, vec3i, vec3u5, Vec3};
+use rayon::iter::ParallelIterator;
+use rayon::iter::IntoParallelRefMutIterator;
 use std::collections::HashMap;
+use std::sync::Arc;
+use crate::world::chunk::generator::Generator;
 
 #[derive(Debug)]
-pub struct ChunkMap {
+pub struct Map {
     map: HashMap<vec3i, Chunk>,
-    generator: ChunkGenerator,
-    sender: Sender<Response>,
+    generator: generator::Channel,
+    clientbound: ClientboundChunks,
+    materials: material::Registry,
 }
 
-impl ChunkMap {
-    pub fn new(seed: i32, sender: Sender<Response>) -> Self {
+impl Map {
+    pub fn new(seed: i32, clientbound: ClientboundChunks) -> Self {
+        let materials = material::Registry::new();
         Self {
             map: HashMap::new(),
-            generator: ChunkGenerator::new(seed),
-            sender,
+            generator: generator::Channel::new(Arc::new(Generator::new(seed)), materials.clone()),
+            clientbound,
+            materials,
         }
     }
 
@@ -36,7 +43,7 @@ impl ChunkMap {
             for y in min.y..max.y {
                 for z in min.z..max.z {
                     if let Some(material) = self.get_cube_material(CubePosition(Vec3::new(x, y, z))) {
-                        if material.can_collide() {
+                        if material.has_collider {
                             colliders.push(Cuboid::new(
                                 Vec3::new(x as f32 - 0.5, y as f32 - 0.5, z as f32 - 0.5),
                                 Vec3::new(x as f32 + 0.5, y as f32 + 0.5, z as f32 + 0.5),
@@ -56,17 +63,9 @@ impl ChunkMap {
         self.map.get_mut(&position)
     }
 
-    pub fn chunk(&mut self, position: vec3i) -> &mut Chunk {
-        if !self.map.contains_key(&position) {
-            self.load_chunk(position);
-        }
-
-        self.map.get_mut(&position).unwrap()
-    }
-
     pub fn unload_chunk(&mut self, position: vec3i) {
         self.map.remove(&position);
-        let _ = self.sender.try_send(Response::UnloadChunk { position });
+        self.clientbound.send_unload_chunk(position);
     }
 
     pub fn load_chunk(&mut self, position: vec3i) {
@@ -74,19 +73,25 @@ impl ChunkMap {
             return;
         }
 
+        self.generator.request_chunk(position);
+    }
+
+    fn wrap_mesh(&mut self, mesh: Mesh) -> Chunk {
         let (sender, receiver) = bounded(4);
-        let mut chunk = Chunk::new(position, sender);
-        if let Err(e) = self.sender.try_send(Response::LoadChunk { position, receiver }) {
-            eprintln!("Failed to send load chunk request: {:?}", e);
-        }
-        self.generator.generate(&mut chunk);
 
+        let chunk = Chunk::new(mesh, sender);
+        self.clientbound.send_load_chunk(chunk.mesh.position, receiver);
+
+        chunk
+    }
+
+    fn submit_queued(&mut self, mut chunk: Chunk) {
         for offset in Face::entries().map(Face::into_vec3) {
-            let Some(other) = self.get_chunk_mut(position + offset) else { continue };
-            chunk.cull_shared_faces(other);
+            let Some(other) = self.get_chunk_mut(chunk.mesh.position + offset) else { continue };
+            chunk.mesh.cull_shared_faces(&mut other.mesh);
         }
 
-        self.map.insert(position, chunk);
+        self.map.insert(chunk.mesh.position, chunk);
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &Chunk> {
@@ -97,7 +102,7 @@ impl ChunkMap {
         self.map.values_mut()
     }
 
-    pub fn set_cube(&mut self, position: impl Into<CubePosition>, material: Option<Material>) {
+    pub fn set_cube(&mut self, position: impl Into<CubePosition>, material: Option<&Arc<Material>>) {
         let position = ChunkLocalPosition::from(position.into());
         let edges = [
             (Vec3::new(-1, 0, 0), Faces::RIGHT,  position.local.x() == 0),
@@ -123,23 +128,20 @@ impl ChunkMap {
                 Vec3 { x: 0, y: 0, z: 1 } => vec3u5::new(position.local.x(), position.local.y(), 0),
                 _ => unreachable!(),
             };
-            let chunk = self.chunk(neighbor_chunk_coord);
+            let Some(chunk) = self.get_chunk_mut(neighbor_chunk_coord) else { continue };
             let index = linearize(neighbor_local_pos);
-            chunk.data[index].insert_faces(face);
-            chunk.dirtied_positions.push(neighbor_local_pos);
+            chunk.mesh.data.insert_faces_at(index, face);
+            chunk.mesh.updated_pos.push(neighbor_local_pos);
         }
 
-        self.chunk(position.chunk).set(position.local, material);
+        if let Some(chunk) = self.get_chunk_mut(position.chunk) {
+            chunk.mesh.data.set_material(linearize(position.local), material, &mut chunk.mesh.materials);
+        }
     }
 
-    pub fn get_cube_material(&self, position: impl Into<CubePosition>) -> Option<Material> {
+    pub fn get_cube_material(&self, position: impl Into<CubePosition>) -> Option<&Arc<Material>> {
         let position = ChunkLocalPosition::from(position.into());
-        self.get_chunk(position.chunk).map(|x| x.get(position.local)).flatten()
-    }
-
-    pub fn cube_material(&mut self, position: impl Into<CubePosition>) -> Option<Material> {
-        let position = ChunkLocalPosition::from(position.into());
-        self.chunk(position.chunk).get(position.local)
+        self.get_chunk(position.chunk).map(|x| x.mesh.get(position.local)).flatten()
     }
 
     pub fn cast_ray(&mut self, mut origin: vec3f, direction: vec3f, range: f32) -> Option<(vec3i, Face)> {
@@ -153,7 +155,7 @@ impl ChunkMap {
             let norm = Vec3::from(prev) - pos;
 
             if let Some(material) = self.get_cube_material(pos) {
-                if material.can_collide() {
+                if material.has_collider {
                     return Some((pos, Face::from(norm)));
                 }
             }
@@ -163,6 +165,16 @@ impl ChunkMap {
     }
 
     pub fn tick(&mut self) {
+        for mesh in self.generator.dequeue().collect::<Vec<_>>() {
+            let chunk = self.wrap_mesh(mesh);
+            self.submit_queued(chunk);
+        }
+
+        self.map.par_iter_mut()
+            .for_each(|(_, chunk)| {
+                chunk.send_overwrites();
+            });
+
         for chunk in self.map.values_mut() {
             chunk.tick();
         }

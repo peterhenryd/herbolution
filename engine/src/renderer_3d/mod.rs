@@ -77,7 +77,7 @@ impl Renderer3D {
     pub fn render(&self, render_pass: &mut RenderPass, chunk_meshes: impl Iterator<Item = (vec3i, &InstanceGroup)>) {
         let frustum = Frustum::new(&self.camera);
         let chunk_meshes = chunk_meshes
-            .filter(|&(position, _)| frustum.contains_chunk(position, 32))
+            .filter(|&(position, _)| frustum.contains_cube(position, 32))
             .map(|(_, group)| group);
 
         self.pipeline.render(render_pass, chunk_meshes, once(&self.highlight_tile));

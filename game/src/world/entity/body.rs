@@ -1,4 +1,3 @@
-use crate::world::chunk::map::ChunkMap;
 use crate::world::entity::EntityAbilities;
 use lib::geometry::cuboid::Cuboid;
 use math::num::traits::ConstZero;
@@ -7,6 +6,7 @@ use std::ops::Add;
 use math::angle::Rad;
 use math::rotation::Euler;
 use crate::DELTA_TIME;
+use crate::world::chunk;
 
 #[derive(Debug, Clone)]
 pub struct EntityBody {
@@ -33,13 +33,13 @@ impl EntityBody {
         }
     }
 
-    pub fn update(&mut self, chunk_map: &mut ChunkMap, abilities: EntityAbilities) {
+    pub fn update(&mut self, chunk_map: &mut chunk::Map, abilities: EntityAbilities) {
         self.apply_translation(chunk_map, &abilities);
     }
 
     fn apply_translation(
         &mut self,
-        chunk_map: &mut ChunkMap,
+        chunk_map: &mut chunk::Map,
         _: &EntityAbilities,
     ) {
         let (parallel, perpendicular) = self.rotation.yaw_directions();

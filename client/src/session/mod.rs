@@ -1,14 +1,15 @@
+use std::time::Duration;
 use crate::session::debugger::Debugger;
-use engine::gpu::handle::Handle;
 use engine::{Engine, EngineFrame};
-use lib::fps::Fps;
+use lib::counter::IntervalCounter;
 use lib::time::DeltaTime;
 use math::size::Size2;
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
 use winit::window::CursorGrabMode;
+use game::channel::LoadChunkMsg;
 use game::Game;
-use game::handle::{GameHandle, Response};
+use game::handle::GameHandle;
 use crate::session::chunk::SessionChunk;
 use crate::session::player::SessionPlayer;
 use crate::session::world::SessionWorld;
@@ -20,7 +21,7 @@ pub mod world;
 
 pub struct GameSession {
     handle: GameHandle,
-    fps: Fps,
+    fps: IntervalCounter,
     debugger: Debugger,
     delta_time: DeltaTime,
     player: SessionPlayer,
@@ -37,7 +38,7 @@ impl GameSession {
             handle,
             debugger: Debugger::create(size),
             delta_time: DeltaTime::new(),
-            fps: Fps::new(),
+            fps: IntervalCounter::new(Duration::SECOND),
             player,
             is_focused: false,
             world: SessionWorld::new(),
@@ -48,8 +49,16 @@ impl GameSession {
         self.world.chunk_map.update(&engine.gpu.handle);
         self.check_cursor_lock(frame, engine);
 
-        while let Some(response) = self.handle.receive_response() {
-            self.process_response(response, &engine.gpu.handle);
+        while let Some(client) = self.handle.recv_client() {
+            self.player.output_receiver = Some(client);
+        }
+
+        while let Some(LoadChunkMsg { position, receiver }) = self.handle.recv_load_chunk() {
+            self.world.chunk_map.insert(SessionChunk::create(position, &engine.gpu.handle, receiver));
+        }
+
+        while let Some(position) = self.handle.recv_unload_chunk() {
+            self.world.chunk_map.remove(position);
         }
 
         let dt = self.delta_time.next();
@@ -63,22 +72,8 @@ impl GameSession {
         self.debugger.set_size(size);
     }
 
-    pub fn exit(&self) {
+    pub fn exit(&mut self) {
         self.handle.exit();
-    }
-
-    fn process_response(&mut self, response: Response, handle: &Handle) {
-        match response {
-            Response::ClientAdded(output_receiver) => {
-                self.player.output_receiver = Some(output_receiver);
-            }
-            Response::LoadChunk { position, receiver } => {
-                self.world.chunk_map.insert(SessionChunk::create(position, handle, receiver));
-            }
-            Response::UnloadChunk { position } => {
-                self.world.chunk_map.remove(position);
-            }
-        }
     }
 
     fn check_cursor_lock(&mut self, frame: &EngineFrame, engine: &Engine) {

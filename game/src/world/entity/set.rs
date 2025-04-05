@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Formatter};
 use pulz_arena::{Arena, Index, Iter, IterMut};
-use crate::world::chunk::map::ChunkMap;
+use crate::world::chunk;
 use crate::world::entity::Entity;
 
 pub struct EntitySet {
@@ -22,7 +22,7 @@ impl EntitySet {
         EntityId(self.arena.insert(entity))
     }
 
-    pub fn tick(&mut self, chunk_map: &mut ChunkMap) {
+    pub fn tick(&mut self, chunk_map: &mut chunk::Map) {
         for (_, entity) in self.arena.iter_mut() {
             entity.tick(chunk_map);
         }

@@ -222,6 +222,7 @@ impl From<Face> for Faces {
     }
 }
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct PerFace<T> {
     pub top: T,
     pub bottom: T,
@@ -229,6 +230,52 @@ pub struct PerFace<T> {
     pub right: T,
     pub front: T,
     pub back: T,
+}
+
+impl<T> PerFace<T> {
+    pub const fn splat(value: T) -> Self
+    where
+        T: Copy,
+    {
+        Self {
+            top: value,
+            bottom: value,
+            left: value,
+            right: value,
+            front: value,
+            back: value,
+        }
+    }
+
+    pub fn top(mut self, value: T) -> Self {
+        self.top = value;
+        self
+    }
+
+    pub fn bottom(mut self, value: T) -> Self {
+        self.bottom = value;
+        self
+    }
+
+    pub fn left(mut self, value: T) -> Self {
+        self.left = value;
+        self
+    }
+
+    pub fn right(mut self, value: T) -> Self {
+        self.right = value;
+        self
+    }
+
+    pub fn front(mut self, value: T) -> Self {
+        self.front = value;
+        self
+    }
+
+    pub fn back(mut self, value: T) -> Self {
+        self.back = value;
+        self
+    }
 }
 
 impl<T> Index<usize> for PerFace<T> {
@@ -247,60 +294,18 @@ impl<T> Index<usize> for PerFace<T> {
     }
 }
 
-impl<T> PerFace<T> {
-    pub const fn splat(value: T) -> Self
-    where
-        T: Copy,
-    {
-        Self {
-            top: value,
-            bottom: value,
-            left: value,
-            right: value,
-            front: value,
-            back: value,
+impl<T> Index<Face> for PerFace<T> {
+    type Output = T;
+
+    fn index(&self, face: Face) -> &Self::Output {
+        match face {
+            Face::Top => &self.top,
+            Face::Bottom => &self.bottom,
+            Face::Left => &self.left,
+            Face::Right => &self.right,
+            Face::Front => &self.front,
+            Face::Back => &self.back,
         }
-    }
-}
-
-impl<T: Clone> Clone for PerFace<T> {
-    fn clone(&self) -> Self {
-        Self {
-            top: self.top.clone(),
-            bottom: self.bottom.clone(),
-            left: self.left.clone(),
-            right: self.right.clone(),
-            front: self.front.clone(),
-            back: self.back.clone(),
-        }
-    }
-}
-
-impl<T: Copy> Copy for PerFace<T> {}
-
-impl<T: PartialEq> PartialEq for PerFace<T> {
-    fn eq(&self, other: &Self) -> bool {
-        self.top == other.top
-            && self.bottom == other.bottom
-            && self.left == other.left
-            && self.right == other.right
-            && self.front == other.front
-            && self.back == other.back
-    }
-}
-
-impl<T: Eq> Eq for PerFace<T> {}
-
-impl<T: Debug> Debug for PerFace<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("PerFace")
-            .field("top", &self.top)
-            .field("bottom", &self.bottom)
-            .field("left", &self.left)
-            .field("right", &self.right)
-            .field("front", &self.front)
-            .field("back", &self.back)
-            .finish()
     }
 }
 

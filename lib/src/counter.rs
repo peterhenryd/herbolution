@@ -1,29 +1,51 @@
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct Counter {
+use std::time::Duration;
+use heapless::HistoryBuffer;
+
+pub struct IntervalCounter {
+    interval: Duration,
+    acc: Duration,
     current: u64,
-    interval: u64,
+    last: u64,
+    buffer: HistoryBuffer<u64, 16>,
+    avg: u64,
 }
 
-impl Counter {
-    pub fn new(interval: u64) -> Self {
+impl IntervalCounter {
+    pub fn new(interval: Duration) -> Self {
         Self {
-            current: 0,
             interval,
+            acc: Duration::ZERO,
+            current: 0,
+            last: 0,
+            buffer: HistoryBuffer::new(),
+            avg: 0,
         }
     }
 
-    pub fn set_interval(&mut self, interval: u64) {
-        self.interval = interval;
+    pub fn add_delta(&mut self, dt: Duration) {
+        self.acc += dt;
     }
 
-    pub fn check(&mut self) -> bool {
+    pub fn update(&mut self, dt: Duration) {
+        self.acc += dt;
         self.current += 1;
 
-        if self.current >= self.interval {
+        if self.acc >= self.interval {
+            self.last = self.current;
             self.current = 0;
-            true
-        } else {
-            false
+            self.acc -= self.interval;
+            self.buffer.write(self.last);
+            self.avg = self.buffer.iter().sum::<u64>() / self.buffer.len() as u64;
         }
+    }
+
+    #[inline]
+    pub fn last(&self) -> u64 {
+        self.last
+    }
+
+    #[inline]
+    pub fn avg(&self) -> u64 {
+        self.avg
     }
 }

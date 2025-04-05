@@ -1,11 +1,112 @@
-use crate::world::chunk;
-use crate::world::chunk::ChunkLocalPosition;
+use crate::world::chunk::{material, ChunkLocalPosition, Material};
 use lib::geometry::cuboid::face::Faces;
 use lib::light::FacialLightLevels;
 use math::num::ToPrimitive;
 use math::vector::vec3i;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
+use std::sync::Arc;
+
+#[derive(Debug)]
+pub enum DynamicCubeGrid {
+    U8(CubeGrid<u8>),
+    U16(CubeGrid<u16>),
+}
+
+impl DynamicCubeGrid {
+    pub fn new() -> Self {
+        DynamicCubeGrid::U8(CubeGrid::new(0))
+    }
+
+    pub fn upsize(&mut self) {
+        let Self::U8(grid) = self else { return };
+        let mut data = [Cube::new(0); super::SIZE];
+
+        for i in 0..super::SIZE {
+            data[i] = Cube {
+                material: grid.data[i].material as u16,
+                dependent_data: grid.data[i].dependent_data,
+            }
+        }
+
+        *self = Self::U16(CubeGrid { data: Box::new(data) });
+    }
+
+    pub fn set_material_index(&mut self, index: usize, material: u16) {
+        match self {
+            Self::U8(grid) => grid.data[index].material = material as u8,
+            Self::U16(grid) => grid.data[index].material = material,
+        }
+    }
+
+    pub fn set_material(&mut self, index: usize, material: Option<&Arc<Material>>, palette: &mut material::Palette) {
+        let id = palette.get_or_insert(material);
+        self.set_material_index(index, id);
+    }
+
+    pub fn get_material_index(&self, index: usize) -> u16 {
+        match self {
+            Self::U8(grid) => grid.data[index].material as u16,
+            Self::U16(grid) => grid.data[index].material,
+        }
+    }
+
+    pub fn get_material(&self, index: usize, palette: &material::Palette) -> Option<&Arc<Material>> {
+        palette.get_by_index(self.get_material_index(index))
+    }
+
+    pub fn insert_faces_at(&mut self, index: usize, faces: Faces) {
+        match self {
+            Self::U8(grid) => grid.data[index].insert_faces(faces),
+            Self::U16(grid) => grid.data[index].insert_faces(faces),
+        }
+    }
+
+    pub fn remove_faces_at(&mut self, index: usize, faces: Faces) {
+        match self {
+            Self::U8(grid) => grid.data[index].remove_faces(faces),
+            Self::U16(grid) => grid.data[index].remove_faces(faces),
+        }
+    }
+
+    pub fn get_faces_at(&self, index: usize) -> Faces {
+        match self {
+            Self::U8(grid) => grid.data[index].faces(),
+            Self::U16(grid) => grid.data[index].faces(),
+        }
+    }
+
+    pub fn set_faces_at(&mut self, index: usize, faces: Faces) {
+        match self {
+            Self::U8(grid) => grid.data[index].set_opaque(faces),
+            Self::U16(grid) => grid.data[index].set_opaque(faces),
+        }
+    }
+
+    pub fn get_cube_at(&self, index: usize) -> Cube<u16> {
+        match self {
+            Self::U8(grid) => Cube {
+                material: grid.data[index].material as u16,
+                dependent_data: grid.data[index].dependent_data,
+            },
+            Self::U16(grid) => grid.data[index],
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct CubeGrid<M> {
+    data: Box<[Cube<M>; super::SIZE]>,
+}
+
+impl<M> CubeGrid<M> {
+    pub fn new(default: M) -> Self
+    where M: Copy {
+        Self {
+            data: Box::new([Cube::new(default); super::SIZE]),
+        }
+    }
+}
 
 #[repr(C)]
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -58,7 +159,7 @@ impl From<vec3i> for CubePosition {
 
 impl From<ChunkLocalPosition> for CubePosition {
     fn from(position: ChunkLocalPosition) -> Self {
-        CubePosition(position.chunk * chunk::LENGTH as i32 + position.local.cast().unwrap())
+        CubePosition(position.chunk * super::LENGTH as i32 + position.local.cast().unwrap())
     }
 }
 

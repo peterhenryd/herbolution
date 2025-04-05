@@ -8,17 +8,20 @@ pub fn client_input_channel() -> (ClientInputSender, ClientInputReceiver) {
     let (movement_command_tx, movement_command_rx) = bounded(1);
     let (mouse_movements_tx, mouse_movements_rx) = bounded(4);
     let (action_state_tx, action_state_rx) = bounded(1);
+    let (render_distance_tx, render_distance_rx) = bounded(1);
 
     (
         ClientInputSender {
             movement_command: movement_command_tx,
             mouse_movements: mouse_movements_tx,
             action_state: action_state_tx,
+            render_distance: render_distance_tx,
         },
         ClientInputReceiver {
             movement_command: movement_command_rx,
             mouse_movements: mouse_movements_rx,
             action_state: action_state_rx,
+            render_distance: render_distance_rx,
         }
     )
 }
@@ -27,6 +30,7 @@ pub struct ClientInputSender {
     movement_command: Sender<vec3i8>,
     mouse_movements: Sender<vec2d>,
     action_state: Sender<ActionState>,
+    render_distance: Sender<bool>,
 }
 
 impl ClientInputSender {
@@ -41,12 +45,21 @@ impl ClientInputSender {
     pub fn set_action_state(&self, action_state: ActionState) {
         let _ = self.action_state.try_send(action_state);
     }
+
+    pub fn increase_render_distance(&self) {
+        let _ = self.render_distance.try_send(true);
+    }
+
+    pub fn decrease_render_distance(&self) {
+        let _ = self.render_distance.try_send(false);
+    }
 }
 
 pub struct ClientInputReceiver {
     movement_command: Receiver<vec3i8>,
     mouse_movements: Receiver<vec2d>,
     action_state: Receiver<ActionState>,
+    render_distance: Receiver<bool>,
 }
 
 impl ClientInputReceiver {
@@ -67,5 +80,9 @@ impl ClientInputReceiver {
         if let Ok(action_state) = self.action_state.try_recv() {
             controller.set_action_state(action_state);
         }
+    }
+
+    pub fn dequeue_render_distance_command(&mut self) -> Option<bool> {
+        self.render_distance.try_recv().ok()
     }
 }

@@ -1,8 +1,9 @@
-use crate::world::chunk::map::ChunkMap;
 use crate::world::entity::body::EntityBody;
 use crate::world::entity::logic::EntityLogic;
 use crate::world::entity::{EntityAbilities, EntityData, EntityTarget};
 use crate::client::output::ClientOutputSender;
+use crate::world::chunk;
+use crate::world::chunk::material::Material;
 
 #[derive(Debug)]
 pub struct PlayerLogic {
@@ -18,7 +19,7 @@ impl PlayerLogic {
 }
 
 impl EntityLogic for PlayerLogic {
-    fn tick(&mut self, data: &mut EntityData, chunk_map: &mut ChunkMap) {
+    fn tick(&mut self, data: &mut EntityData, chunk_map: &mut chunk::Map) {
         self.controller.tick(chunk_map, &mut data.body, &data.abilities);
     }
 }
@@ -47,17 +48,18 @@ impl PlayerController {
 
     pub fn tick(
         &mut self,
-        chunk_map: &mut ChunkMap,
+        chunk_map: &mut chunk::Map,
         body: &mut EntityBody,
         _: &EntityAbilities,
     ) {
         self.apply_target(body, chunk_map);
     }
 
-    fn apply_target(&mut self, body: &EntityBody, chunk_map: &mut ChunkMap) {
+    fn apply_target(&mut self, body: &EntityBody, chunk_map: &mut chunk::Map) {
         let origin = body.eye_position();
         let direction = body.rotation.into_view_center();
-        let position = chunk_map.cast_ray(origin, direction, 5.0).map(|(x, _)| x);
+        let ray = chunk_map.cast_ray(origin, direction, 5.0);
+        let position = ray.map(|(x, _)| x);
         let target = position.map(EntityTarget::Cube);
 
         if target != self.prev_target {
@@ -67,13 +69,18 @@ impl PlayerController {
 
         let Some(position) = position else { return; };
 
-        if !self.action_state.is_left_hand_active {
-            return;
+        if self.action_state.is_left_hand_active {
+            self.action_state.is_left_hand_active = false;
+
+            chunk_map.set_cube(position, None);
         }
 
-        self.action_state.is_left_hand_active = false;
+        if self.action_state.is_right_hand_active {
+            let Some((_, face)) = ray else { return };
+            self.action_state.is_right_hand_active = false;
 
-        chunk_map.set_cube(position, None);
+            chunk_map.set_cube(position + face.into_vec3(), Some(Material::Stone));
+        }
     }
 }
 

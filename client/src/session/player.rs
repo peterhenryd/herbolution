@@ -94,5 +94,12 @@ impl SessionPlayer {
         if movement.x != 0.0 || movement.y != 0.0 {
             self.input_sender.add_mouse_movement(movement);
         }
+
+        if frame.key_events.contains(&KeyCode::ArrowUp) {
+            self.input_sender.increase_render_distance();
+        }
+        if frame.key_events.contains(&KeyCode::ArrowDown) {
+            self.input_sender.decrease_render_distance();
+        }
     }
 }

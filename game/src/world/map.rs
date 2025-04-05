@@ -1,24 +1,23 @@
-use crossbeam::channel::Sender;
 use hashbrown::HashMap;
-use crate::Response;
+use crate::channel::ClientboundChunks;
 use crate::world::{World, WorldId};
 
 pub struct WorldMap {
-    sender: Sender<Response>,
+    channel: ClientboundChunks,
     map: HashMap<WorldId, World>,
 }
 
 impl WorldMap {
-    pub fn new(sender: Sender<Response>) -> Self {
+    pub fn new(channel: ClientboundChunks) -> Self {
         Self {
             map: HashMap::new(),
-            sender
+            channel,
         }
     }
 
     pub fn primary(&mut self) -> &mut World {
         if !self.map.contains_key("world") {
-            self.insert(World::create("world", self.sender.clone()));
+            self.insert(World::create("world", self.channel.clone()));
         }
 
         self.map.get_mut("world").unwrap()

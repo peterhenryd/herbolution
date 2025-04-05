@@ -1,6 +1,7 @@
-extern crate herbolution_client as client;
-
 #[tokio::main]
-async fn main() {
-    client::start().expect("Failed to start game");
+async fn main() -> anyhow::Result<()> {
+    tracing_subscriber::fmt::try_init()?;
+    herbolution_client::start()?;
+
+    Ok(())
 }
