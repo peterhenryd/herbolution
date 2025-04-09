@@ -2,15 +2,18 @@ use math::vector::vec2d;
 use smallvec::SmallVec;
 use std::collections::HashSet;
 use std::mem::take;
+use winit::event::Modifiers;
 pub use winit::event::MouseButton;
 pub use winit::keyboard::KeyCode;
+use winit::keyboard::ModifiersKeyState;
 
 #[derive(Default)]
 pub struct Input {
     active_keys: HashSet<KeyCode>,
     active_mouse_buttons: HashSet<MouseButton>,
-    mouse_position: vec2d,
+    mouse_pos: vec2d,
     frame: InputFrame,
+    modifiers: Modifiers,
     is_focused: bool,
 }
 
@@ -41,7 +44,7 @@ impl Input {
         if self.active_mouse_buttons.contains(&button) {
             self.frame.click_events.push(ClickEvent {
                 button,
-                position: self.mouse_position,
+                pos: self.mouse_pos,
             });
         }
 
@@ -52,8 +55,8 @@ impl Input {
         self.active_mouse_buttons.contains(&button)
     }
 
-    pub fn set_mouse_position(&mut self, position: vec2d) {
-        self.mouse_position = position;
+    pub fn set_mouse_pos(&mut self, pos: vec2d) {
+        self.mouse_pos = pos;
     }
 
     pub fn add_mouse_movement(&mut self, delta: vec2d) {
@@ -72,6 +75,42 @@ impl Input {
         self.is_focused = is_focused;
     }
 
+    pub fn set_modifiers(&mut self, modifiers: Modifiers) {
+        self.modifiers = modifiers;
+    }
+
+    pub fn is_left_control_active(&self) -> bool {
+        self.modifiers.lcontrol_state() == ModifiersKeyState::Pressed
+    }
+
+    pub fn is_right_control_active(&self) -> bool {
+        self.modifiers.rcontrol_state() == ModifiersKeyState::Pressed
+    }
+
+    pub fn is_left_shift_active(&self) -> bool {
+        self.modifiers.lshift_state() == ModifiersKeyState::Pressed
+    }
+
+    pub fn is_right_shift_active(&self) -> bool {
+        self.modifiers.rshift_state() == ModifiersKeyState::Pressed
+    }
+
+    pub fn is_left_alt_active(&self) -> bool {
+        self.modifiers.lalt_state() == ModifiersKeyState::Pressed
+    }
+
+    pub fn is_right_alt_active(&self) -> bool {
+        self.modifiers.ralt_state() == ModifiersKeyState::Pressed
+    }
+
+    pub fn is_left_super_active(&self) -> bool {
+        self.modifiers.lsuper_state() == ModifiersKeyState::Pressed
+    }
+
+    pub fn is_right_super_active(&self) -> bool {
+        self.modifiers.rsuper_state() == ModifiersKeyState::Pressed
+    }
+
     pub fn is_focused(&self) -> bool {
         self.is_focused
     }
@@ -88,5 +127,5 @@ pub struct InputFrame {
 #[derive(Debug, Copy, Clone)]
 pub struct ClickEvent {
     pub button: MouseButton,
-    pub position: vec2d,
+    pub pos: vec2d,
 }

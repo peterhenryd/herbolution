@@ -7,15 +7,22 @@ use winit::keyboard::PhysicalKey;
 use winit::window::WindowId;
 use math::size::Size2;
 use math::vector::Vec2;
+use crate::Options;
 
-#[derive(Default)]
 pub struct Handler {
+    options: Options,
     app: Option<App>,
+}
+
+impl Handler {
+    pub fn new(options: Options) -> Self {
+        Self { options, app: None }
+    }
 }
 
 impl ApplicationHandler for Handler {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        self.app = Some(App::new(event_loop));
+        self.app = Some(App::new(event_loop, &self.options.data_dir));
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _: WindowId, event: WindowEvent) {
@@ -30,13 +37,16 @@ impl ApplicationHandler for Handler {
                 event_loop.exit();
             }
             WindowEvent::CursorMoved { position: PhysicalPosition { x, y }, .. } => {
-                app.engine.input.set_mouse_position(Vec2::new(x, y));
+                app.engine.input.set_mouse_pos(Vec2::new(x, y));
             }
             WindowEvent::MouseInput { button, state, .. } => {
                 app.engine.input.set_mouse_button_activity(button, state.is_pressed());
             }
             WindowEvent::MouseWheel { delta: MouseScrollDelta::PixelDelta(delta), .. } => {
                 app.engine.input.add_mouse_scroll(delta.y as f32);
+            }
+            WindowEvent::ModifiersChanged(modifiers) => {
+                app.engine.input.set_modifiers(modifiers);
             }
             WindowEvent::KeyboardInput {
                 event: KeyEvent {

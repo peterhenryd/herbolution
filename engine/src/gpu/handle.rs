@@ -41,7 +41,7 @@ impl Handle {
         })
     }
 
-    pub fn create_render_pipeline(&self, bind_group_set: &BindGroupSet, shader: ShaderModuleDescriptor, vertex_buffers: &[VertexBufferLayout], format: TextureFormat) -> RenderPipeline {
+    pub fn create_render_pipeline(&self, face: Face, bind_group_set: &BindGroupSet, shader: ShaderModuleDescriptor, vertex_buffers: &[VertexBufferLayout], format: TextureFormat, depth: bool) -> RenderPipeline {
         let bind_group_layouts = bind_group_set.layouts().collect::<Vec<_>>();
         let layout = self.device
             .create_pipeline_layout(&PipelineLayoutDescriptor {
@@ -64,14 +64,14 @@ impl Handle {
                 topology: PrimitiveTopology::TriangleList,
                 strip_index_format: None,
                 front_face: FrontFace::Ccw,
-                cull_mode: Some(Face::Front),
+                cull_mode: Some(face),
                 unclipped_depth: false,
                 polygon_mode: PolygonMode::Fill,
                 conservative: false,
             },
             depth_stencil: Some(DepthStencilState {
                 format: TextureFormat::Depth32Float,
-                depth_write_enabled: true,
+                depth_write_enabled: depth,
                 depth_compare: CompareFunction::Less,
                 stencil: StencilState::default(),
                 bias: DepthBiasState::default(),
@@ -84,7 +84,18 @@ impl Handle {
                 targets: &[
                     Some(ColorTargetState {
                         format,
-                        blend: Some(BlendState::REPLACE),
+                        blend: Some(BlendState {
+                            color: BlendComponent {
+                                src_factor: BlendFactor::SrcAlpha,
+                                dst_factor: BlendFactor::OneMinusSrcAlpha,
+                                operation: BlendOperation::Add,
+                            },
+                            alpha: BlendComponent {
+                                src_factor: BlendFactor::One,
+                                dst_factor: BlendFactor::OneMinusSrcAlpha,
+                                operation: BlendOperation::Add,
+                            },
+                        }),
                         write_mask: ColorWrites::ALL,
                     })
                 ],

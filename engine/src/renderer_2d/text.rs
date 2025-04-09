@@ -91,11 +91,11 @@ impl TextRenderer {
             right: width as i32,
             bottom: height as i32,
         };
-        for (i, (_, TextSection { position, .. })) in frame.sections.iter().enumerate() {
+        for (i, (_, TextSection { pos, .. })) in frame.sections.iter().enumerate() {
             text_areas.push(TextArea {
                 buffer: &buffers[i],
-                left: position.x,
-                top: position.y,
+                left: pos.x,
+                top: pos.y,
                 scale: 1.0,
                 bounds,
                 default_color: Color::rgb(255, 255, 255),
@@ -139,7 +139,7 @@ impl TextRenderer {
 
 #[derive(Debug)]
 pub struct TextSection {
-    pub position: vec2f,
+    pub pos: vec2f,
     pub content: String,
     pub font_size: f32,
     pub line_height: f32,

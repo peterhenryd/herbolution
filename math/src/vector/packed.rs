@@ -1,3 +1,4 @@
+use std::ops::Sub;
 use crate::vector::{vec3u8, Vec3};
 use bytemuck::{Pod, Zeroable};
 use num::NumCast;
@@ -69,6 +70,18 @@ impl<T: NumCast> From<Vec3<T>> for vec3u5 {
             NumCast::from(vec.x).unwrap(),
             NumCast::from(vec.y).unwrap(),
             NumCast::from(vec.z).unwrap(),
+        )
+    }
+}
+
+impl Sub for vec3u5 {
+    type Output = vec3u5;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        vec3u5::new(
+            self.x() - rhs.x(),
+            self.y() - rhs.y(),
+            self.z() - rhs.z(),
         )
     }
 }

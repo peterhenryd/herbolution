@@ -1,6 +1,6 @@
 use math::num::Float;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Plane<T> {
     pub a: T,
     pub b: T,
@@ -25,7 +25,8 @@ impl<T> Plane<T> {
     }
 }
 
-impl<T: Default> Default for Plane<T> {
+impl<T> Default for Plane<T>
+where T: Default {
     fn default() -> Self {
         Self {
             a: T::default(),

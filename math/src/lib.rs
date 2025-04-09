@@ -9,4 +9,4 @@ pub mod matrix;
 pub mod rotation;
 pub mod size;
 pub mod vector;
-pub mod projection;
+pub mod proj;

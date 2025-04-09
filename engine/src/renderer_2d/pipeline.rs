@@ -1,5 +1,5 @@
-use wgpu::{include_wgsl, RenderPass, RenderPipeline, TextureFormat};
-use math::projection::orthographic::Orthographic;
+use wgpu::{include_wgsl, Face, RenderPass, RenderPipeline, TextureFormat};
+use math::proj::Orthographic;
 use crate::camera::Camera;
 use crate::gpu::handle::Handle;
 use crate::gpu::mem::bind_group::BindGroupSet;
@@ -16,10 +16,12 @@ impl Pipeline2D {
             .build_group(|builder| builder.with_entries(camera))
             .finish();
         let render_pipeline = handle.create_render_pipeline(
+            Face::Back,
             &bind_group_set,
             include_wgsl!("shader.wgsl"),
             &super::vertex::buffer_layouts(),
-            format
+            format,
+            true
         );
 
         Self {

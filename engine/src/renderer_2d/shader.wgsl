@@ -1,21 +1,21 @@
 @group(0) @binding(0) var<uniform> camera: Camera;
 struct Camera {
     view_projection_matrix: mat4x4<f32>,
-    world_position: vec3f,
+    world_pos: vec3f,
 }
 
 struct Vertex {
-    @location(0) position: vec2f,
+    @location(0) pos: vec2f,
 }
 
 struct Fragment {
-    @builtin(position) clip_position: vec4f,
+    @builtin(position) clip_pos: vec4f,
 }
 
 @vertex
 fn vs(vert: Vertex) -> Fragment {
     var frag: Fragment;
-    frag.clip_position = camera.view_projection_matrix * vec4f(vert.position, 0.0, 1.0);
+    frag.clip_pos = camera.view_projection_matrix * vec4f(vert.pos, 0.0, 1.0);
     return frag;
 }
 

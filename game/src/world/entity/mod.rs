@@ -59,57 +59,57 @@ impl EntityLogicVariant {
 
 #[derive(Debug)]
 pub struct ChunkLoader {
-    pub(crate) prev_chunk_position: vec3i,
-    owned_chunk_positions: HashSet<vec3i>,
+    pub(crate) prev_chunk_pos: vec3i,
+    owned_chunk_pos: HashSet<vec3i>,
 }
 
 impl ChunkLoader {
     pub fn new() -> Self {
         Self {
-            prev_chunk_position: Vec3::ZERO,
-            owned_chunk_positions: HashSet::new(),
+            prev_chunk_pos: Vec3::ZERO,
+            owned_chunk_pos: HashSet::new(),
         }
     }
 
-    pub fn reload_radial_chunks(&mut self, position: vec3f, chunk_map: &mut ChunkMap) {
-        let chunk_position = position.cast().unwrap() / chunk::LENGTH as i32;
+    pub fn reload_radial_chunks(&mut self, pos: vec3f, chunk_map: &mut ChunkMap) {
+        let chunk_pos = pos.cast().unwrap() / chunk::LENGTH as i32;
 
-        if chunk_position == self.prev_chunk_position {
+        if chunk_pos == self.prev_chunk_pos {
             return;
         } else {
-            self.prev_chunk_position = chunk_position;
+            self.prev_chunk_pos = chunk_pos;
         }
 
-        let positions = rhombus(chunk_position, 4);
+        let radial_pos = rhombus(chunk_pos, 8);
 
-        let remove_positions = self.owned_chunk_positions.iter()
-            .filter(|&position| !positions.contains(position));
-        for position in remove_positions {
-            chunk_map.unload_chunk(*position);
+        let remove_pos = self.owned_chunk_pos.iter()
+            .filter(|&pos| !radial_pos.contains(pos));
+        for pos in remove_pos {
+            chunk_map.unload_chunk(*pos);
         }
 
-        for &position in &positions {
-            chunk_map.load_chunk(position);
+        for &pos in &radial_pos {
+            chunk_map.load_chunk(pos);
         }
 
-        self.owned_chunk_positions = positions;
+        self.owned_chunk_pos = radial_pos;
     }
 }
 
 fn rhombus(center: vec3i, radius: i32) -> HashSet<vec3i> {
-    let mut positions = HashSet::new();
+    let mut pos = HashSet::new();
 
     for x in -radius..=radius {
         for y in -radius / 2..=radius / 2 {
             for z in -radius..=radius {
                 if x.abs() + z.abs() <= radius {
-                    positions.insert(center + vec3i::new(x, y, z));
+                    pos.insert(center + vec3i::new(x, y, z));
                 }
             }
         }
     }
 
-    positions
+    pos
 }
 
 impl From<PlayerLogic> for EntityLogicVariant {

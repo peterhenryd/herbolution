@@ -5,7 +5,7 @@ use crate::gpu::surface::Surface;
 use math::size::Size2;
 use std::sync::Arc;
 use thiserror::Error;
-pub use wgpu::{CreateSurfaceError, RequestDeviceError, SurfaceError, TextureFormat};
+pub use wgpu::{CreateSurfaceError, RequestDeviceError, SurfaceError, TextureFormat, Face};
 use wgpu::Instance;
 use winit::dpi::PhysicalSize;
 use winit::window::Window;
@@ -39,10 +39,6 @@ impl Gpu {
     pub fn set_size(&mut self, size: Size2<u32>) {
         self.surface.set_size(&self.handle, size);
         self.depth_texture.set_size(&self.handle, size);
-    }
-
-    pub fn size(&self) -> Size2<u32> {
-        self.surface.size()
     }
 
     pub fn create_frame(&self) -> Result<GpuFrame, GpuError> {

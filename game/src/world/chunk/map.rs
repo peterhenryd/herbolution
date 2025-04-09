@@ -1,29 +1,31 @@
 use crate::world::chunk;
-use crate::world::chunk::cube::CubePosition;
-use crate::world::chunk::generator::ChunkGenerator;
+use crate::world::chunk::channel::ServerChunkChannel;
+use crate::world::chunk::cube::CubePos;
+use crate::world::chunk::generator::Generator;
 use crate::world::chunk::material::Material;
-use crate::world::chunk::{linearize, Chunk, ChunkLocalPosition};
-use crate::Response;
-use crossbeam::channel::{bounded, Sender};
+use crate::world::chunk::{generator, linearize, Chunk, ChunkLocalPos};
+use crossbeam::channel::bounded;
 use lib::geometry::cuboid::face::{Face, Faces};
 use lib::geometry::cuboid::Cuboid;
 use line_drawing::{VoxelOrigin, WalkVoxels};
 use math::vector::{vec3f, vec3i, vec3u5, Vec3};
 use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::task;
 
 #[derive(Debug)]
 pub struct ChunkMap {
-    map: HashMap<vec3i, Chunk>,
-    generator: ChunkGenerator,
-    sender: Sender<Response>,
+    map: HashMap<vec3i, Arc<Chunk>>,
+    generator: generator::Channel,
+    channel: ServerChunkChannel,
 }
 
 impl ChunkMap {
-    pub fn new(seed: i32, sender: Sender<Response>) -> Self {
+    pub fn new(seed: i32, channel: ServerChunkChannel) -> Self {
         Self {
             map: HashMap::new(),
-            generator: ChunkGenerator::new(seed),
-            sender,
+            generator: generator::Channel::new(Arc::new(Generator::new(seed))),
+            channel,
         }
     }
 
@@ -35,7 +37,7 @@ impl ChunkMap {
         for x in min.x..max.x {
             for y in min.y..max.y {
                 for z in min.z..max.z {
-                    if let Some(material) = self.get_cube_material(CubePosition(Vec3::new(x, y, z))) {
+                    if let Some(material) = self.get_cube_material(CubePos(Vec3::new(x, y, z))) {
                         if material.can_collide() {
                             colliders.push(Cuboid::new(
                                 Vec3::new(x as f32 - 0.5, y as f32 - 0.5, z as f32 - 0.5),
@@ -48,64 +50,40 @@ impl ChunkMap {
         }
     }
 
-    pub fn get_chunk(&self, position: vec3i) -> Option<&Chunk> {
-        self.map.get(&position)
+    pub fn get_chunk(&self, pos: vec3i) -> Option<&Chunk> {
+        self.map.get(&pos).map(|x| x.as_ref())
     }
 
-    pub fn get_chunk_mut(&mut self, position: vec3i) -> Option<&mut Chunk> {
-        self.map.get_mut(&position)
+    pub fn get_chunk_mut(&self, pos: vec3i) -> Option<Arc<Chunk>> {
+        self.map.get(&pos).cloned()
     }
 
-    pub fn chunk(&mut self, position: vec3i) -> &mut Chunk {
-        if !self.map.contains_key(&position) {
-            self.load_chunk(position);
-        }
-
-        self.map.get_mut(&position).unwrap()
+    pub fn unload_chunk(&mut self, pos: vec3i) {
+        self.map.remove(&pos);
+        self.channel.send_unload(pos);
     }
 
-    pub fn unload_chunk(&mut self, position: vec3i) {
-        self.map.remove(&position);
-        let _ = self.sender.try_send(Response::UnloadChunk { position });
-    }
-
-    pub fn load_chunk(&mut self, position: vec3i) {
-        if self.map.contains_key(&position) {
+    pub fn load_chunk(&mut self, pos: vec3i) {
+        if self.map.contains_key(&pos) {
             return;
         }
 
-        let (sender, receiver) = bounded(4);
-        let mut chunk = Chunk::new(position, sender);
-        if let Err(e) = self.sender.try_send(Response::LoadChunk { position, receiver }) {
-            eprintln!("Failed to send load chunk request: {:?}", e);
-        }
-        self.generator.generate(&mut chunk);
-
-        for offset in Face::entries().map(Face::into_vec3) {
-            let Some(other) = self.get_chunk_mut(position + offset) else { continue };
-            chunk.cull_shared_faces(other);
-        }
-
-        self.map.insert(position, chunk);
+        self.generator.request_chunk(pos);
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &Chunk> {
+    pub fn iter(&self) -> impl Iterator<Item = &Arc<Chunk>> {
         self.map.values()
     }
 
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Chunk> {
-        self.map.values_mut()
-    }
-
-    pub fn set_cube(&mut self, position: impl Into<CubePosition>, material: Option<Material>) {
-        let position = ChunkLocalPosition::from(position.into());
+    pub fn set_cube(&mut self, pos: impl Into<CubePos>, material: Option<Material>) {
+        let pos = ChunkLocalPos::from(pos.into());
         let edges = [
-            (Vec3::new(-1, 0, 0), Faces::RIGHT,  position.local.x() == 0),
-            (Vec3::new(1, 0, 0),  Faces::LEFT,   position.local.x() == chunk::LENGTH as u8 - 1),
-            (Vec3::new(0, -1, 0), Faces::TOP,    position.local.y() == 0),
-            (Vec3::new(0, 1, 0),  Faces::BOTTOM, position.local.y() == chunk::LENGTH as u8 - 1),
-            (Vec3::new(0, 0, -1), Faces::FRONT,  position.local.z() == 0),
-            (Vec3::new(0, 0, 1),  Faces::BACK,   position.local.z() == chunk::LENGTH as u8 - 1),
+            (Vec3::new(-1, 0, 0), Faces::RIGHT, pos.local.x() == 0),
+            (Vec3::new(1, 0, 0), Faces::LEFT, pos.local.x() == chunk::LENGTH as u8 - 1),
+            (Vec3::new(0, -1, 0), Faces::TOP, pos.local.y() == 0),
+            (Vec3::new(0, 1, 0), Faces::BOTTOM, pos.local.y() == chunk::LENGTH as u8 - 1),
+            (Vec3::new(0, 0, -1), Faces::FRONT, pos.local.z() == 0),
+            (Vec3::new(0, 0, 1), Faces::BACK, pos.local.z() == chunk::LENGTH as u8 - 1),
         ];
 
         for (offset, face, condition) in edges {
@@ -113,33 +91,36 @@ impl ChunkMap {
                 continue;
             }
 
-            let neighbor_chunk_coord = position.chunk + offset;
+            let neighbor_chunk_coord = pos.chunk + offset;
             let neighbor_local_pos = match offset {
-                Vec3 { x: -1, y: 0, z: 0 } => vec3u5::new(chunk::LENGTH as u8 -1, position.local.y(), position.local.z()),
-                Vec3 { x: 1, y: 0, z: 0 } => vec3u5::new(0, position.local.y(), position.local.z()),
-                Vec3 { x: 0, y: -1, z: 0 } => vec3u5::new(position.local.x(), chunk::LENGTH as u8 -1, position.local.z()),
-                Vec3 { x: 0, y: 1, z: 0 } => vec3u5::new(position.local.x(), 0, position.local.z()),
-                Vec3 { x: 0, y: 0, z: -1 } => vec3u5::new(position.local.x(), position.local.y(), chunk::LENGTH as u8 -1),
-                Vec3 { x: 0, y: 0, z: 1 } => vec3u5::new(position.local.x(), position.local.y(), 0),
+                Vec3 { x: -1, y: 0, z: 0 } => vec3u5::new(chunk::LENGTH as u8 -1, pos.local.y(), pos.local.z()),
+                Vec3 { x: 1, y: 0, z: 0 } => vec3u5::new(0, pos.local.y(), pos.local.z()),
+                Vec3 { x: 0, y: -1, z: 0 } => vec3u5::new(pos.local.x(), chunk::LENGTH as u8 -1, pos.local.z()),
+                Vec3 { x: 0, y: 1, z: 0 } => vec3u5::new(pos.local.x(), 0, pos.local.z()),
+                Vec3 { x: 0, y: 0, z: -1 } => vec3u5::new(pos.local.x(), pos.local.y(), chunk::LENGTH as u8 -1),
+                Vec3 { x: 0, y: 0, z: 1 } => vec3u5::new(pos.local.x(), pos.local.y(), 0),
                 _ => unreachable!(),
             };
-            let chunk = self.chunk(neighbor_chunk_coord);
+            let Some(chunk) = self.get_chunk_mut(neighbor_chunk_coord) else { continue };
             let index = linearize(neighbor_local_pos);
-            chunk.data[index].insert_faces(face);
-            chunk.dirtied_positions.push(neighbor_local_pos);
+            let Ok(mut mesh) = chunk.mesh.try_write() else { continue };
+            mesh.data[index].insert_faces(face);
+            mesh.dirtied_pos.push(neighbor_local_pos);
         }
 
-        self.chunk(position.chunk).set(position.local, material);
+        let Some(chunk) = self.get_chunk_mut(pos.chunk) else { return };
+        if let Ok(mut mesh) = chunk.mesh.try_write() {
+            mesh.set(pos.local, material);
+        }
     }
 
-    pub fn get_cube_material(&self, position: impl Into<CubePosition>) -> Option<Material> {
-        let position = ChunkLocalPosition::from(position.into());
-        self.get_chunk(position.chunk).map(|x| x.get(position.local)).flatten()
-    }
-
-    pub fn cube_material(&mut self, position: impl Into<CubePosition>) -> Option<Material> {
-        let position = ChunkLocalPosition::from(position.into());
-        self.chunk(position.chunk).get(position.local)
+    pub fn get_cube_material(&self, pos: impl Into<CubePos>) -> Option<Material> {
+        let pos = ChunkLocalPos::from(pos.into());
+        self.get_chunk(pos.chunk)
+            .map(|x| x.mesh.try_read().ok())
+            .flatten()
+            .map(|x| x.get(pos.local))
+            .flatten()
     }
 
     pub fn cast_ray(&mut self, mut origin: vec3f, direction: vec3f, range: f32) -> Option<(vec3i, Face)> {
@@ -162,8 +143,34 @@ impl ChunkMap {
         None
     }
 
+    fn load_generated(&mut self) {
+        for mesh in self.generator.dequeue() {
+            let (sender, receiver) = bounded(4);
+            self.channel.send_load(mesh.pos, receiver);
+
+            let chunk = Arc::new(Chunk::new(mesh, sender));
+            for offset in Face::entries().map(Face::into_vec3) {
+                let chunk = chunk.clone();
+                let Some(other) = self.get_chunk_mut(chunk.pos + offset) else { continue };
+
+                // TODO: given that both chunk meshes are referenced mutably, there is currently no
+                // performance gain from making this task async.
+                // The solution is to adapt the signature to be Mesh::cull_shared_faces(&mut self, &Mesh),
+                // to allow for all adjacent chunks to be processed in parallel, however, this requires
+                // rewriting the culling function to process the cull-ee and cull-er separately.
+                task::spawn(async move {
+                    chunk.mesh.write().await.cull_shared_faces(&mut *other.mesh.write().await);
+                });
+            }
+
+            self.map.insert(chunk.pos, chunk);
+        }
+    }
+
     pub fn tick(&mut self) {
-        for chunk in self.map.values_mut() {
+        self.load_generated();
+
+        for chunk in self.map.values() {
             chunk.tick();
         }
     }

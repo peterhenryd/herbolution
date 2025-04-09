@@ -5,10 +5,10 @@ use crate::renderer_2d::pipeline::Pipeline2D;
 use crate::renderer_2d::text::{TextFrame, TextId, TextRenderer, TextSection};
 use lib::Modify;
 use math::num::traits::ConstZero;
-use math::projection::orthographic::Orthographic;
 use math::size::Size2;
 use math::vector::Vec3;
 use wgpu::{RenderPass, ShaderStages, TextureFormat};
+use math::proj::Orthographic;
 
 pub mod pipeline;
 pub mod vertex;

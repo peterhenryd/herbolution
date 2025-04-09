@@ -1,5 +1,5 @@
 use crate::world::chunk;
-use crate::world::chunk::ChunkLocalPosition;
+use crate::world::chunk::ChunkLocalPos;
 use lib::geometry::cuboid::face::Faces;
 use lib::light::FacialLightLevels;
 use math::num::ToPrimitive;
@@ -8,7 +8,7 @@ use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
 
 #[repr(C)]
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Cube<M> {
     pub material: M,
     pub dependent_data: CubeDependentData,
@@ -20,16 +20,6 @@ impl<M> Cube<M> {
             material,
             dependent_data: CubeDependentData::new(),
         }
-    }
-}
-
-impl<M: Debug> Debug for Cube<M> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Cube")
-            .field("material_index", &self.material)
-            .field("faces", &self.faces())
-            .field("light_levels", &self.light_levels())
-            .finish()
     }
 }
 
@@ -48,17 +38,17 @@ impl<M> DerefMut for Cube<M> {
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
-pub struct CubePosition(pub vec3i);
+pub struct CubePos(pub vec3i);
 
-impl From<vec3i> for CubePosition {
+impl From<vec3i> for CubePos {
     fn from(value: vec3i) -> Self {
-        CubePosition(value)
+        CubePos(value)
     }
 }
 
-impl From<ChunkLocalPosition> for CubePosition {
-    fn from(position: ChunkLocalPosition) -> Self {
-        CubePosition(position.chunk * chunk::LENGTH as i32 + position.local.cast().unwrap())
+impl From<ChunkLocalPos> for CubePos {
+    fn from(pos: ChunkLocalPos) -> Self {
+        CubePos(pos.chunk * chunk::LENGTH as i32 + pos.local.cast().unwrap())
     }
 }
 
@@ -145,5 +135,14 @@ impl CubeDependentData {
     #[inline]
     pub fn is_opaque(&self) -> bool {
         self.value & 1 == 1
+    }
+}
+
+impl Debug for CubeDependentData {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CubeDependentData")
+            .field("faces", &self.faces())
+            .field("light_levels", &self.light_levels())
+            .finish()
     }
 }

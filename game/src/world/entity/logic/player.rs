@@ -3,6 +3,7 @@ use crate::world::entity::body::EntityBody;
 use crate::world::entity::logic::EntityLogic;
 use crate::world::entity::{EntityAbilities, EntityData, EntityTarget};
 use crate::client::output::ClientOutputSender;
+use crate::world::chunk::material::Material;
 
 #[derive(Debug)]
 pub struct PlayerLogic {
@@ -55,25 +56,31 @@ impl PlayerController {
     }
 
     fn apply_target(&mut self, body: &EntityBody, chunk_map: &mut ChunkMap) {
-        let origin = body.eye_position();
+        let origin = body.eye_pos();
         let direction = body.rotation.into_view_center();
-        let position = chunk_map.cast_ray(origin, direction, 5.0).map(|(x, _)| x);
-        let target = position.map(EntityTarget::Cube);
+        let ray = chunk_map.cast_ray(origin, direction, 5.0);
+        let pos = ray.map(|(x, _)| x);
+        let target = pos.map(EntityTarget::Cube);
 
         if target != self.prev_target {
-            self.output_sender.set_target(target);
+            self.output_sender.send_target(target);
             self.prev_target = target;
         }
 
-        let Some(position) = position else { return; };
+        let Some(pos) = pos else { return; };
 
-        if !self.action_state.is_left_hand_active {
-            return;
+        if self.action_state.is_left_hand_active {
+            self.action_state.is_left_hand_active = false;
+
+            chunk_map.set_cube(pos, None);
         }
 
-        self.action_state.is_left_hand_active = false;
+        if self.action_state.is_right_hand_active {
+            self.action_state.is_right_hand_active = false;
 
-        chunk_map.set_cube(position, None);
+            let Some((_, face)) = ray else { return };
+            chunk_map.set_cube(pos + face.into_vec3(), Some(Material::Stone));
+        }
     }
 }
 

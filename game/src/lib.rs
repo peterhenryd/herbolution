@@ -4,20 +4,21 @@
 use crate::client::input::ClientInputReceiver;
 use crate::client::output::client_output_channel;
 use crate::client::Client;
-use crate::handle::{GameHandle, Request, Response};
 use crate::world::entity::body::{Boundary, EntityBody};
 use crate::world::entity::logic::player::PlayerLogic;
 use crate::world::entity::{ChunkLoader, Entity, EntityAbilities, EntityData, EntityLogicVariant};
 use crate::world::map::WorldMap;
-use crossbeam::channel::{bounded, Receiver, Sender};
 use lib::geometry::cuboid::Cuboid;
 use lib::time::{DeltaTime, TickTime};
 use math::vector::Vec3;
 use tokio::spawn;
+use crate::channel::{ClientChannel, ServerChannel};
+use crate::world::chunk;
+use crate::world::chunk::channel::{ClientChunkChannel, ServerChunkChannel};
 
 pub mod client;
 pub mod world;
-pub mod handle;
+pub mod channel;
 
 pub const TICKS_PER_SECOND: u64 = 60;
 pub const DELTA_TIME: f32 = 1.0 / TICKS_PER_SECOND as f32;
@@ -27,21 +28,19 @@ pub struct Game {
     delta_time: DeltaTime,
     tick_time: TickTime,
     clients: Vec<Client>,
-    request_rx: Receiver<Request>,
-    response_tx: Sender<Response>,
+    channel: ServerChannel,
 }
 
 impl Game {
-    pub fn spawn() -> GameHandle {
-        let (request_tx, request_rx) = bounded(128);
-        let (response_tx, response_rx) = bounded(128);
-        let (shutdown_tx, shutdown_rx) = bounded(1);
+    pub fn spawn() -> (ClientChannel, ClientChunkChannel) {
+        let (client_channel, server_channel) = channel::create();
+        let (client_chunk_channel, server_chunk_channel) = chunk::channel::create();
 
         spawn(async move {
-            let mut game = Game::new(request_rx, response_tx);
+            let mut game = Game::new(server_channel, server_chunk_channel);
 
             loop {
-                if let Ok(()) = shutdown_rx.try_recv() {
+                if game.channel.recv_exit() {
                     game.shutdown();
                     break;
                 }
@@ -50,11 +49,7 @@ impl Game {
             }
         });
 
-        GameHandle {
-            request_tx,
-            response_rx,
-            shutdown_tx,
-        }
+        (client_channel, client_chunk_channel)
     }
 
     fn shutdown(&self) {
@@ -84,23 +79,22 @@ impl Game {
             output_sender,
         });
 
-        self.send_response(Response::ClientAdded(output_receiver));
+        self.channel.send_client_output(output_receiver);
     }
 
-    fn new(request_receiver: Receiver<Request>, response_sender: Sender<Response>) -> Self {
+    fn new(channel: ServerChannel, chunk_channel: ServerChunkChannel) -> Self {
         Self {
-            world_map: WorldMap::new(response_sender.clone()),
+            world_map: WorldMap::new(chunk_channel),
             delta_time: DeltaTime::new(),
             tick_time: TickTime::new(TICKS_PER_SECOND),
             clients: vec![],
-            request_rx: request_receiver,
-            response_tx: response_sender,
+            channel,
         }
     }
 
     fn update(&mut self) {
-        while let Ok(request) = self.request_rx.try_recv() {
-            self.handle_request(request);
+        while let Some(input_receiver) = self.channel.recv_client_input() {
+            self.add_client(input_receiver);
         }
 
         let dt = self.delta_time.next();
@@ -112,16 +106,6 @@ impl Game {
         }
     }
 
-    fn handle_request(&mut self, request: Request) {
-        match request {
-            Request::AddClient(receiver) => self.add_client(receiver)
-        }
-    }
-
-    fn send_response(&self, response: Response) {
-        self.response_tx.try_send(response).unwrap();
-    }
-
     fn tick(&mut self) {
         let world = self.world_map.primary();
         for client in &mut self.clients {
@@ -129,8 +113,8 @@ impl Game {
 
             client.input_receiver.dequeue_onto_body(&mut entity.data.body);
 
-            client.output_sender.set_camera_position(entity.data.body.eye_position());
-            client.output_sender.set_camera_rotation(entity.data.body.rotation);
+            client.output_sender.send_camera_pos(entity.data.body.eye_pos());
+            client.output_sender.send_camera_rotation(entity.data.body.rotation);
 
             if let EntityLogicVariant::Player(logic) = &mut entity.logic {
                 client.input_receiver.dequeue_onto_controller(&mut logic.controller);

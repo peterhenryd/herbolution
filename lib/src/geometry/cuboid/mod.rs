@@ -88,14 +88,14 @@ impl<T> Cuboid<T> {
         (self.min + self.max) / T::from(2).unwrap()
     }
 
-    pub fn set_pos(&mut self, position: Vec3<T>)
+    pub fn set_pos(&mut self, pos: Vec3<T>)
     where
         T: Copy + Num,
     {
-        self.max.x = position.x + self.width();
-        self.max.y = position.y + self.height();
-        self.max.z = position.z + self.depth();
-        self.min = position;
+        self.max.x = pos.x + self.width();
+        self.max.y = pos.y + self.height();
+        self.max.z = pos.z + self.depth();
+        self.min = pos;
     }
 
     pub fn add_x(&mut self, x: T)

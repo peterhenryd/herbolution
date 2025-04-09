@@ -59,36 +59,6 @@ impl Engine {
         self.renderer_2d.update(&self.gpu.handle);
         self.renderer_3d.update(&self.gpu.handle);
     }
-
-    /*
-    pub fn on_input(&mut self, event: &InputEvent) {
-        use InputEvent::*;
-        match event {
-            Key {
-                code: KeyCode::Escape,
-                state: ElementState::Pressed,
-            } if self.is_focused => {
-                self.window.set_cursor_visible(true);
-                self.window
-                    .set_cursor_grab(CursorGrabMode::None)
-                    .expect("Failed to release cursor");
-                self.is_focused = false;
-            }
-            MouseClick {
-                state: ElementState::Pressed,
-                ..
-            } if !self.is_focused => {
-                self.window.set_cursor_visible(false);
-                self.window
-                    .set_cursor_grab(CursorGrabMode::Locked)
-                    .expect("Failed to lock cursor");
-                self.is_focused = true;
-            }
-            _ => {}
-        }
-    }
-
-     */
 }
 
 pub struct EngineFrame {

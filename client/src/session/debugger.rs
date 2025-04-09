@@ -25,14 +25,14 @@ impl Debugger {
         self.is_resized = true;
     }
 
-    pub fn update(&mut self, frame: &EngineFrame, renderer_2d: &mut Renderer2D, fps: &Fps, position: vec3f) {
+    pub fn update(&mut self, frame: &EngineFrame, renderer_2d: &mut Renderer2D, fps: &Fps, pos: vec3f) {
         if self.is_resized {
             if let Some(id) = self.crosshair_id.take() {
                 renderer_2d.remove_text(id);
             }
 
             self.crosshair_id = Some(renderer_2d.add_text(TextSection {
-                position: Vec2::new(self.size.width as f32 / 2.0, self.size.height as f32 / 2.0),
+                pos: Vec2::new(self.size.width as f32 / 2.0, self.size.height as f32 / 2.0),
                 content: "+".to_string(),
                 font_size: 24.0,
                 line_height: 24.0,
@@ -56,7 +56,7 @@ impl Debugger {
         }
 
         let fps = renderer_2d.add_text(TextSection {
-            position: Vec2::new(10., 10.),
+            pos: Vec2::new(10., 10.),
             content: format!("FPS: {}", fps.get()),
             font_size: 36.0,
             line_height: 42.0,
@@ -64,24 +64,24 @@ impl Debugger {
         });
 
         let x = renderer_2d.add_text(TextSection {
-            position: Vec2::new(10., 46.),
-            content: format!("X: {:.2}", position.x),
+            pos: Vec2::new(10., 46.),
+            content: format!("X: {:.2}", pos.x),
             font_size: 36.0,
             line_height: 42.0,
             color: Rgba::WHITE,
         });
 
         let y = renderer_2d.add_text(TextSection {
-            position: Vec2::new(10., 82.),
-            content: format!("Y: {:.2}", position.y),
+            pos: Vec2::new(10., 82.),
+            content: format!("Y: {:.2}", pos.y),
             font_size: 36.0,
             line_height: 42.0,
             color: Rgba::WHITE,
         });
 
         let z = renderer_2d.add_text(TextSection {
-            position: Vec2::new(10., 118.),
-            content: format!("Z: {:.2}", position.z),
+            pos: Vec2::new(10., 118.),
+            content: format!("Z: {:.2}", pos.z),
             font_size: 36.0,
             line_height: 42.0,
             color: Rgba::WHITE,

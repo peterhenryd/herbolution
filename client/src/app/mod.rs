@@ -1,22 +1,26 @@
+use crate::app::fs::Fs;
+use crate::session::GameSession;
+use engine::Engine;
+use math::color::{Color, Rgba};
+use math::size::Size2;
+use std::path::Path;
 use std::sync::Arc;
 use winit::dpi::PhysicalSize;
 use winit::event_loop::ActiveEventLoop;
 use winit::keyboard::KeyCode;
 use winit::window::WindowAttributes;
-use engine::Engine;
-use math::color::{Color, Rgba};
-use math::size::Size2;
-use crate::session::GameSession;
 
 pub mod handler;
+pub mod fs;
 
 pub struct App {
     pub(crate) engine: Engine,
+    fs: Fs,
     session: Option<GameSession>,
 }
 
 impl App {
-    pub fn new(event_loop: &ActiveEventLoop) -> Self {
+    pub fn new(event_loop: &ActiveEventLoop, data_dir: impl AsRef<Path>) -> Self {
         const VERSION: &str = env!("CARGO_PKG_VERSION");
         const RESOLUTION: (u32, u32) = (1920, 1080);
 
@@ -29,8 +33,9 @@ impl App {
 
         let window = Arc::new(window);
         let engine = Engine::create(window).expect("Failed to create engine");
+        let fs = Fs::new(data_dir.as_ref().to_path_buf());
 
-        Self { engine, session: None }
+        Self { engine, fs, session: None }
     }
 
     pub fn set_size(&mut self, size: Size2<u32>) {
@@ -45,7 +50,7 @@ impl App {
         let mut frame = self.engine.create_frame().expect("Failed to create frame");
 
         if frame.input.key_events.contains(&KeyCode::Space) && self.session.is_none() {
-            self.session = Some(GameSession::create(self.engine.gpu.size()));
+            self.session = Some(GameSession::create(self.engine.gpu.surface.size()));
         }
 
         if let Some(session) = &mut self.session {
@@ -67,8 +72,8 @@ impl App {
         self.engine.renderer_2d.cleanup();
     }
 
-    pub fn exit(&self) {
-        if let Some(session) = &self.session {
+    pub fn exit(&mut self) {
+        if let Some(session) = &mut self.session {
             session.exit();
         }
     }

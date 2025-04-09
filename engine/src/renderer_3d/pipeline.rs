@@ -1,44 +1,53 @@
+use std::iter::once;
 use crate::camera::Camera;
 use crate::gpu::handle::Handle;
 use crate::gpu::mem::bind_group::{BindEntry, BindGroup, BindGroupSet};
+use crate::gpu::mem::buffer::UnaryBuffer;
 use crate::gpu::mem::model::{InstanceGroup, Mesh};
 use crate::gpu::TextureFormat;
-use crate::renderer_3d::lighting::Lighting;
 use crate::renderer_3d::vertex::Vertex3D;
 use image::DynamicImage;
 use image_atlas::{AtlasDescriptor, AtlasEntry, Texcoord};
-use math::projection::perspective::Perspective;
 use math::vector::{vec2f, Vec2, Vec3};
-use wgpu::{include_wgsl, AddressMode, BindGroupEntry, BindGroupLayoutEntry, BindingResource, BindingType, FilterMode, RenderPass, RenderPipeline, SamplerBindingType, SamplerDescriptor, ShaderStages};
-use crate::gpu::mem::buffer::UnaryBuffer;
+use wgpu::{include_wgsl, AddressMode, BindGroupEntry, BindGroupLayoutEntry, BindingResource, BindingType, Face, FilterMode, RenderPass, RenderPipeline, SamplerBindingType, SamplerDescriptor, ShaderStages};
+use math::proj::Perspective;
 
 pub struct Pipeline3D {
-    render_pipeline: RenderPipeline,
+    // Front-face culling with depth writing
+    front_pipeline: RenderPipeline,
+    // Back-face culling without depth writing
+    back_pipeline: RenderPipeline,
     bind_group_set: BindGroupSet,
     meshes: Meshes,
 }
 
 impl Pipeline3D {
-    pub fn create(handle: &Handle, camera: &UnaryBuffer<Camera<Perspective>>, lighting: &Lighting, format: TextureFormat) -> Self {
+    pub fn create(handle: &Handle, camera: &UnaryBuffer<Camera<Perspective>>, format: TextureFormat) -> Self {
         let mut bind_group_set = BindGroupSet::build(handle)
             .build_group(|builder| builder.with_entries(camera))
-            .build_group(|builder| builder
-                .with_entries(&lighting.ambient_light_set)
-                .with_entries(&lighting.directional_light_set)
-                .with_entries(&lighting.point_light_set)
-            )
             .finish();
         bind_group_set.push(build_textures(handle));
-        let render_pipeline = handle.create_render_pipeline(
+        let front_pipeline = handle.create_render_pipeline(
+            Face::Front,
             &bind_group_set,
             include_wgsl!("shader.wgsl"),
             &super::vertex::buffer_layouts(),
-            format
+            format,
+            true,
+        );
+        let back_pipeline = handle.create_render_pipeline(
+            Face::Back,
+            &bind_group_set,
+            include_wgsl!("shader.wgsl"),
+            &super::vertex::buffer_layouts(),
+            format,
+            false
         );
         let meshes = Meshes::create(handle);
 
         Self {
-            render_pipeline,
+            front_pipeline,
+            back_pipeline,
             bind_group_set,
             meshes,
         }
@@ -47,10 +56,15 @@ impl Pipeline3D {
     pub fn render(
         &self,
         render_pass: &mut RenderPass,
+        skybox: &InstanceGroup,
         tile_instance_groups: impl Iterator<Item = &InstanceGroup>,
         tile_highlight_instance_groups: impl Iterator<Item = &InstanceGroup>,
     ) {
-        render_pass.set_pipeline(&self.render_pipeline);
+        render_pass.set_pipeline(&self.back_pipeline);
+        self.bind_group_set.bind_consecutive(render_pass, 0);
+        self.meshes.tile_quad.render(render_pass, once(skybox));
+
+        render_pass.set_pipeline(&self.front_pipeline);
         self.bind_group_set.bind_consecutive(render_pass, 0);
         self.meshes.tile_quad.render(render_pass, tile_instance_groups);
         self.meshes.tile_highlight.render(render_pass, tile_highlight_instance_groups);
@@ -66,7 +80,7 @@ impl Meshes {
     fn create(handle: &Handle) -> Self {
         Self {
             tile_quad: create_tile_quad_mesh(handle),
-            tile_highlight: create_tile_highlight_mesh(handle, 0.005),
+            tile_highlight: create_tile_highlight_mesh(handle, 0.0025),
         }
     }
 }
@@ -106,34 +120,44 @@ fn create_tile_highlight_mesh(handle: &Handle, width: f32) -> Mesh {
 
 fn build_textures(handle: &Handle) -> BindGroup {
     // TODO: fix
-    let entries = ["stone", "dirt", "grass", "grass_side"].into_iter()
-        .map(|name| image::open(format!("assets/texture/{name}.png")).unwrap())
+    let entries = ["stone", "dirt", "grass", "grass_side", "px", "nx", "py", "ny", "pz", "nz"].into_iter()
+        .map(|name| {
+            let image = image::open(format!("assets/texture/{name}.png")).unwrap();
+            if name == "py" {
+                image.rotate90()
+            } else if name == "ny" {
+                image.rotate270()
+            } else {
+                image
+            }
+        })
         .map(|image| AtlasEntry { texture: image, mip: Default::default() })
         .collect::<Vec<_>>();
 
     let diffuse_atlas = image_atlas::create_atlas(&AtlasDescriptor {
         max_page_count: 1,
-        size: 256,
+        size: 8192,
         mip: Default::default(),
         entries: &entries,
-    })
-        .unwrap();
+    }).unwrap();
     let texture = diffuse_atlas.textures.into_iter().next().unwrap();
     let image = texture.mip_maps.into_iter().next().unwrap();
 
     let atlas_texture = handle.create_texture_from_image(DynamicImage::ImageRgba8(image));
-    let mut positions: Vec<vec2f> = vec![];
+    let mut pos_vec: Vec<vec2f> = vec![];
     for Texcoord { min_x, min_y, max_x, max_y, size, .. } in diffuse_atlas.texcoords {
         let min = Vec2::new(min_x as f32, min_y as f32);
         let max = Vec2::new(max_x as f32, max_y as f32);
+
         let size = Vec2::splat(size as f32);
 
-        positions.push(Vec2::new(min.x, min.y) / size);
-        positions.push(Vec2::new(max.x, min.y) / size);
-        positions.push(Vec2::new(min.x, max.y) / size);
-        positions.push(Vec2::new(max.x, max.y) / size);
+        pos_vec.push(Vec2::new(min.x, min.y) / size);
+        pos_vec.push(Vec2::new(max.x, min.y) / size);
+        pos_vec.push(Vec2::new(min.x, max.y) / size);
+        pos_vec.push(Vec2::new(max.x, max.y) / size);
     }
-    let positions_uniform = handle.create_array_buffer(positions, ShaderStages::VERTEX);
+
+    let pos_uniform = handle.create_array_buffer(pos_vec, ShaderStages::VERTEX);
     let sampler = handle.device
         .create_sampler(&SamplerDescriptor {
             label: None,
@@ -147,7 +171,7 @@ fn build_textures(handle: &Handle) -> BindGroup {
         });
 
     let builder = BindGroup::build()
-        .with_entries(&positions_uniform)
+        .with_entries(&pos_uniform)
         .with_entries(&atlas_texture);
     let binding = builder.len() as u32;
 

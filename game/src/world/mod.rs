@@ -4,8 +4,7 @@ pub mod map;
 
 use std::borrow::Borrow;
 use std::random::random;
-use crossbeam::channel::Sender;
-use crate::handle::Response;
+use crate::world::chunk::channel::ServerChunkChannel;
 use crate::world::chunk::map::ChunkMap;
 use crate::world::entity::set::EntitySet;
 
@@ -16,10 +15,10 @@ pub struct World {
 }
 
 impl World {
-    pub fn create(id: impl Into<WorldId>, sender: Sender<Response>) -> Self {
+    pub fn create(id: impl Into<WorldId>, channel: ServerChunkChannel) -> Self {
         Self {
             id: id.into(),
-            chunk_map: ChunkMap::new(random(), sender),
+            chunk_map: ChunkMap::new(random(), channel),
             entity_set: EntitySet::new(),
         }
     }

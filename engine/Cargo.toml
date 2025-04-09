@@ -16,3 +16,4 @@ smallvec.workspace = true
 thiserror.workspace = true
 wgpu.workspace = true
 winit.workspace = true
+tracing.workspace = true

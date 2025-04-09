@@ -1,3 +1,4 @@
+use game::world::chunk::channel::ClientChunkChannel;
 use crate::session::chunk::SessionChunkMap;
 
 pub struct SessionWorld {
@@ -12,7 +13,7 @@ pub struct Sky {
 
  */
 impl SessionWorld {
-    pub fn new() -> Self {
+    pub fn new(chunk_channel: ClientChunkChannel) -> Self {
         Self {
             /*
             sky: Sky {
@@ -20,7 +21,7 @@ impl SessionWorld {
             },
 
              */
-            chunk_map: SessionChunkMap::new(),
+            chunk_map: SessionChunkMap::new(chunk_channel),
         }
     }
 }

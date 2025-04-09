@@ -1,6 +1,4 @@
-use wgpu::{
-    PresentMode, SurfaceConfiguration, TextureFormat, TextureUsages,
-};
+use wgpu::{CompositeAlphaMode, PresentMode, SurfaceConfiguration, TextureFormat, TextureUsages};
 pub use wgpu::SurfaceTexture;
 use math::size::Size2;
 use crate::gpu::GpuError;
@@ -26,7 +24,7 @@ impl Surface {
             height: size.height,
             present_mode: PresentMode::Immediate,
             desired_maximum_frame_latency: 2,
-            alpha_mode: capabilities.alpha_modes[0],
+            alpha_mode: CompositeAlphaMode::PostMultiplied,
             view_formats: vec![],
         };
 

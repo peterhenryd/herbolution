@@ -24,6 +24,10 @@ impl<T: ShaderPayload> UnaryBuffer<T> {
         }
     }
 
+    pub fn is_dirty(&self) -> bool {
+        self.is_dirty
+    }
+
     pub fn submit(&mut self, handle: &Handle) {
         if !take(&mut self.is_dirty) {
             return;

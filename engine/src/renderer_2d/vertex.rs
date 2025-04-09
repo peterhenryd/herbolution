@@ -11,12 +11,12 @@ pub fn buffer_layouts() -> [VertexBufferLayout<'static>; 1] {
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Pod, Zeroable)]
 pub struct Vertex2D {
-    pub position: vec2f,
+    pub pos: vec2f,
 }
 
 impl Vertex2D {
-    pub const fn new(position: vec2f) -> Self {
-        Self { position }
+    pub const fn new(pos: vec2f) -> Self {
+        Self { pos }
     }
 }
 

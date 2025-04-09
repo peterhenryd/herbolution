@@ -10,7 +10,6 @@ use crate::DELTA_TIME;
 
 #[derive(Debug, Clone)]
 pub struct EntityBody {
-    /// The position of the entity in the world.
     pub(crate) pos: vec3f,
     delta_pos: vec3f,
     pub(crate) rotation: Euler<Rad<f32>>,
@@ -21,9 +20,9 @@ pub struct EntityBody {
 }
 
 impl EntityBody {
-    pub fn new(position: vec3f, boundary: Boundary) -> Self {
+    pub fn new(pos: vec3f, boundary: Boundary) -> Self {
         Self {
-            pos: position,
+            pos,
             delta_pos: Vec3::ZERO,
             rotation: Euler::IDENTITY,
             boundary,
@@ -52,7 +51,7 @@ impl EntityBody {
 
         self.delta_pos += direction * speed;
         if self.is_on_ground {
-            self.delta_pos.y = motion.y / 3.0;
+            self.delta_pos.y = motion.y / 3.2;
         }
 
         self.delta_pos.y -= 1.8 * DELTA_TIME;
@@ -87,7 +86,7 @@ impl EntityBody {
         self.boundary.cuboid + self.pos
     }
 
-    pub fn eye_position(&self) -> vec3f {
+    pub fn eye_pos(&self) -> vec3f {
         self.boundary.eye_offset + self.pos
     }
 

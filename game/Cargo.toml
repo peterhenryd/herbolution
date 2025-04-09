@@ -9,6 +9,10 @@ hashbrown.workspace = true
 lib = { package = "herbolution-lib", path = "../lib" }
 line_drawing.workspace = true
 math = { package = "herbolution-math", path = "../math" }
+oneshot.workspace = true
 pulz-arena.workspace = true
 simdnoise.workspace = true
 tokio = { workspace = true, features = ["rt", "sync"] }
+tracing.workspace = true
+cached.workspace = true
+rayon.workspace = true

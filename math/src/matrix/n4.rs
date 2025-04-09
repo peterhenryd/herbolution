@@ -35,9 +35,9 @@ impl<T> Mat4<T> {
         }
     }
 
-    pub fn view(position: Vec3<T>, rotation: Euler<impl Angle<Comp = T>>) -> Self
+    pub fn view(pos: Vec3<T>, rot: Euler<impl Angle<Comp = T>>) -> Self
     where T: Real + ConstZero + ConstOne {
-        let f = -rotation.into_view_center().cast().unwrap();
+        let f = -rot.into_view_center().cast().unwrap();
         let s = f.cross(Vec3::Y).normalize();
         let u = s.cross(f);
 
@@ -46,9 +46,9 @@ impl<T> Mat4<T> {
             Vec4::new(s.y, u.y, -f.y, T::ZERO),
             Vec4::new(s.z, u.z, -f.z, T::ZERO),
             Vec4::new(
-                -position.dot(s),
-                -position.dot(u),
-                position.dot(f),
+                -pos.dot(s),
+                -pos.dot(u),
+                pos.dot(f),
                 T::ONE,
             ),
         )

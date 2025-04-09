@@ -1,11 +1,12 @@
-use bytemuck::{Pod, Zeroable};
-use math::vector::vec3f;
-use wgpu::{vertex_attr_array, BufferAddress, VertexAttribute, VertexBufferLayout, VertexStepMode};
-use math::color::Rgba;
-use math::matrix::{mat4f, Mat4};
-use math::rotation::Quat;
 use crate::gpu::mem::model::VertexShaderArgument;
 use crate::gpu::mem::payload::{AutoShaderPayload, ShaderPayload};
+use bytemuck::{Pod, Zeroable};
+use math::color::Rgba;
+use math::matrix::{mat4f, Mat4};
+use math::num::traits::ConstZero;
+use math::rotation::Quat;
+use math::vector::{vec3f, Vec3};
+use wgpu::{vertex_attr_array, BufferAddress, VertexAttribute, VertexBufferLayout, VertexStepMode};
 
 pub fn buffer_layouts() -> [VertexBufferLayout<'static>; 2] {
     [Vertex3D::LAYOUT, Instance::LAYOUT]
@@ -14,8 +15,8 @@ pub fn buffer_layouts() -> [VertexBufferLayout<'static>; 2] {
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Pod, Zeroable)]
 pub struct Vertex3D {
-    pub position: vec3f,
-    pub normal: vec3f,
+    pub pos: vec3f,
+    pub norm: vec3f,
 }
 
 impl VertexShaderArgument for Vertex3D {
@@ -31,18 +32,19 @@ impl VertexShaderArgument for Vertex3D {
 }
 
 impl Vertex3D {
-    pub const fn new(position: vec3f, normal: vec3f) -> Self {
-        Self { position, normal }
+    pub const fn new(pos: vec3f, norm: vec3f) -> Self {
+        Self { pos, norm }
     }
 }
 
 impl AutoShaderPayload for Vertex3D {}
 
 pub struct Instance {
-    pub position: vec3f,
-    pub rotation: Quat,
+    pub pos: vec3f,
+    pub quat: Quat,
     pub texture_index: u32,
     pub color: Rgba<f32>,
+    pub is_lit: bool,
 }
 
 impl VertexShaderArgument for Instance {
@@ -53,6 +55,7 @@ impl VertexShaderArgument for Instance {
         5 => Float32x4,
         6 => Uint32,
         7 => Float32x4,
+        8 => Uint32,
     ];
     const LAYOUT: VertexBufferLayout<'static> = VertexBufferLayout {
         array_stride: size_of::<InstanceShaderPayload>() as BufferAddress,
@@ -63,7 +66,7 @@ impl VertexShaderArgument for Instance {
 
 impl Instance {
     pub fn model_matrix(&self) -> mat4f {
-        Mat4::from_translation(self.position) * self.rotation.into_matrix()
+        Mat4::from_translation(self.pos) * self.quat.into_matrix()
     }
 }
 
@@ -72,9 +75,22 @@ impl ShaderPayload for Instance {
 
     fn payload(&self) -> Self::Output<'_> {
         InstanceShaderPayload {
-            model_matrix: self.model_matrix(),
+            model: self.model_matrix(),
             texture_index: self.texture_index,
             color: self.color,
+            is_lit: self.is_lit as u32,
+        }
+    }
+}
+
+impl Default for Instance {
+    fn default() -> Self {
+        Self {
+            pos: Vec3::ZERO,
+            quat: Quat::IDENTITY,
+            texture_index: 0,
+            color: Rgba::TRANSPARENT,
+            is_lit: false,
         }
     }
 }
@@ -82,7 +98,8 @@ impl ShaderPayload for Instance {
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Pod, Zeroable)]
 pub struct InstanceShaderPayload {
-    pub model_matrix: mat4f,
+    pub model: mat4f,
     pub texture_index: u32,
     pub color: Rgba<f32>,
+    pub is_lit: u32,
 }
