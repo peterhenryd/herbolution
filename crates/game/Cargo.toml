@@ -1,0 +1,19 @@
+[package]
+name = "herbolution-game"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+cached.workspace = true
+crossbeam.workspace = true
+hashbrown.workspace = true
+lib = { package = "herbolution-lib", path = "../lib" }
+line_drawing.workspace = true
+math = { package = "herbolution-math", path = "../math" }
+oneshot.workspace = true
+pulz-arena.workspace = true
+rayon.workspace = true
+serde.workspace = true
+simdnoise.workspace = true
+tokio = { workspace = true, features = ["rt", "sync", "io-util"] }
+tracing.workspace = true

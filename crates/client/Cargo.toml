@@ -1,0 +1,19 @@
+[package]
+name = "herbolution-client"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap.workspace = true
+crossbeam.workspace = true
+engine = { package = "herbolution-engine", path = "../engine" }
+game = { package = "herbolution-game", path = "../game" }
+lib = { package = "herbolution-lib", path = "../lib" }
+math = { package = "herbolution-math", path = "../math" }
+num.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["fs", "macros", "rt-multi-thread", "sync"] }
+toml.workspace = true
+tracing-subscriber.workspace = true
+winit.workspace = true
