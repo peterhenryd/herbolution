@@ -1,6 +1,6 @@
 use crossbeam::channel::{unbounded, Receiver, Sender};
 use hashbrown::HashMap;
-use math::vector::{vec3i, vec3u5};
+use math::vector::{vec3i, vec4u4};
 use crate::chunk::cube::Cube;
 use crate::chunk::material::Material;
 
@@ -16,7 +16,7 @@ pub struct ServerChunkChannel {
 }
 
 pub struct ChunkUpdate {
-    pub overwrites: HashMap<vec3u5, Cube<Option<Material>>>,
+    pub overwrites: HashMap<vec4u4, Cube<Option<Material>>>,
 }
 
 impl ClientChunkChannel {

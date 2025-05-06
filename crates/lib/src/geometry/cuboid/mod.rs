@@ -7,7 +7,7 @@ use math::vector::Vec3;
 
 pub mod face;
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Cuboid<T> {
     pub min: Vec3<T>,
     pub max: Vec3<T>,

@@ -1,7 +1,8 @@
-use std::fmt::{Debug, Formatter};
-use pulz_arena::{Arena, Index, Iter, IterMut};
 use crate::chunk::map::ChunkMap;
 use crate::entity::Entity;
+use pulz_arena::{Arena, Index, Iter, IterMut};
+use std::fmt::{Debug, Formatter};
+use tokio::sync::Mutex;
 
 pub struct EntitySet {
     arena: Arena<Entity>,
@@ -22,9 +23,9 @@ impl EntitySet {
         EntityId(self.arena.insert(entity))
     }
 
-    pub async fn tick(&mut self, chunk_map: &mut ChunkMap) {
+    pub async fn tick(&mut self, chunk_map: &Mutex<ChunkMap>) {
         for (_, entity) in self.arena.iter_mut() {
-            entity.tick(chunk_map);
+            entity.tick(chunk_map).await;
         }
     }
 

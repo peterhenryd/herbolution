@@ -136,3 +136,23 @@ impl Into<Rgba<f64>> for Rgba<u8> {
         }
     }
 }
+
+impl Into<Rgb<f32>> for Rgb<u8> {
+    fn into(self) -> Rgb<f32> {
+        Rgb {
+            r: self.r as f32 / 255.0,
+            g: self.g as f32 / 255.0,
+            b: self.b as f32 / 255.0,
+        }
+    }
+}
+
+impl Into<Rgb<f64>> for Rgb<u8> {
+    fn into(self) -> Rgb<f64> {
+        Rgb {
+            r: self.r as f64 / 255.0,
+            g: self.g as f64 / 255.0,
+            b: self.b as f64 / 255.0,
+        }
+    }
+}

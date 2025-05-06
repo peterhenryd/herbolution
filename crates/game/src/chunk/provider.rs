@@ -1,11 +1,12 @@
 use crate::chunk::generator::{ChunkGenerator, GenerationParams};
-use crate::chunk::{CubeMesh, MaterialMesh};
+use crate::chunk::{CubeGrid, CubeMesh};
 use lib::display;
 use math::vector::vec3i;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::task;
+use tracing::error;
 
 #[derive(Debug)]
 pub struct ChunkProvider {
@@ -66,10 +67,14 @@ impl ChunkReader {
         let to_be_loaded = self.to_be_loaded.clone();
 
         task::spawn(async move {
-            let bytes = tokio::fs::read(path).await.unwrap();
-            let material_mesh = MaterialMesh::decode(&bytes);
+            let bytes;
+            match tokio::fs::read(path).await {
+                Ok(x) => bytes = x,
+                Err(e) => return error!("Failed to read chunk file: {}", e),
+            }
+            let material_mesh = CubeGrid::decode(&bytes);
 
-            to_be_loaded.lock().await.push(material_mesh.to_cube_mesh(pos));
+            to_be_loaded.lock().await.push(material_mesh.to_mesh(pos));
         });
     }
 }

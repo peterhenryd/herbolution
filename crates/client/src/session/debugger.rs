@@ -1,11 +1,11 @@
-use engine::renderer_2d::text::{TextId, TextSection};
-use engine::renderer_2d::Renderer2D;
-use engine::EngineFrame;
 use lib::fps::Fps;
 use math::color::{ColorConsts, Rgba};
 use math::vector::{vec3f, Vec2};
 use winit::keyboard::KeyCode;
 use math::size::Size2;
+use crate::engine::EngineFrame;
+use crate::state2d::State2d;
+use crate::state2d::text::{TextId, TextSection};
 
 pub struct Debugger {
     is_resized: bool,
@@ -25,13 +25,13 @@ impl Debugger {
         self.is_resized = true;
     }
 
-    pub fn update(&mut self, frame: &EngineFrame, renderer_2d: &mut Renderer2D, fps: &Fps, pos: vec3f) {
+    pub fn update(&mut self, frame: &EngineFrame, state: &mut State2d, fps: &Fps, pos: vec3f) {
         if self.is_resized {
             if let Some(id) = self.crosshair_id.take() {
-                renderer_2d.remove_text(id);
+                state.remove_text(id);
             }
 
-            self.crosshair_id = Some(renderer_2d.add_text(TextSection {
+            self.crosshair_id = Some(state.add_text(TextSection {
                 pos: Vec2::new(self.size.width as f32 / 2.0, self.size.height as f32 / 2.0),
                 content: "+".to_string(),
                 font_size: 24.0,
@@ -47,7 +47,7 @@ impl Debugger {
 
         if let Some(ids) = self.text_ids.take() {
             for id in ids {
-                renderer_2d.remove_text(id);
+                state.remove_text(id);
             }
         }
 
@@ -55,7 +55,7 @@ impl Debugger {
             return;
         }
 
-        let fps = renderer_2d.add_text(TextSection {
+        let fps = state.add_text(TextSection {
             pos: Vec2::new(10., 10.),
             content: format!("FPS: {}", fps.get()),
             font_size: 36.0,
@@ -63,7 +63,7 @@ impl Debugger {
             color: Rgba::WHITE,
         });
 
-        let x = renderer_2d.add_text(TextSection {
+        let x = state.add_text(TextSection {
             pos: Vec2::new(10., 46.),
             content: format!("X: {:.2}", pos.x),
             font_size: 36.0,
@@ -71,7 +71,7 @@ impl Debugger {
             color: Rgba::WHITE,
         });
 
-        let y = renderer_2d.add_text(TextSection {
+        let y = state.add_text(TextSection {
             pos: Vec2::new(10., 82.),
             content: format!("Y: {:.2}", pos.y),
             font_size: 36.0,
@@ -79,7 +79,7 @@ impl Debugger {
             color: Rgba::WHITE,
         });
 
-        let z = renderer_2d.add_text(TextSection {
+        let z = state.add_text(TextSection {
             pos: Vec2::new(10., 118.),
             content: format!("Z: {:.2}", pos.z),
             font_size: 36.0,

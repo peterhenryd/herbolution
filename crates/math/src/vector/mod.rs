@@ -57,3 +57,4 @@ pub type vec4f = Vec4<f32>;
 pub type vec4d = Vec4<f64>;
 
 pub use packed::vec3u5;
+pub use packed::vec4u4;

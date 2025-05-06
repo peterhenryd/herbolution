@@ -39,14 +39,17 @@ impl TickTime {
         self.interval = Duration::from_millis(1000 / ticks_per_second);
     }
 
+    #[inline]
     pub fn increment(&mut self, dt: Duration) {
         self.accumulator += dt;
     }
 
+    #[inline]
     pub fn is_ready(&self) -> bool {
         self.accumulator >= self.interval
     }
 
+    #[inline]
     pub fn reduce(&mut self) {
         self.accumulator -= self.interval;
     }

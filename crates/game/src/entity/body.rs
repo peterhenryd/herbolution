@@ -32,11 +32,11 @@ impl EntityBody {
         }
     }
 
-    pub fn update(&mut self, chunk_map: &mut ChunkMap, abilities: EntityAbilities) {
-        self.apply_translation(chunk_map, &abilities);
+    pub async fn update(&mut self, chunk_map: &mut ChunkMap, abilities: EntityAbilities) {
+        self.apply_translation(chunk_map, &abilities).await;
     }
 
-    fn apply_translation(
+    async fn apply_translation(
         &mut self,
         chunk_map: &mut ChunkMap,
         abilities: &EntityAbilities,
@@ -61,7 +61,7 @@ impl EntityBody {
         let mut clipped_delta_pos = self.delta_pos;
         let mut bounds = self.bounds();
 
-        chunk_map.get_near_colliders(bounds, &mut self.near_colliders);
+        chunk_map.get_near_colliders(bounds, &mut self.near_colliders).await;
         for collider in &self.near_colliders {
             clipped_delta_pos.y = collider.clip_dy_collision(&bounds, clipped_delta_pos.y);
         }

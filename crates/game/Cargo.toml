@@ -17,3 +17,4 @@ serde.workspace = true
 simdnoise.workspace = true
 tokio = { workspace = true, features = ["rt", "sync", "io-util"] }
 tracing.workspace = true
+futures.workspace = true

@@ -8,6 +8,7 @@ use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Not, Rem, RemAssign, Sub,
     SubAssign,
 };
+use crate::vector::Vec3;
 
 #[repr(C)]
 #[derive(
@@ -1009,5 +1010,12 @@ impl<T> Vec4<T> {
         T: Copy,
     {
         Self::new(self.w, self.w, self.w, self.w)
+    }
+
+    pub fn xyz(&self) -> Vec3<T>
+    where
+        T: Copy,
+    {
+        Vec3::new(self.x, self.y, self.z)
     }
 }

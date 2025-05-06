@@ -1,15 +1,16 @@
 use crate::session::debugger::Debugger;
 use crate::session::player::SessionPlayer;
 use crate::session::world::SessionWorld;
-use engine::{Engine, EngineFrame};
 use game::channel::ClientChannel;
-use game::Game;
+use game::{Game, Options};
 use lib::fps::Fps;
 use lib::time::DeltaTime;
 use math::size::Size2;
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
 use winit::window::CursorGrabMode;
+use lib::fs::Save;
+use crate::engine::{Engine, EngineFrame};
 
 pub mod chunk;
 pub mod player;
@@ -21,14 +22,16 @@ pub struct GameSession {
     fps: Fps,
     debugger: Debugger,
     delta_time: DeltaTime,
-    player: SessionPlayer,
+    pub(crate) player: SessionPlayer,
     is_focused: bool,
     pub(crate) world: SessionWorld,
 }
 
 impl GameSession {
     pub fn create(size: Size2<u32>) -> Self {
-        let (channel, chunk_channel) = Game::spawn();
+        let (channel, chunk_channel) = Game::spawn(Options {
+            save: Save::open("./world").unwrap(),
+        });
         let player = SessionPlayer::create(&channel);
 
         Self {
@@ -43,7 +46,7 @@ impl GameSession {
     }
 
     pub fn update(&mut self, frame: &EngineFrame, engine: &mut Engine) {
-        self.world.chunk_map.update(&engine.gpu.handle, &engine.renderer_3d.pipeline.texture_positions);
+        self.world.chunk_map.update(&engine.gpu, &engine.state3d.texture_positions);
         self.check_cursor_lock(frame, engine);
 
         while let Some(output_receiver) = self.channel.recv_client_output() {
@@ -52,9 +55,9 @@ impl GameSession {
 
         let dt = self.delta_time.next();
 
-        self.player.update(&engine.gpu.handle, &mut engine.renderer_3d, (&frame.input, &engine.input), self.is_focused);
+        self.player.update(dt, &engine.gpu, &mut engine.state3d, (&frame.input, &engine.input), self.is_focused);
         self.fps.update(dt);
-        self.debugger.update(frame, &mut engine.renderer_2d, &self.fps, engine.renderer_3d.camera.pos);
+        self.debugger.update(frame, &mut engine.state2d, &self.fps, engine.state3d.camera.position);
     }
 
     pub fn set_size(&mut self, size: Size2<u32>) {

@@ -1,13 +1,13 @@
+use crate::chunk;
+use crate::chunk::material::Material;
+use crate::chunk::CubeMesh;
 use cached::proc_macro::cached;
 use crossbeam::channel::{bounded, Receiver, Sender, TryIter};
-use math::vector::{vec2i, vec3i, vec3u5};
+use math::vector::{vec2i, vec3i, vec4u4};
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use simdnoise::NoiseBuilder;
 use std::ops::Mul;
 use std::sync::Arc;
-use crate::chunk;
-use crate::chunk::material::Material;
-use crate::chunk::CubeMesh;
 
 #[derive(Debug)]
 pub struct ChunkGenerator {
@@ -56,7 +56,7 @@ pub struct GenerationParams {
 
 impl GenerationParams {
     const MIN_HEIGHT: i32 = 64;
-    const MAX_HEIGHT: i32 = 96;
+    const MAX_HEIGHT: i32 = 112;
 
     pub fn new(seed: i32) -> Self {
         Self { seed }
@@ -75,14 +75,14 @@ impl GenerationParams {
                     let y = chunk.pos.y * chunk::LENGTH as i32 + chunk_y as i32;
                     if y < h - 6 {
                         chunk.set(
-                            vec3u5::new(x as u8, chunk_y as u8, z as u8),
+                            vec4u4::new(x as u8, chunk_y as u8, z as u8, 0),
                             Some(Material::Stone),
                         );
                     } else if y < h - 1 {
-                        chunk.set(vec3u5::new(x as u8, chunk_y as u8, z as u8), Some(Material::Dirt));
+                        chunk.set(vec4u4::new(x as u8, chunk_y as u8, z as u8, 0), Some(Material::Dirt));
                     } else if y < h {
                         chunk.set(
-                            vec3u5::new(x as u8, chunk_y as u8, z as u8),
+                            vec4u4::new(x as u8, chunk_y as u8, z as u8, 0),
                             Some(Material::Grass),
                         );
                     }

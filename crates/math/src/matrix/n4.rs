@@ -23,18 +23,6 @@ impl<T> Mat4<T> {
         Self { x, y, z, w }
     }
 
-    pub const fn from_translation(translation: Vec3<T>) -> Self
-    where
-        T: ConstZero + ConstOne,
-    {
-        Self {
-            x: Vec4::X,
-            y: Vec4::Y,
-            z: Vec4::Z,
-            w: translation.extend(T::ONE),
-        }
-    }
-
     pub fn view(pos: Vec3<T>, rot: Euler<impl Angle<Comp = T>>) -> Self
     where T: Real + ConstZero + ConstOne {
         let f = -rot.into_view_center().cast().unwrap();

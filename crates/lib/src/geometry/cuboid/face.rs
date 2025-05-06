@@ -6,17 +6,22 @@ use math::rotation::{Euler, Quat};
 use math::vector::{vec3i, Vec3};
 use std::array::IntoIter;
 use std::fmt::Debug;
-use std::marker::PhantomData;
-use std::ops::{Index, Range, Sub};
+use std::ops::{Index, IndexMut, Range, Sub};
 
 #[repr(u8)]
 #[derive(Debug, Copy, Clone)]
 pub enum Face {
+    // Positive Y
     Top,
+    // Negative Y
     Bottom,
+    // Negative X
     Left,
+    // Positive X
     Right,
+    // Positive Z
     Front,
+    // Negative Z
     Back,
 }
 
@@ -174,36 +179,31 @@ impl Faces {
     }
 }
 
-pub struct MapFaces<F, T> {
+pub struct FaceIter {
     faces: Faces,
-    function: F,
-    _marker: PhantomData<T>,
     index: u8,
 }
 
-impl<F, T> Iterator for MapFaces<F, T>
-where F: Fn(Face) -> T {
-    type Item = T;
+impl Iterator for FaceIter {
+    type Item = Face;
 
     fn next(&mut self) -> Option<Self::Item> {
         while self.index < 6 {
             let face = Face::from_u8(self.index).unwrap();
-            self.index += 1;
-            if self.faces.contains(face.into()) {
-                return Some((self.function)(face));
+            if self.faces.contains(Faces::from(face)) {
+                self.index += 1;
+                return Some(face);
             }
+            self.index += 1;
         }
         None
     }
 }
 
 impl Faces {
-    pub fn map<T, F>(self, function: F) -> MapFaces<F, T>
-    where F: Fn(Face) -> T {
-        MapFaces {
+    pub fn var_iter(self) -> FaceIter {
+        FaceIter {
             faces: self,
-            function,
-            _marker: PhantomData,
             index: 0,
         }
     }
@@ -247,6 +247,48 @@ impl<T> Index<usize> for PerFace<T> {
     }
 }
 
+impl<T> IndexMut<usize> for PerFace<T> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        match index {
+            0 => &mut self.top,
+            1 => &mut self.bottom,
+            2 => &mut self.left,
+            3 => &mut self.right,
+            4 => &mut self.front,
+            5 => &mut self.back,
+            _ => panic!("Index out of bounds"),
+        }
+    }
+}
+
+impl<T> Index<Face> for PerFace<T> {
+    type Output = T;
+
+    fn index(&self, index: Face) -> &Self::Output {
+        match index {
+            Face::Top => &self.top,
+            Face::Bottom => &self.bottom,
+            Face::Left => &self.left,
+            Face::Right => &self.right,
+            Face::Front => &self.front,
+            Face::Back => &self.back,
+        }
+    }
+}
+
+impl<T> IndexMut<Face> for PerFace<T> {
+    fn index_mut(&mut self, index: Face) -> &mut Self::Output {
+        match index {
+            Face::Top => &mut self.top,
+            Face::Bottom => &mut self.bottom,
+            Face::Left => &mut self.left,
+            Face::Right => &mut self.right,
+            Face::Front => &mut self.front,
+            Face::Back => &mut self.back,
+        }
+    }
+}
+
 impl<T> PerFace<T> {
     pub const fn splat(value: T) -> Self
     where
@@ -259,6 +301,38 @@ impl<T> PerFace<T> {
             right: value,
             front: value,
             back: value,
+        }
+    }
+
+    pub fn mapped<F>(f: F) -> Self
+    where
+        F: Fn(Face) -> T,
+    {
+        Self {
+            top: f(Face::Top),
+            bottom: f(Face::Bottom),
+            left: f(Face::Left),
+            right: f(Face::Right),
+            front: f(Face::Front),
+            back: f(Face::Back),
+        }
+    }
+
+    pub fn to_array(&self) -> [&T; 6] {
+        [
+            &self.top,
+            &self.bottom,
+            &self.left,
+            &self.right,
+            &self.front,
+            &self.back,
+        ]
+    }
+
+    pub fn iter(&self) -> PerFaceIter<T> {
+        PerFaceIter {
+            value: self,
+            index: 0,
         }
     }
 }
@@ -313,6 +387,25 @@ impl<T: Default> Default for PerFace<T> {
             right: T::default(),
             front: T::default(),
             back: T::default(),
+        }
+    }
+}
+
+pub struct PerFaceIter<'a, T> {
+    value: &'a PerFace<T>,
+    index: usize,
+}
+
+impl<'a, T> Iterator for PerFaceIter<'a, T> {
+    type Item = (Face, &'a T);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index < 6 {
+            let face = Face::from_u8(self.index as u8).unwrap();
+            self.index += 1;
+            Some((face, &self.value[face]))
+        } else {
+            None
         }
     }
 }

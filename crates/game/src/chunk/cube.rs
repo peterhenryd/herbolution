@@ -38,17 +38,17 @@ impl<M> DerefMut for Cube<M> {
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
-pub struct CubePos(pub vec3i);
+pub struct CubePosition(pub vec3i);
 
-impl From<vec3i> for CubePos {
+impl From<vec3i> for CubePosition {
     fn from(value: vec3i) -> Self {
-        CubePos(value)
+        CubePosition(value)
     }
 }
 
-impl From<ChunkLocalPos> for CubePos {
+impl From<ChunkLocalPos> for CubePosition {
     fn from(pos: ChunkLocalPos) -> Self {
-        CubePos(pos.chunk * chunk::LENGTH as i32 + pos.local.cast().unwrap())
+        CubePosition(pos.chunk * chunk::LENGTH as i32 + pos.local.cast().unwrap().xyz())
     }
 }
 

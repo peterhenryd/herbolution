@@ -1,19 +1,23 @@
-use engine::gpu::handle::Handle;
-use engine::input::{Input, InputFrame};
-use engine::renderer_3d::Renderer3D;
-use math::vector::{vec3i, vec3i8};
-use num::traits::ConstZero;
-use winit::event::MouseButton;
-use winit::keyboard::KeyCode;
+use crate::gpu::Gpu;
+use crate::input::{Input, InputFrame};
+use crate::state3d::State3d;
 use game::channel::ClientChannel;
 use game::client::{client_input_channel, ClientInputSender, ClientOutputReceiver};
-use game::entity::EntityTarget;
 use game::entity::logic::player::ActionState;
+use game::entity::EntityTarget;
+use math::vector::{vec3i, vec3i8};
+use num::traits::ConstZero;
+use std::time::Duration;
+use winit::event::MouseButton;
+use winit::keyboard::KeyCode;
 
 pub struct SessionPlayer {
     input_sender: ClientInputSender,
     pub(super) output_receiver: Option<ClientOutputReceiver>,
     prev_target: Option<vec3i>,
+    //prev_position: vec3f,
+    //position: vec3f,
+    //view_bob: f32,
 }
 
 impl SessionPlayer {
@@ -25,32 +29,48 @@ impl SessionPlayer {
             input_sender,
             output_receiver: None,
             prev_target: None,
+            //prev_position: Vec3::ZERO,
+            //position: Vec3::ZERO,
+            //view_bob: 0.0,
         }
     }
 
 
-    pub(super) fn update(&mut self, handle: &Handle, renderer: &mut Renderer3D, input: (&InputFrame, &Input), is_focused: bool) {
+    pub(super) fn update(&mut self, _: Duration, gpu: &Gpu, state: &mut State3d, input: (&InputFrame, &Input), is_focused: bool) {
         let Some(output_receiver) = &mut self.output_receiver else { return };
 
-        if let Some(pos) = output_receiver.recv_camera_pos() {
-            renderer.camera.pos = pos;
+        if let Some(position) = output_receiver.recv_camera_pos() {
+            //self.prev_position = self.position;
+            //self.position = position;
+            state.camera.position = position;
         }
 
+        /*if (self.prev_position - self.position).length_squared() > 0.5 * dt.as_secs_f32() {
+            self.view_bob += dt.as_secs_f32() * 10.0;
+        } else {
+            self.view_bob = 0.0;
+        }
+
+        camera_position.y += self.view_bob.sin() * 0.1;
+
+         */
+
+
         if let Some(rot) = output_receiver.recv_camera_rotation() {
-            renderer.camera.rot = rot;
+            state.camera.rot = rot;
         }
 
         match output_receiver.recv_target() {
             Some(Some(EntityTarget::Cube(pos))) => {
                 if self.prev_target != Some(pos) {
-                    renderer.set_highlighted_tile(&handle, Some(pos));
+                    state.set_highlighted_tile(gpu, Some(pos));
                     self.prev_target = Some(pos);
                 }
             }
             Some(Some(EntityTarget::Entity(_))) => {}
             Some(None) => {
                 if self.prev_target.is_some() {
-                    renderer.set_highlighted_tile(&handle, None);
+                    state.set_highlighted_tile(gpu, None);
                     self.prev_target = None;
                 }
             }

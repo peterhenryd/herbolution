@@ -13,6 +13,8 @@ use lib::geometry::cuboid::Cuboid;
 use lib::time::{DeltaTime, TickTime};
 use math::vector::Vec3;
 use tokio::spawn;
+use tokio::sync::Mutex;
+use lib::fs::Save;
 use math::num::traits::ConstZero;
 
 pub mod client;
@@ -30,15 +32,20 @@ pub struct Game {
     tick_time: TickTime,
     clients: Vec<Client>,
     channel: ServerChannel,
+    //save: Save,
+}
+
+pub struct Options {
+    pub save: Save,
 }
 
 impl Game {
-    pub fn spawn() -> (ClientChannel, ClientChunkChannel) {
+    pub fn spawn(options: Options) -> (ClientChannel, ClientChunkChannel) {
         let (client_channel, server_channel) = channel::create();
         let (client_chunk_channel, server_chunk_channel) = chunk::channel::create();
 
         spawn(async move {
-            let mut game = Game::new(server_channel, server_chunk_channel);
+            let mut game = Game::new(options, server_channel, server_chunk_channel);
 
             loop {
                 if game.channel.recv_exit() {
@@ -60,17 +67,17 @@ impl Game {
     fn add_client(&mut self, input_receiver: ClientInputReceiver) {
         let (output_sender, output_receiver) = client_output_channel();
         let entity_id = self.world_map.primary().entity_set.add(Entity {
-            data: EntityData {
+            data: Mutex::new(EntityData {
                 body: EntityBody::new(
-                    Vec3::new(0., 128., 0.0),
+                    Vec3::new(0., 96., 0.0),
                     Boundary {
-                        cuboid: Cuboid::new(Vec3::ZERO, Vec3::new(0.9, 1.95, 0.9)),
-                        eye_offset: Vec3::new(0., 1.2, 0.),
+                        cuboid: Cuboid::new(Vec3::ZERO, Vec3::new(0.9, 1.9, 0.9)),
+                        eye_offset: Vec3::new(0., 1.0, 0.),
                     }
                 ),
                 abilities: EntityAbilities { is_affected_by_gravity: true },
                 chunk_loader: Some(ChunkLoader::new()),
-            },
+            }),
             logic: PlayerLogic::new(output_sender.clone()).into(),
         });
 
@@ -83,13 +90,14 @@ impl Game {
         self.channel.send_client_output(output_receiver);
     }
 
-    fn new(channel: ServerChannel, chunk_channel: ServerChunkChannel) -> Self {
+    fn new(_: Options, channel: ServerChannel, chunk_channel: ServerChunkChannel) -> Self {
         Self {
             world_map: WorldMap::new(chunk_channel),
             delta_time: DeltaTime::new(),
             tick_time: TickTime::new(TICKS_PER_SECOND),
             clients: vec![],
             channel,
+            //save: options.save,
         }
     }
 
@@ -110,15 +118,16 @@ impl Game {
     async fn tick(&mut self) {
         let world = self.world_map.primary();
         for client in &mut self.clients {
-            let Some(entity) = world.entities_mut().get_mut(client.entity_id) else { continue };
+            let Some(entity) = world.entity_set.get_mut(client.entity_id) else { continue };
 
-            client.input_receiver.dequeue_onto_body(&mut entity.data.body);
+            let mut data = entity.data.lock().await;
+            client.input_receiver.dequeue_onto_body(&mut data.body);
 
-            client.output_sender.send_camera_pos(entity.data.body.eye_pos());
-            client.output_sender.send_camera_rotation(entity.data.body.rotation);
+            client.output_sender.send_camera_position(data.body.eye_pos());
+            client.output_sender.send_camera_rotation(data.body.rotation);
 
-            if let EntityLogicVariant::Player(logic) = &mut entity.logic {
-                client.input_receiver.dequeue_onto_controller(&mut logic.controller);
+            if let EntityLogicVariant::Player(logic) = &entity.logic {
+                client.input_receiver.dequeue_onto_controller(&mut *logic.controller.lock().await);
             }
         }
 

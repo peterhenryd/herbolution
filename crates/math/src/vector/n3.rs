@@ -6,6 +6,7 @@ use num::{NumCast, One, Signed, ToPrimitive, Zero};
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::ops::{Add, AddAssign, BitAnd, BitAndAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign};
+use crate::matrix::Mat4;
 
 #[repr(C)]
 #[derive(
@@ -169,6 +170,16 @@ impl<T> Vec3<T> {
         T: Copy + PartialEq + ConstZero,
     {
         std::mem::replace(self, Self::ZERO)
+    }
+
+    pub fn into_matrix(self) -> Mat4<T>
+    where T: ConstZero + ConstOne {
+        Mat4 {
+            x: Vec4::X,
+            y: Vec4::Y,
+            z: Vec4::Z,
+            w: self.extend(T::ONE),
+        }
     }
 }
 

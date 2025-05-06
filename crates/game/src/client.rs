@@ -79,7 +79,7 @@ impl ClientInputReceiver {
 }
 
 impl ClientOutputSender {
-    pub fn send_camera_pos(&self, pos: vec3f) {
+    pub fn send_camera_position(&self, pos: vec3f) {
         let _ = self.camera_pos.try_send(pos);
     }
 

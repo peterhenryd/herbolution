@@ -1,28 +1,6 @@
 use math::vector::vec3u5;
 use std::fmt::{Debug, Formatter};
 
-#[derive(Debug, Copy, Clone)]
-pub struct LightLevel(u8);
-
-impl LightLevel {
-    pub const fn new(level: u8) -> Self {
-        debug_assert!(level < 32, "light level out of bounds");
-
-        Self(level)
-    }
-
-    #[inline]
-    pub const fn into_u8(self) -> u8 {
-        self.0
-    }
-}
-
-impl Into<u8> for LightLevel {
-    fn into(self) -> u8 {
-        self.into_u8()
-    }
-}
-
 #[repr(C)]
 pub struct FacialLightLevels(vec3u5, vec3u5);
 
