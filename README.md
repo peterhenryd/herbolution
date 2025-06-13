@@ -1,6 +1,6 @@
 # herbolution
 
-Herbolution is a 3D voxel game written in Rust to help me learn low-level graphics programming as well to satisfy some
+Herbolution is a 3D voxel game written in Rust to help me learn low-level graphics programming as well as to satisfy some
 of my blocky creative urges.
 
 ## Building
