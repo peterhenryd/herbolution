@@ -5,23 +5,14 @@ edition = "2024"
 
 [dependencies]
 # Internal dependencies
+engine = { package = "herbolution-engine", path = "../engine" }
 game = { package = "herbolution-game", path = "../game" }
 lib = { package = "herbolution-lib", path = "../lib" }
 math = { package = "herbolution-math", path = "../math" }
 
 # External dependencies
-bytemuck.workspace = true
 clap.workspace = true
 crossbeam.workspace = true
-generational-arena.workspace = true
-glyphon.workspace = true
-hashbrown.workspace = true
-image-atlas.workspace = true
-image.workspace = true
-pollster.workspace = true
-smallvec.workspace = true
-thiserror.workspace = true
 tracing-subscriber.workspace = true
-tracing.workspace = true
 wgpu.workspace = true
 winit.workspace = true

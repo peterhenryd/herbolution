@@ -1,5 +1,7 @@
 #![allow(non_camel_case_types)]
 
+use bytemuck::{Pod, Zeroable};
+
 mod n2;
 mod n3;
 mod n4;
@@ -20,7 +22,7 @@ macro_rules! vec_type {
         linearize($($order:ident),+)
     ) => {
         #[repr(C)]
-        #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, serde::Deserialize, serde::Serialize)]
+        #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, serde::Deserialize, serde::Serialize)]
         pub struct $name<$t> {
             $(pub $field: $ft),+
         }
@@ -329,6 +331,14 @@ macro_rules! vec_type {
                 pub const $constant: Self = Self::new($(if $literal == 1 { T::ONE } else { T::ZERO }),+);
             )+
         }
+        
+        impl<$t: Default> Default for $name<$t> {
+            fn default() -> Self {
+                Self {
+                    $($field: Default::default()),+
+                }
+            }
+        }   
 
         impl<$t> From<($($ft),+)> for $name<$t> {
             fn from(($($field),+): ($($ft),+)) -> Self {
@@ -762,3 +772,22 @@ pub use n2::*;
 pub use n3::*;
 pub use n4::*;
 pub use packed::*;
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, PartialEq, Pod, Zeroable)]
+pub struct vec3if {
+    pub integral: vec3i,
+    pub fractional: vec3f,
+}
+
+impl From<vec3d> for vec3if {
+    fn from(value: vec3d) -> Self {
+        let int_vec = value.cast().unwrap();
+        let fract_vec = value.fract().cast().unwrap();
+
+        Self {
+            integral: int_vec,
+            fractional: fract_vec,
+        }
+    }
+}

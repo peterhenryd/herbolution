@@ -1,0 +1,17 @@
+[package]
+name = "herbolution-video"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# Internal dependencies
+math = { package = "herbolution-math", path = "../math" }
+
+# External dependencies
+bytemuck.workspace = true
+generational-arena.workspace = true
+glyphon.workspace = true
+image-atlas.workspace = true
+image.workspace = true
+pollster.workspace = true
+wgpu.workspace = true

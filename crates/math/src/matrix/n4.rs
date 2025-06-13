@@ -8,7 +8,7 @@ use num::Float;
 
 #[repr(C)]
 #[derive(
-    Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize,
+    Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize,
 )]
 pub struct Mat4<T> {
     pub x: Vec4<T>,

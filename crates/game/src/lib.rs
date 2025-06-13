@@ -95,7 +95,7 @@ impl Game {
         let mut world_map = HashMap::new();
         let save_world = save.default_world().unwrap();
         world_map.insert(save.descriptor.default_world.clone(), World::from_save(save_world, chunk_channel.clone()));
-        
+
         Self {
             world_map,
             chunk_channel,

@@ -4,5 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# Internal dependencies
+audio = { package = "herbolution-audio", path = "../audio" }
 math = { package = "herbolution-math", path = "../math" }
 video = { package = "herbolution-video", path = "../video" }
+
+# External dependencies
+smallvec.workspace = true
+winit.workspace = true

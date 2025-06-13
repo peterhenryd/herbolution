@@ -11,12 +11,12 @@ pub mod geo;
 pub mod light;
 pub mod time;
 
-pub struct Modify<T> {
+pub struct TrackMut<T> {
     value: T,
     is_dirty: bool,
 }
 
-impl<T> Modify<T> {
+impl<T> TrackMut<T> {
     pub fn new(value: T) -> Self {
         Self {
             value,
@@ -29,7 +29,7 @@ impl<T> Modify<T> {
     }
 }
 
-impl<T> Deref for Modify<T> {
+impl<T> Deref for TrackMut<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -37,14 +37,14 @@ impl<T> Deref for Modify<T> {
     }
 }
 
-impl<T> DerefMut for Modify<T> {
+impl<T> DerefMut for TrackMut<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.is_dirty = true;
         &mut self.value
     }
 }
 
-impl<T> From<T> for Modify<T> {
+impl<T> From<T> for TrackMut<T> {
     fn from(value: T) -> Self {
         Self::new(value)
     }

@@ -4,8 +4,7 @@ use std::mem::take;
 use smallvec::SmallVec;
 use winit::event::Modifiers;
 pub use winit::event::MouseButton;
-pub use winit::keyboard::KeyCode;
-use winit::keyboard::ModifiersKeyState;
+use winit::keyboard::{KeyCode, ModifiersKeyState};
 
 #[derive(Default)]
 pub struct Input {
@@ -18,7 +17,7 @@ pub struct Input {
 }
 
 impl Input {
-    pub fn set_key_activity(&mut self, key_code: KeyCode, is_active: bool) {
+    pub fn push_key_activity(&mut self, key_code: KeyCode, is_active: bool) {
         if is_active {
             self.active_keys.insert(key_code);
             return;
@@ -59,7 +58,7 @@ impl Input {
         self.mouse_pos = pos;
     }
 
-    pub fn add_mouse_movement(&mut self, delta: vec2d) {
+    pub fn push_mouse_movement(&mut self, delta: vec2d) {
         self.frame.mouse_movement += delta;
     }
 

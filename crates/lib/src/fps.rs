@@ -1,29 +1,30 @@
 use std::time::Duration;
 
-// TODO: implement weighted average
-pub struct Fps {
-    sec_accumulator: Duration,
+pub struct IntervalCounter {
+    acc: Duration,
+    interval: Duration,
     current: u64,
     last: u64,
 }
 
-impl Fps {
-    pub fn new() -> Self {
+impl IntervalCounter {
+    pub fn new(interval: Duration) -> Self {
         Self {
-            sec_accumulator: Duration::ZERO,
+            acc: Duration::ZERO,
+            interval,
             current: 0,
             last: 0,
         }
     }
 
     pub fn update(&mut self, dt: Duration) {
-        self.sec_accumulator += dt;
+        self.acc += dt;
         self.current += 1;
 
-        if self.sec_accumulator >= Duration::SECOND {
+        if self.acc >= self.interval {
             self.last = self.current;
             self.current = 0;
-            self.sec_accumulator -= Duration::SECOND;
+            self.acc -= self.interval;
         }
     }
 

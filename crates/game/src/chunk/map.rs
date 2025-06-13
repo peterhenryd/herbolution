@@ -12,6 +12,7 @@ use line_drawing::{VoxelOrigin, WalkVoxels};
 use math::vector::{vec3d, vec3f, vec3i, vec3u4, Vec3};
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use std::collections::HashMap;
+use std::ops::Add;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::atomic::AtomicBool;
@@ -117,20 +118,17 @@ impl ChunkMap {
 
             let mut mesh = chunk.mesh.write();
             mesh.data[index].insert_faces(face);
-            
-            /*
+
             let Vec3 { x, y, z } = pos.local.cast::<i32>().unwrap().add(offset);
             if x == 0 || x == 15 && material.is_none() {
-                mesh.exposed_faces.set(Face::from_vec3(Vec3::new(x / 15 * 2 - 1, 0, 0)).unwrap().into(), true);
+                mesh.exposed_faces.set(Face::from_normal(Vec3::new(x / 15 * 2 - 1, 0, 0)).unwrap().into(), true);
             }
             if y == 0 || y == 15 && material.is_none() {
-                mesh.exposed_faces.set(Face::from_vec3(Vec3::new(0, y / 15 * 2 - 1, 0)).unwrap().into(), true);
+                mesh.exposed_faces.set(Face::from_normal(Vec3::new(0, y / 15 * 2 - 1, 0)).unwrap().into(), true);
             }
             if z == 0 || z == 15 && material.is_none() {
-                mesh.exposed_faces.set(Face::from_vec3(Vec3::new(0, 0, z / 15 * 2 - 1)).unwrap().into(), true);
+                mesh.exposed_faces.set(Face::from_normal(Vec3::new(0, 0, z / 15 * 2 - 1)).unwrap().into(), true);
             }
-            
-             */
             
             mesh.updated_positions.push(neighbor_local_pos);
         }

@@ -7,12 +7,11 @@ use lib::geo::face::{Face, Faces};
 use math::vector::{vec3i, vec3u4, Vec3};
 use parking_lot::RwLock;
 use rayon::ThreadPool;
-use std::ops::{BitAnd, Not, Range, Sub};
+use std::ops::{BitAnd, Not, Range};
 use std::path::PathBuf;
 use std::rc::Rc;
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use math::num::traits::{ConstOne, ConstZero};
 
 pub mod cube;
 pub mod generator;
@@ -38,7 +37,7 @@ pub struct CubeMesh {
     pub pos: vec3i,
     data: Box<[Cube<Option<Material>>]>,
     updated_positions: Vec<vec3u4>,
-    //exposed_faces: Faces,
+    exposed_faces: Faces,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
@@ -65,7 +64,7 @@ impl Chunk {
     fn send_overwrite_update(&self) {
         let Some(mesh) = self.mesh.try_read() else { return };
         
-        //self.render_flag.store(!mesh.exposed_faces.is_empty(), Ordering::Relaxed);
+        self.render_flag.store(!mesh.exposed_faces.is_empty(), Ordering::Relaxed);
 
         if mesh.updated_positions.is_empty() {
             return;
@@ -123,7 +122,7 @@ impl CubeMesh {
             pos,
             data: Box::new([Cube::new(None); SIZE]),
             updated_positions: vec![],
-            //exposed_faces: Faces::all(),
+            exposed_faces: Faces::all(),
         }
     }
 
@@ -147,42 +146,6 @@ impl CubeMesh {
                 Face::North => Vec3::new(0..l, 0..l, l - 1..l),
                 Face::South => Vec3::new(0..l, 0..l, 0..1),
             }
-            
-            /*
-            match face {
-                Face::East => Vec3::new(
-                    length - T::ONE..length,
-                    T::ZERO..length,
-                    T::ZERO..length,
-                ),
-                Face::West => Vec3::new(
-                    T::ZERO..T::ONE,
-                    T::ZERO..length,
-                    T::ZERO..length,
-                ),
-                Face::Up => Vec3::new(
-                    T::ZERO..length,
-                    length - T::ONE..length,
-                    T::ZERO..length,
-                ),
-                Face::Down => Vec3::new(
-                    T::ZERO..length,
-                    T::ZERO..T::ONE,
-                    T::ZERO..length,
-                ),
-                Face::North => Vec3::new(
-                    T::ZERO..length,
-                    T::ZERO..length,
-                    length - T::ONE..length,
-                ),
-                Face::South => Vec3::new(
-                    T::ZERO..length,
-                    T::ZERO..length,
-                    T::ZERO..T::ONE,
-                ),
-            }
-            
-             */
         }
 
         let matric = sized_boundary_slice(shared_face);
@@ -210,8 +173,8 @@ impl CubeMesh {
             }
         }
         
-        //self.exposed_faces.set(shared_face.into(), is_exposed);
-        //other.exposed_faces.set(other_shared_face.into(), is_exposed);
+        self.exposed_faces.set(shared_face.into(), is_exposed);
+        other.exposed_faces.set(other_shared_face.into(), is_exposed);
     }
 
     pub fn set(&mut self, pos: vec3u4, new_material: Option<Material>) {
@@ -236,18 +199,16 @@ impl CubeMesh {
             self.add_neighboring_faces(present, pos);
         }
         
-        /*let (x, y, z) = (pos.x(), pos.y(), pos.z());
+        let (x, y, z) = (pos.x(), pos.y(), pos.z());
         if x == 0 || x == 15 && new_material.is_none() {
-            self.exposed_faces.set(Face::from_vec3(Vec3::new(if x == 0 { -1 } else { 1 }, 0, 0)).unwrap().into(), true);
+            self.exposed_faces.set(Face::from(Vec3::new(if x == 0 { -1 } else { 1 }, 0, 0)).into(), true);
         }
         if y == 0 || y == 15 && new_material.is_none() {
-            self.exposed_faces.set(Face::from_vec3(Vec3::new(0, if y == 0 { -1 } else { 1 }, 0)).unwrap().into(), true);
+            self.exposed_faces.set(Face::from(Vec3::new(0, if y == 0 { -1 } else { 1 }, 0)).into(), true);
         }
         if z == 0 || z == 15 && new_material.is_none() {
-            self.exposed_faces.set(Face::from_vec3(Vec3::new(0, 0, if y == 0 { -1 } else { 1 })).unwrap().into(), true);
+            self.exposed_faces.set(Face::from(Vec3::new(0, 0, if y == 0 { -1 } else { 1 })).into(), true);
         }
-        
-         */
 
         self.updated_positions.push(pos);
     }

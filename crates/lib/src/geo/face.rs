@@ -66,7 +66,7 @@ impl Face {
         }
     }
 
-    pub fn into_quat(self) -> Quat {
+    pub fn to_rotation(self) -> Quat {
         match self {
             Face::East => ROTATIONS[0],
             Face::West => ROTATIONS[1],
@@ -107,7 +107,7 @@ impl Face {
 
 impl Into<Quat> for Face {
     fn into(self) -> Quat {
-        self.into_quat()
+        self.to_rotation()
     }
 }
 

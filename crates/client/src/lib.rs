@@ -6,16 +6,14 @@
 use std::path::PathBuf;
 use winit::error::EventLoopError;
 use winit::event_loop::EventLoop;
-use crate::app::Handler;
+use crate::app::handler::Handler;
 
 pub mod app;
 pub mod session;
-pub mod gpu;
-pub mod uniform;
-pub mod engine;
-pub mod input;
-pub mod state2d;
-pub mod state3d;
+pub mod chunk;
+pub mod player;
+pub mod debugger;
+pub mod world;
 
 pub struct Options {
     pub data_dir: PathBuf,

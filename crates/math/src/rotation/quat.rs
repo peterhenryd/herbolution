@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 #[repr(transparent)]
 #[derive(
-    Debug, Default, Copy, Clone, PartialEq, PartialOrd, Deserialize, Serialize, Pod, Zeroable,
+    Debug, Copy, Clone, PartialEq, PartialOrd, Deserialize, Serialize, Pod, Zeroable,
 )]
 pub struct Quat(vec4f);
 

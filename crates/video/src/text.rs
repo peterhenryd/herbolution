@@ -9,7 +9,7 @@ use math::color::Rgba;
 use math::size::Size2;
 use math::vector::vec2f;
 use wgpu::{CompareFunction, DepthStencilState, MultisampleState, RenderPass, TextureFormat};
-use crate::gpu::Gpu;
+use crate::gpu::Handle;
 
 pub struct TextRenderer {
     inner: glyphon::TextRenderer,
@@ -20,17 +20,17 @@ pub struct TextRenderer {
 }
 
 impl TextRenderer {
-    pub fn create(gpu: &Gpu, Size2 { width, height }: Size2<u32>, format: TextureFormat) -> Self {
+    pub fn create(handle: &Handle, Size2 { width, height }: Size2<u32>) -> Self {
         let mut font_system = FontSystem::new();
         font_system.db_mut().load_fonts_dir("assets/font");
 
-        let cache = Cache::new(&gpu.device);
+        let cache = Cache::new(handle.device());
         let swash_cache = SwashCache::new();
-        let mut text_atlas = TextAtlas::new(&gpu.device, &gpu.queue, &cache, format);
+        let mut text_atlas = TextAtlas::new(handle.device(), handle.queue(), &cache, TextureFormat::Bgra8UnormSrgb);
 
         let inner = glyphon::TextRenderer::new(
             &mut text_atlas,
-            &gpu.device,
+            handle.device(),
             MultisampleState {
                 count: 1,
                 mask: 1,
@@ -45,8 +45,8 @@ impl TextRenderer {
             }),
         );
 
-        let mut viewport = Viewport::new(&gpu.device, &cache);
-        viewport.update(&gpu.queue, Resolution { width, height });
+        let mut viewport = Viewport::new(handle.device(), &cache);
+        viewport.update(handle.queue(), Resolution { width, height });
 
         Self {
             inner,
@@ -57,7 +57,7 @@ impl TextRenderer {
         }
     }
 
-    pub fn prepare(&mut self, gpu: &Gpu, frame: &TextFrame) {
+    pub fn prepare(&mut self, handle: &Handle, frame: &TextFrame) {
         let mut buffers = Vec::with_capacity(frame.sections.len());
         for (_, TextSection {
             content,
@@ -110,8 +110,8 @@ impl TextRenderer {
 
         self.inner
             .prepare_with_depth(
-                &gpu.device,
-                &gpu.queue,
+                handle.device(),
+                handle.queue(),
                 &mut self.font_system,
                 &mut self.text_atlas,
                 &self.viewport,
@@ -132,8 +132,9 @@ impl TextRenderer {
         self.text_atlas.trim();
     }
 
-    pub fn set_size(&mut self, gpu: &Gpu, Size2 { width, height }: Size2<u32>) {
-        self.viewport.update(&gpu.queue, Resolution { width, height });
+    pub fn set_resolution(&mut self, handle: &Handle, resolution: impl Into<Size2<u32>>) {
+        let Size2 { width, height } = resolution.into();
+        self.viewport.update(handle.queue(), Resolution { width, height });
     }
 }
 
@@ -149,6 +150,20 @@ pub struct TextSection {
 #[derive(Default)]
 pub struct TextFrame {
     pub sections: Arena<TextSection>,
+}
+
+impl TextFrame {
+    pub fn insert(&mut self, section: TextSection) -> TextId {
+        TextId(self.sections.insert(section))
+    }
+
+    pub fn remove(&mut self, id: TextId) {
+        self.sections.remove(id.0);
+    }
+
+    pub fn get(&mut self, id: &TextId) -> &mut TextSection {
+        self.sections.get_mut(id.0).unwrap()
+    }
 }
 
 impl Debug for TextFrame {

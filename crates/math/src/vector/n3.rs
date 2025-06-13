@@ -18,7 +18,7 @@ impl<T> Vec3<T> {
             w,
         }
     }
-    
+
     pub fn cross(self, rhs: Self) -> Self
     where
         T: Copy + std::ops::Sub<Output = T>,
