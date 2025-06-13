@@ -1,11 +1,10 @@
-use crate::angle::Angle;
 use crate::rotation::Euler;
 use crate::vector::{Vec3, Vec4};
 use bytemuck::{Pod, Zeroable};
-use num::traits::real::Real;
 use num::traits::{ConstOne, ConstZero};
 use serde::{Deserialize, Serialize};
 use std::ops::{Add, Mul};
+use num::Float;
 
 #[repr(C)]
 #[derive(
@@ -23,8 +22,8 @@ impl<T> Mat4<T> {
         Self { x, y, z, w }
     }
 
-    pub fn view(pos: Vec3<T>, rot: Euler<impl Angle<Comp = T>>) -> Self
-    where T: Real + ConstZero + ConstOne {
+    pub fn view_origin(rot: Euler<T>) -> Self
+    where T: Float + ConstZero + ConstOne {
         let f = -rot.into_view_center().cast().unwrap();
         let s = f.cross(Vec3::Y).normalize();
         let u = s.cross(f);
@@ -33,12 +32,7 @@ impl<T> Mat4<T> {
             Vec4::new(s.x, u.x, -f.x, T::ZERO),
             Vec4::new(s.y, u.y, -f.y, T::ZERO),
             Vec4::new(s.z, u.z, -f.z, T::ZERO),
-            Vec4::new(
-                -pos.dot(s),
-                -pos.dot(u),
-                pos.dot(f),
-                T::ONE,
-            ),
+            Vec4::W,
         )
     }
 }

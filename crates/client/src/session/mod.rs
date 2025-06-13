@@ -9,7 +9,7 @@ use math::size::Size2;
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
 use winit::window::CursorGrabMode;
-use lib::fs::Save;
+use lib::fs::save::Save;
 use crate::engine::{Engine, EngineFrame};
 
 pub mod chunk;
@@ -28,10 +28,8 @@ pub struct GameSession {
 }
 
 impl GameSession {
-    pub fn create(size: Size2<u32>) -> Self {
-        let (channel, chunk_channel) = Game::spawn(Options {
-            save: Save::open("./world").unwrap(),
-        });
+    pub fn create(save: Save, size: Size2<u32>) -> Self {
+        let (channel, chunk_channel) = Game::spawn(Options { save });
         let player = SessionPlayer::create(&channel);
 
         Self {

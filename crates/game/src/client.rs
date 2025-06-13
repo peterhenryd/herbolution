@@ -1,12 +1,11 @@
-use std::f32::consts::FRAC_PI_2;
-use crossbeam::channel::{bounded, Receiver, Sender};
-use math::angle::Rad;
-use math::rotation::Euler;
-use math::vector::{vec2d, vec3f, vec3i8, Vec2};
 use crate::entity::body::EntityBody;
-use crate::entity::EntityTarget;
 use crate::entity::logic::player::{ActionState, PlayerController};
 use crate::entity::set::EntityId;
+use crate::entity::EntityTarget;
+use crossbeam::channel::{bounded, Receiver, Sender};
+use math::rotation::Euler;
+use math::vector::{vec2d, vec3d, vec3i8, Vec2};
+use std::f32::consts::FRAC_PI_2;
 
 #[derive(Debug)]
 pub struct Client {
@@ -31,15 +30,15 @@ pub struct ClientInputReceiver {
 
 #[derive(Debug, Clone)]
 pub struct ClientOutputSender {
-    camera_pos: Sender<vec3f>,
-    camera_rotation: Sender<Euler<Rad<f32>>>,
+    camera_pos: Sender<vec3d>,
+    camera_rotation: Sender<Euler<f32>>,
     entity_target: Sender<Option<EntityTarget>>
 }
 
 #[derive(Debug)]
 pub struct ClientOutputReceiver {
-    camera_pos: Receiver<vec3f>,
-    camera_rotation: Receiver<Euler<Rad<f32>>>,
+    camera_pos: Receiver<vec3d>,
+    camera_rotation: Receiver<Euler<f32>>,
     entity_target: Receiver<Option<EntityTarget>>
 }
 
@@ -68,7 +67,7 @@ impl ClientInputReceiver {
             body.rotation.yaw -= dx.to_radians() as f32;
             body.rotation.pitch -= dy.to_radians() as f32;
         }
-        body.rotation.pitch = body.rotation.pitch.0.clamp(-FRAC_PI_2 + f32::EPSILON, FRAC_PI_2 - f32::EPSILON).into();
+        body.rotation.pitch = body.rotation.pitch.clamp(-FRAC_PI_2 + f32::EPSILON, FRAC_PI_2 - f32::EPSILON).into();
     }
 
     pub fn dequeue_onto_controller(&mut self, controller: &mut PlayerController) {
@@ -79,11 +78,11 @@ impl ClientInputReceiver {
 }
 
 impl ClientOutputSender {
-    pub fn send_camera_position(&self, pos: vec3f) {
+    pub fn send_camera_position(&self, pos: vec3d) {
         let _ = self.camera_pos.try_send(pos);
     }
 
-    pub fn send_camera_rotation(&self, rotation: Euler<Rad<f32>>) {
+    pub fn send_camera_rotation(&self, rotation: Euler<f32>) {
         let _ = self.camera_rotation.try_send(rotation);
     }
 
@@ -93,11 +92,11 @@ impl ClientOutputSender {
 }
 
 impl ClientOutputReceiver {
-    pub fn recv_camera_pos(&self) -> Option<vec3f> {
+    pub fn recv_camera_pos(&self) -> Option<vec3d> {
         self.camera_pos.try_recv().ok()
     }
 
-    pub fn recv_camera_rotation(&self) -> Option<Euler<Rad<f32>>> {
+    pub fn recv_camera_rotation(&self) -> Option<Euler<f32>> {
         self.camera_rotation.try_recv().ok()
     }
 

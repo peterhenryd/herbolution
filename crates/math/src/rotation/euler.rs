@@ -1,9 +1,8 @@
-use crate::angle::Angle;
 use crate::vector::Vec3;
-use num::traits::real::Real;
 use num::traits::ConstZero;
 use serde::{Deserialize, Serialize};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
+use num::Float;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]
@@ -18,40 +17,34 @@ impl<A> Euler<A> {
         Self { yaw, pitch, roll }
     }
 
-    pub fn into_view_center(self) -> Vec3<A::Comp>
+    pub fn into_view_center(self) -> Vec3<A>
     where
-        A: Angle,
-        A::Comp: Real + ConstZero,
+        A: Float + ConstZero,
     {
-        let (sin_pitch, cos_pitch) = self.pitch.into_rad().0.sin_cos();
-        let (sin_yaw, cos_yaw) = self.yaw.into_rad().0.sin_cos();
+        let (sin_pitch, cos_pitch) = self.pitch.sin_cos();
+        let (sin_yaw, cos_yaw) = self.yaw.sin_cos();
         Vec3::new(cos_pitch * cos_yaw, sin_pitch, cos_pitch * sin_yaw).normalize()
     }
 
     /// Returns the parallel and perpendicular directions to the yaw of the rotation.
-    pub fn yaw_directions(self) -> (Vec3<A::Comp>, Vec3<A::Comp>)
+    pub fn yaw_directions(self) -> (Vec3<A>, Vec3<A>)
     where
-        A: Angle,
-        A::Comp: Real + ConstZero,
+        A: Float + ConstZero,
     {
-        let (sin_yaw, cos_yaw) = self.yaw.into_rad().0.sin_cos();
+        let (sin_yaw, cos_yaw) = self.yaw.sin_cos();
 
-        let straight = Vec3::new(cos_yaw, ConstZero::ZERO, sin_yaw);
-        let side = Vec3::new(-sin_yaw, ConstZero::ZERO, cos_yaw);
+        let straight = Vec3::new(cos_yaw, A::ZERO, sin_yaw);
+        let side = Vec3::new(-sin_yaw, A::ZERO, cos_yaw);
 
         (straight.normalize(), side.normalize())
     }
 }
 
-impl<A> Euler<A>
-where
-    A: Angle + ConstZero {
+impl<A: ConstZero> Euler<A> {
     pub const IDENTITY: Self = Self::new(A::ZERO, A::ZERO, A::ZERO);
 }
 
-impl<A> Default for Euler<A>
-where
-    A: Angle + ConstZero {
+impl<A: ConstZero> Default for Euler<A> {
     fn default() -> Self {
         Self::IDENTITY
     }

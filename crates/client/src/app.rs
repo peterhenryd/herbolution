@@ -1,10 +1,14 @@
 use crate::engine::Engine;
 use crate::session::GameSession;
 use crate::Options;
+use game::chunk;
+use lib::fs::save::{SaveAttributes, WorldAttributes, WorldDescriptor};
+use lib::fs::Fs;
 use math::color::{Color, Rgba};
 use math::size::Size2;
 use math::vector::Vec2;
-use std::path::Path;
+use std::path::PathBuf;
+use std::random::random;
 use std::sync::Arc;
 use winit::application::ApplicationHandler;
 use winit::dpi::{PhysicalPosition, PhysicalSize};
@@ -15,7 +19,7 @@ use winit::window::{WindowAttributes, WindowId};
 
 pub struct App {
     engine: Engine,
-    //fs: Fs,
+    fs: Fs,
     session: Option<GameSession>,
 }
 
@@ -25,7 +29,7 @@ pub struct Handler {
 }
 
 impl App {
-    pub fn new(event_loop: &ActiveEventLoop, _: impl AsRef<Path>) -> Self {
+    pub fn new(event_loop: &ActiveEventLoop, data_dir: PathBuf) -> Self {
         const VERSION: &str = env!("CARGO_PKG_VERSION");
         const RESOLUTION: (u32, u32) = (1920, 1080);
 
@@ -38,9 +42,9 @@ impl App {
 
         let window = Arc::new(window);
         let engine = Engine::create(window).expect("Failed to create engine");
-        //let fs = Fs::new(data_dir.as_ref().to_path_buf());
+        let fs = Fs::new(data_dir);
 
-        Self { engine, /*fs,*/ session: None }
+        Self { engine, fs, session: None }
     }
 
     pub fn set_size(&mut self, size: Size2<u32>) {
@@ -55,7 +59,17 @@ impl App {
         let mut frame = self.engine.next_frame().expect("Failed to create frame");
 
         if self.session.is_none() {
-            self.session = Some(GameSession::create(self.engine.surface.size()));
+            let save = self.fs.create_or_open_save("default", SaveAttributes {
+                title: "Default".to_string(),
+                default_world: WorldAttributes { 
+                    name: "world".to_string(), 
+                    descriptor: WorldDescriptor {
+                        title: "Overworld".to_string(), 
+                        seed: random(),
+                    } 
+                },
+            }).unwrap();
+            self.session = Some(GameSession::create(save, self.engine.surface.size()));
         }
 
         self.session.as_mut().unwrap().update(&frame, &mut self.engine);
@@ -64,8 +78,8 @@ impl App {
         let mut render_pass = frame.gpu.start_pass(Some(Rgba::from_rgb(117, 255, 250).into()));
 
         if let Some(session) = &self.session {
-            let observer = self.engine.state3d.camera.position;
-            self.engine.render(&mut render_pass, session.world.chunk_map.meshes(observer));
+            let offset_chunk = self.engine.state3d.camera.position.cast().unwrap() / chunk::LENGTH as i32;
+            self.engine.render(&mut render_pass, offset_chunk, session.world.chunk_map.meshes());
         }
         self.engine.state2d.render(&mut render_pass);
 
@@ -91,7 +105,7 @@ impl Handler {
 
 impl ApplicationHandler for Handler {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        self.app = Some(App::new(event_loop, &self.options.data_dir));
+        self.app = Some(App::new(event_loop, self.options.data_dir.clone()));
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _: WindowId, event: WindowEvent) {

@@ -8,24 +8,28 @@ use game::chunk::channel::{ChunkUpdate, ClientChunkChannel};
 use game::chunk::cube::Cube;
 use game::chunk::material::Material;
 use math::color::Rgba;
-use math::vector::{vec2f, vec3f, vec3i, vec4u4};
+use math::vector::{vec2f, vec3i, vec3u4};
 use std::collections::HashMap;
-use std::ops::{Add, Mul};
+use std::ops::Mul;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 pub struct SessionChunk {
     position: vec3i,
     data: Box<[Cube<Option<Material>>; chunk::SIZE]>,
     receiver: Receiver<ChunkUpdate>,
     mesh: InstanceBuffer,
+    render_flag: Arc<AtomicBool>,
 }
 
 impl SessionChunk {
-    pub fn create(pos: vec3i, gpu: &Gpu, receiver: Receiver<ChunkUpdate>) -> Self {
+    pub fn create(pos: vec3i, gpu: &Gpu, receiver: Receiver<ChunkUpdate>, render_flag: Arc<AtomicBool>) -> Self {
         Self {
             position: pos,
             data: Box::new([Cube::new(None); chunk::SIZE]),
             receiver,
             mesh: InstanceBuffer::create::<Instance3dPayload>(gpu, &[]),
+            render_flag,
         }
     }
 
@@ -43,26 +47,24 @@ impl SessionChunk {
             return;
         }
 
-        let chunk_pos = self.position.mul(chunk::LENGTH as i32).cast::<f32>().unwrap();
+        let chunk_pos = self.position.mul(chunk::LENGTH as i32).cast::<f64>().unwrap();
 
         let mut instances = vec![];
         for x in 0..chunk::LENGTH {
             for z in 0..chunk::LENGTH {
                 for y in 0..chunk::LENGTH {
-                    let pos = vec4u4::new(x as u8, y as u8, z as u8, 0);
+                    let pos = vec3u4::new(x as u8, y as u8, z as u8);
                     let cube = self.data[pos.linearize()];
                     if let Some(material) = cube.material {
-                        for face in cube.faces().var_iter() {
+                        for face in cube.faces().variant_iter() {
                             let (tex_pos, tex_size) = texture_positions[material.texture_index(face)];
 
                             instances.push(Instance3d {
-                                position: chunk_pos + pos.cast().unwrap().xyz(),
+                                position: chunk_pos + pos.cast().unwrap(),
                                 rotation: face.into_quat(),
                                 texture_position: tex_pos,
                                 texture_size: tex_size,
                                 color: Rgba::TRANSPARENT,
-                                light: 0,
-                                is_lit: true,
                             }.payload());
                         }
                     }
@@ -73,13 +75,12 @@ impl SessionChunk {
         self.mesh.write(gpu, &instances);
     }
 
-    pub fn is_rendered(&self, observer: vec3f) -> bool {
-        observer.min(self.position
-            .cast::<f32>()
-            .unwrap()
-            .mul(chunk::LENGTH as f32)
-            .add(chunk::LENGTH as f32 / 2.0))
-            .length() < 128.0
+    fn is_rendered(&self) -> bool { 
+        let game_flag = self.render_flag.load(Ordering::Relaxed);
+        
+        // Client-side culling...
+        
+        game_flag
     }
 }
 
@@ -105,9 +106,9 @@ impl SessionChunkMap {
     }
 
     pub fn update(&mut self, gpu: &Gpu, texture_positions: &[(vec2f, f32)]) {
-        while let Some((pos, receiver)) = self.channel.recv_load() {
+        while let Some((pos, receiver, render_flag)) = self.channel.recv_load() {
             self.map
-                .insert(pos, SessionChunk::create(pos, gpu, receiver));
+                .insert(pos, SessionChunk::create(pos, gpu, receiver, render_flag));
         }
 
         while let Some(pos) = self.channel.recv_unload() {
@@ -119,7 +120,7 @@ impl SessionChunkMap {
         }
     }
 
-    pub fn meshes(&self, _: vec3f) -> impl Iterator<Item = (vec3i, &InstanceBuffer)> {
-        self.map.values().map(|x| (x.position, &x.mesh))
+    pub fn meshes(&self) -> impl Iterator<Item = (vec3i, &InstanceBuffer)> {
+        self.map.values().filter(|x| x.is_rendered()).map(|x| (x.position, &x.mesh))
     }
 }

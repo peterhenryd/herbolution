@@ -1,11 +1,9 @@
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Neg};
-use math::num::{Float, Num, NumCast};
+use math::num::{Float, Num, NumCast, ToPrimitive};
 use math::num::traits::ConstZero;
 use math::num::traits::real::Real;
 use math::vector::Vec3;
-
-pub mod face;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Cuboid<T> {
@@ -253,6 +251,24 @@ impl<T> Cuboid<T> {
     pub fn z(&self) -> T
     where T: Real {
         (self.min.z + self.max.z) * T::from(0.5).unwrap()
+    }
+    
+    pub fn cast<U: NumCast>(self) -> Option<Cuboid<U>>
+    where
+        T: ToPrimitive,
+    {
+        Some(Cuboid {
+            min: Vec3::new(
+                NumCast::from(self.min.x)?,
+                NumCast::from(self.min.y)?,
+                NumCast::from(self.min.z)?,
+            ),
+            max: Vec3::new(
+                NumCast::from(self.max.x)?,
+                NumCast::from(self.max.y)?,
+                NumCast::from(self.max.z)?,
+            ),
+        })
     }
 }
 

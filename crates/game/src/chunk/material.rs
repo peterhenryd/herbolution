@@ -1,6 +1,6 @@
 use std::array::IntoIter;
 use serde::{Deserialize, Serialize};
-use lib::geometry::cuboid::face::Face;
+use lib::geo::face::Face;
 
 #[repr(u16)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]
@@ -20,8 +20,8 @@ impl Material {
             Self::Stone => 0,
             Self::Dirt => 1,
             Self::Grass => match face {
-                Face::Top => 2,
-                Face::Bottom => 1,
+                Face::Up => 2,
+                Face::Down => 1,
                 _ => 3,
             },
         }

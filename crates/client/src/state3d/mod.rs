@@ -3,20 +3,18 @@ use crate::gpu::ext::{BindGroupExt, RenderPipelineExt, RenderPipelineOptions};
 use crate::gpu::geometry::{InstanceBuffer, Mesh, Primitive};
 use crate::gpu::renderer::{InstancedMesh, RenderGroup, RenderType, Renderer};
 use crate::gpu::Gpu;
+use crate::uniform::{Camera, Frustum, World};
 use bytemuck::{Pod, Zeroable};
 use image::DynamicImage;
 use image_atlas::{AtlasDescriptor, AtlasEntry, AtlasMipOption};
-use math::color::{Color, ColorConsts, Rgba};
-use math::matrix::mat4f;
-use math::rotation::Quat;
-use math::vector::{vec2f, vec3f, vec3i, Vec2, Vec3};
-use num::traits::ConstZero;
-use wgpu::{include_wgsl, vertex_attr_array, AddressMode, BindGroup, BindGroupEntry, BindGroupLayout, BindGroupLayoutEntry, BindingResource, BindingType, BufferAddress, FilterMode, RenderPass, RenderPipeline, SamplerBindingType, SamplerDescriptor, ShaderStages, TextureFormat, VertexAttribute, VertexBufferLayout, VertexStepMode};
-use lib::geometry::cuboid::face::{Face, Faces};
+use lib::geo::face::Face;
 use lib::Modify;
+use math::color::{Color, ColorConsts, Rgba};
 use math::proj::Perspective;
+use math::rotation::Quat;
 use math::size::Size2;
-use crate::uniform::{Camera, Frustum, World};
+use math::vector::{vec2f, vec3d, vec3f, vec3i, vec4f, Vec2, Vec3};
+use wgpu::{include_wgsl, vertex_attr_array, AddressMode, BindGroup, BindGroupEntry, BindGroupLayout, BindGroupLayoutEntry, BindingResource, BindingType, BufferAddress, FilterMode, RenderPass, RenderPipeline, SamplerBindingType, SamplerDescriptor, ShaderStages, TextureFormat, VertexAttribute, VertexBufferLayout, VertexStepMode};
 
 pub struct State3d {
     renderer: Renderer<RenderType3d>,
@@ -110,8 +108,8 @@ impl State3d {
         };
 
         let position = position.cast().unwrap();
-        let instances = Faces::all().iter()
-            .map(|x| x.variant().into_quat())
+        let instances = Face::entries()
+            .map(|x| x.into_quat())
             .map(|rotation| {
                 Instance3d {
                     position,
@@ -125,9 +123,7 @@ impl State3d {
     }
 }
 
-
-
-fn update_skybox(instances: &mut InstanceBuffer, _: &[(vec2f, f32)], gpu: &Gpu, pos: vec3f) {
+fn update_skybox(instances: &mut InstanceBuffer, _: &[(vec2f, f32)], gpu: &Gpu, position: vec3d) {
     //let (tp1, ts1) = texture_positions[4];
     //let (tp2, ts2) = texture_positions[5];
     //let (tp3, ts3) = texture_positions[6];
@@ -138,48 +134,48 @@ fn update_skybox(instances: &mut InstanceBuffer, _: &[(vec2f, f32)], gpu: &Gpu, 
     let color = Rgba::<u8>::from_rgb(177, 242, 255).into();
     instances.write(gpu, &[
         Instance3d {
-            position: pos,
-            rotation: Face::Front.into_quat(),
+            position,
+            rotation: Face::North.into_quat(),
             color,
             // tex_pos: tp1,
             // tex_size: ts1,
             ..Default::default()
         }.payload(),
         Instance3d {
-            position: pos,
-            rotation: Face::Back.into_quat(),
+            position,
+            rotation: Face::South.into_quat(),
             color,
             // tex_pos: tp2,
             // tex_size: ts2,
             ..Default::default()
         }.payload(),
         Instance3d {
-            position: pos,
-            rotation: Face::Top.into_quat(),
+            position,
+            rotation: Face::Up.into_quat(),
             color,
             // tex_pos: tp3,
             // tex_size: ts3,
             ..Default::default()
         }.payload(),
         Instance3d {
-            position: pos,
-            rotation: Face::Bottom.into_quat(),
+            position,
+            rotation: Face::Down.into_quat(),
             color,
             // tex_pos: tp4,
             // tex_size: ts4,
             ..Default::default()
         }.payload(),
         Instance3d {
-            position: pos,
-            rotation: Face::Left.into_quat(),
+            position,
+            rotation: Face::West.into_quat(),
             color,
             // tex_pos: tp5,
             // tex_size: ts5,
             ..Default::default()
         }.payload(),
         Instance3d {
-            position: pos,
-            rotation: Face::Right.into_quat(),
+            position,
+            rotation: Face::East.into_quat(),
             color,
             // tex_pos: tp6,
             // tex_size: ts6,
@@ -206,15 +202,15 @@ impl Uniforms {
 #[derive(Debug, Copy, Clone, PartialEq, Pod, Zeroable)]
 pub struct Vertex3d {
     pub position: vec3f,
-    pub texture_offset: vec2f,
     pub normal: vec3f,
+    pub texture_offset: vec2f,
 }
 
 impl Primitive for Vertex3d {
     const ATTRIBUTES: &'static [VertexAttribute] = &vertex_attr_array![
         0 => Float32x3,
-        1 => Float32x2,
-        2 => Float32x3,
+        1 => Float32x3,
+        2 => Float32x2,
     ];
     const LAYOUT: VertexBufferLayout<'static> = VertexBufferLayout {
         array_stride: size_of::<Vertex3d>() as BufferAddress,
@@ -232,13 +228,11 @@ impl Vertex3d {
 impl AutoPayload for Vertex3d {}
 
 pub struct Instance3d {
-    pub position: vec3f,
+    pub position: vec3d,
     pub rotation: Quat,
     pub texture_position: vec2f,
     pub texture_size: f32,
     pub color: Rgba<f32>,
-    pub light: u8,
-    pub is_lit: bool,
 }
 
 impl Primitive for Instance3d {
@@ -246,11 +240,10 @@ impl Primitive for Instance3d {
         3 => Float32x4,
         4 => Float32x4,
         5 => Float32x4,
-        6 => Float32x4,
-        7 => Float32x2,
-        8 => Float32,
-        9 => Float32x4,
-        10 => Uint32,
+        6 => Sint32x3,
+        7 => Float32x3,
+        8 => Float32x4,
+        9 => Float32x3,
     ];
     const LAYOUT: VertexBufferLayout<'static> = VertexBufferLayout {
         array_stride: size_of::<Instance3dPayload>() as BufferAddress,
@@ -259,24 +252,22 @@ impl Primitive for Instance3d {
     };
 }
 
-impl Instance3d {
-    pub fn model_matrix(&self) -> mat4f {
-        self.position.into_matrix() * self.rotation.into_matrix()
-    }
-}
-
 impl Payload for Instance3d {
     type Output = Instance3dPayload;
 
     fn payload(&self) -> Self::Output {
-        let light = (self.light as u32) << 1 | self.is_lit as u32;
-
+        let rotation_matrix = self.rotation.to_matrix();
+        let world_position_int = self.position.cast::<i32>().unwrap();
+        let world_position_frac = self.position.fract().cast().unwrap();
+        
         Instance3dPayload {
-            model: self.model_matrix(),
-            texture_position: self.texture_position,
-            texture_size: self.texture_size,
+            model_0: rotation_matrix.x,
+            model_1: rotation_matrix.y,
+            model_2: rotation_matrix.z,
+            world_position_int,
+            world_position_frac,
             color: self.color,
-            light,
+            texture: self.texture_position.extend(self.texture_size),
         }
     }
 }
@@ -289,8 +280,6 @@ impl Default for Instance3d {
             texture_position: Vec2::ZERO,
             texture_size: 1.0,
             color: Rgba::TRANSPARENT,
-            light: 0,
-            is_lit: false,
         }
     }
 }
@@ -298,11 +287,13 @@ impl Default for Instance3d {
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Pod, Zeroable)]
 pub struct Instance3dPayload {
-    pub model: mat4f,
-    pub texture_position: vec2f,
-    pub texture_size: f32,
+    pub model_0: vec4f,
+    pub model_1: vec4f,
+    pub model_2: vec4f,
+    pub world_position_int: vec3i,
+    pub world_position_frac: vec3f,
     pub color: Rgba<f32>,
-    pub light: u32,
+    pub texture: vec3f,
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]

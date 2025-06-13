@@ -7,7 +7,7 @@ use hashbrown::Equivalent;
 pub mod display;
 pub mod fps;
 pub mod fs;
-pub mod geometry;
+pub mod geo;
 pub mod light;
 pub mod time;
 

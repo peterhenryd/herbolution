@@ -14,11 +14,10 @@ fn command() -> Command {
             .required(false)
         )
 }
-
-#[tokio::main]
-async fn main() -> Result<(), EventLoopError> {
+ 
+fn main() -> Result<(), EventLoopError> {
     let matches = command().get_matches();
-    let data_dir = matches.get_one::<PathBuf>("data_dir").cloned()
+    let data_dir = matches.get_one::<PathBuf>("data-dir").cloned()
         .unwrap_or(home_dir().unwrap_or(PathBuf::from(".")).join(".herbolution"));
 
     if let Err(e) = tracing_subscriber::fmt::try_init() {

@@ -7,7 +7,6 @@ use crate::state2d::text::{TextFrame, TextId, TextRenderer, TextSection};
 use crate::uniform::Camera;
 use bytemuck::{Pod, Zeroable};
 use lib::Modify;
-use math::num::traits::ConstZero;
 use math::proj::Orthographic;
 use math::size::Size2;
 use math::vector::{vec2f, Vec3};
@@ -76,7 +75,7 @@ impl Payload for Instance2d {
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-struct RenderType2d;
+pub struct RenderType2d;
 
 impl RenderType for RenderType2d {
     type Vertex = Vertex2D;

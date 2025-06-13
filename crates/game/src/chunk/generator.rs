@@ -1,12 +1,10 @@
 use crate::chunk;
 use crate::chunk::material::Material;
 use crate::chunk::CubeMesh;
-use cached::proc_macro::cached;
-use crossbeam::channel::{bounded, Receiver, Sender, TryIter};
-use math::vector::{vec2i, vec3i, vec4u4};
+use crossbeam::channel::{unbounded, Receiver, Sender, TryIter};
+use math::vector::{vec3i, vec3u4};
+use noise::{NoiseFn, Simplex};
 use rayon::{ThreadPool, ThreadPoolBuilder};
-use simdnoise::NoiseBuilder;
-use std::ops::Mul;
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -19,11 +17,11 @@ pub struct ChunkGenerator {
 
 impl ChunkGenerator {
     pub fn new(generator: Arc<GenerationParams>) -> Self {
-        let (sender, receiver) = bounded(64);
-
+        let (sender, receiver) = unbounded();
+        
         Self {
             thread_pool: ThreadPoolBuilder::new()
-                .num_threads(8)
+                .num_threads(num_cpus::get())
                 .build()
                 .unwrap(),
             sender,
@@ -38,7 +36,7 @@ impl ChunkGenerator {
 
         self.thread_pool.spawn(move || {
             let mut mesh = CubeMesh::new(pos);
-
+            
             params.generate(&mut mesh);
             sender.send(mesh).unwrap();
         });
@@ -51,23 +49,27 @@ impl ChunkGenerator {
 
 #[derive(Debug)]
 pub struct GenerationParams {
-    seed: i32,
+    noise: Simplex,
 }
 
 impl GenerationParams {
     const MIN_HEIGHT: i32 = 64;
     const MAX_HEIGHT: i32 = 112;
 
-    pub fn new(seed: i32) -> Self {
-        Self { seed }
+    pub fn new(seed: i64) -> Self {
+        Self {
+            noise: Simplex::new(seed as u32)
+        }
     }
 
     pub fn generate(&self, chunk: &mut CubeMesh) {
-        let noise = generate_noise(chunk.pos.xz(), self.seed);
-
         for x in 0..chunk::LENGTH {
             for z in 0..chunk::LENGTH {
-                let f = noise[x + z * chunk::LENGTH];
+                let f = {
+                    let x = chunk.pos.x * chunk::LENGTH as i32 + x as i32;
+                    let z = chunk.pos.z * chunk::LENGTH as i32 + z as i32;
+                    self.noise.get([x as f64 / 32.0, z as f64 / 32.0]) as f32 / 4.0
+                };
                 let h =
                     Self::MIN_HEIGHT + (f * (Self::MAX_HEIGHT - Self::MIN_HEIGHT) as f32) as i32;
 
@@ -75,14 +77,14 @@ impl GenerationParams {
                     let y = chunk.pos.y * chunk::LENGTH as i32 + chunk_y as i32;
                     if y < h - 6 {
                         chunk.set(
-                            vec4u4::new(x as u8, chunk_y as u8, z as u8, 0),
+                            vec3u4::new(x as u8, chunk_y as u8, z as u8),
                             Some(Material::Stone),
                         );
                     } else if y < h - 1 {
-                        chunk.set(vec4u4::new(x as u8, chunk_y as u8, z as u8, 0), Some(Material::Dirt));
+                        chunk.set(vec3u4::new(x as u8, chunk_y as u8, z as u8), Some(Material::Dirt));
                     } else if y < h {
                         chunk.set(
-                            vec4u4::new(x as u8, chunk_y as u8, z as u8, 0),
+                            vec3u4::new(x as u8, chunk_y as u8, z as u8),
                             Some(Material::Grass),
                         );
                     }
@@ -90,14 +92,4 @@ impl GenerationParams {
             }
         }
     }
-}
-
-#[cached]
-fn generate_noise(pos: vec2i, seed: i32) -> Vec<f32> {
-    let offset = pos.mul(chunk::LENGTH as i32).cast().unwrap();
-    let noise_type = NoiseBuilder::fbm_2d_offset(offset.x, chunk::LENGTH, offset.y, chunk::LENGTH)
-        .with_seed(seed)
-        .with_freq(0.1)
-        .wrap();
-    unsafe { simdnoise::sse2::get_2d_noise(&noise_type).0 }
 }

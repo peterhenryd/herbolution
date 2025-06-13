@@ -1,8 +1,6 @@
-use lib::geometry::cuboid::Cuboid;
-use math::num::traits::ConstZero;
-use math::vector::{vec3f, vec3i8, Vec3};
+use lib::geo::cuboid::Cuboid;
+use math::vector::{vec3d, vec3f, vec3i8, Vec3};
 use std::ops::Add;
-use math::angle::Rad;
 use math::rotation::Euler;
 use crate::chunk::map::ChunkMap;
 use crate::DELTA_TIME;
@@ -10,17 +8,17 @@ use crate::entity::EntityAbilities;
 
 #[derive(Debug, Clone)]
 pub struct EntityBody {
-    pub(crate) pos: vec3f,
-    delta_pos: vec3f,
-    pub(crate) rotation: Euler<Rad<f32>>,
+    pub(crate) pos: vec3d,
+    delta_pos: vec3d,
+    pub(crate) rotation: Euler<f32>,
     boundary: Boundary,
     motion: vec3f,
     is_on_ground: bool,
-    near_colliders: Vec<Cuboid<f32>>,
+    near_colliders: Vec<Cuboid<f64>>,
 }
 
 impl EntityBody {
-    pub fn new(pos: vec3f, boundary: Boundary) -> Self {
+    pub fn new(pos: vec3d, boundary: Boundary) -> Self {
         Self {
             pos,
             delta_pos: Vec3::ZERO,
@@ -32,26 +30,26 @@ impl EntityBody {
         }
     }
 
-    pub async fn update(&mut self, chunk_map: &mut ChunkMap, abilities: EntityAbilities) {
-        self.apply_translation(chunk_map, &abilities).await;
+    pub fn update(&mut self, chunk_map: &mut ChunkMap, abilities: EntityAbilities) {
+        self.apply_translation(chunk_map, &abilities);
     }
 
-    async fn apply_translation(
+    fn apply_translation(
         &mut self,
         chunk_map: &mut ChunkMap,
         abilities: &EntityAbilities,
     ) {
         let (parallel, perpendicular) = self.rotation.yaw_directions();
         let motion = self.motion.take();
-        let direction = vec3f::ZERO
-            .add(parallel * motion.x)
-            .add(perpendicular * motion.z)
+        let direction = vec3d::ZERO
+            .add(parallel.cast().unwrap() * motion.x as f64)
+            .add(perpendicular.cast().unwrap() * motion.z as f64)
             .normalize();
         let speed = if self.is_on_ground { 3.0 } else { 0.8 } * DELTA_TIME;
 
         self.delta_pos += direction * speed;
         if self.is_on_ground || !abilities.is_affected_by_gravity {
-            self.delta_pos.y = motion.y / 3.2;
+            self.delta_pos.y = motion.y as f64 / 3.2;
         }
 
         if abilities.is_affected_by_gravity {
@@ -61,7 +59,7 @@ impl EntityBody {
         let mut clipped_delta_pos = self.delta_pos;
         let mut bounds = self.bounds();
 
-        chunk_map.get_near_colliders(bounds, &mut self.near_colliders).await;
+        chunk_map.get_near_colliders(bounds, &mut self.near_colliders);
         for collider in &self.near_colliders {
             clipped_delta_pos.y = collider.clip_dy_collision(&bounds, clipped_delta_pos.y);
         }
@@ -104,12 +102,12 @@ impl EntityBody {
         }
     }
 
-    pub fn bounds(&self) -> Cuboid<f32> {
-        self.boundary.cuboid + self.pos
+    pub fn bounds(&self) -> Cuboid<f64> {
+        self.boundary.cuboid.cast().unwrap() + self.pos
     }
 
-    pub fn eye_pos(&self) -> vec3f {
-        self.boundary.eye_offset + self.pos
+    pub fn eye_pos(&self) -> vec3d {
+        self.boundary.eye_offset.cast::<f64>().unwrap() + self.pos
     }
 
     pub fn apply_motion_command(&mut self, command: vec3i8) {

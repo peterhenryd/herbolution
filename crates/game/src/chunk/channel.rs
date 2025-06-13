@@ -1,26 +1,28 @@
+use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 use crossbeam::channel::{unbounded, Receiver, Sender};
 use hashbrown::HashMap;
-use math::vector::{vec3i, vec4u4};
+use math::vector::{vec3i, vec3u4};
 use crate::chunk::cube::Cube;
 use crate::chunk::material::Material;
 
 pub struct ClientChunkChannel {
-    load: Receiver<(vec3i, Receiver<ChunkUpdate>)>,
+    load: Receiver<(vec3i, Receiver<ChunkUpdate>, Arc<AtomicBool>)>,
     unload: Receiver<vec3i>,
 }
 
 #[derive(Debug, Clone)]
 pub struct ServerChunkChannel {
-    load: Sender<(vec3i, Receiver<ChunkUpdate>)>,
+    load: Sender<(vec3i, Receiver<ChunkUpdate>, Arc<AtomicBool>)>,
     unload: Sender<vec3i>,
 }
 
 pub struct ChunkUpdate {
-    pub overwrites: HashMap<vec4u4, Cube<Option<Material>>>,
+    pub overwrites: HashMap<vec3u4, Cube<Option<Material>>>,
 }
 
 impl ClientChunkChannel {
-    pub fn recv_load(&self) -> Option<(vec3i, Receiver<ChunkUpdate>)> {
+    pub fn recv_load(&self) -> Option<(vec3i, Receiver<ChunkUpdate>, Arc<AtomicBool>)> {
         self.load.try_recv().ok()
     }
 
@@ -30,8 +32,8 @@ impl ClientChunkChannel {
 }
 
 impl ServerChunkChannel {
-    pub fn send_load(&self, pos: vec3i, receiver: Receiver<ChunkUpdate>) {
-        if let Err(e) = self.load.try_send((pos, receiver)) {
+    pub fn send_load(&self, pos: vec3i, receiver: Receiver<ChunkUpdate>, render_flag: Arc<AtomicBool>) {
+        if let Err(e) = self.load.try_send((pos, receiver, render_flag)) {
             tracing::warn!("Failed to send chunk load: {}", e);
         }
     }

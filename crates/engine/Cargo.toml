@@ -1,0 +1,8 @@
+[package]
+name = "herbolution-engine"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+math = { package = "herbolution-math", path = "../math" }
+video = { package = "herbolution-video", path = "../video" }

@@ -1,11 +1,11 @@
+use crate::engine::EngineFrame;
+use crate::state2d::text::{TextId, TextSection};
+use crate::state2d::State2d;
 use lib::fps::Fps;
 use math::color::{ColorConsts, Rgba};
-use math::vector::{vec3f, Vec2};
-use winit::keyboard::KeyCode;
 use math::size::Size2;
-use crate::engine::EngineFrame;
-use crate::state2d::State2d;
-use crate::state2d::text::{TextId, TextSection};
+use math::vector::{vec3d, Vec2};
+use winit::keyboard::KeyCode;
 
 pub struct Debugger {
     is_resized: bool,
@@ -25,7 +25,7 @@ impl Debugger {
         self.is_resized = true;
     }
 
-    pub fn update(&mut self, frame: &EngineFrame, state: &mut State2d, fps: &Fps, pos: vec3f) {
+    pub fn update(&mut self, frame: &EngineFrame, state: &mut State2d, fps: &Fps, pos: vec3d) {
         if self.is_resized {
             if let Some(id) = self.crosshair_id.take() {
                 state.remove_text(id);

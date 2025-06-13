@@ -5,9 +5,10 @@ edition = "2024"
 
 [dependencies]
 bitflags.workspace = true
+bytemuck = { workspace = true, features = ["derive"] }
+hashbrown.workspace = true
 lazy_static.workspace = true
 math = { package = "herbolution-math", path = "../math" }
 serde = { workspace = true, features = ["derive"] }
 thiserror.workspace = true
 toml.workspace = true
-hashbrown.workspace = true

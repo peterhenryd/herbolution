@@ -4,8 +4,8 @@ use lib::display;
 use math::vector::vec3i;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tokio::sync::Mutex;
-use tokio::task;
+use crossbeam::channel::{unbounded, Receiver, Sender};
+use rayon::{ThreadPool, ThreadPoolBuilder};
 use tracing::error;
 
 #[derive(Debug)]
@@ -17,7 +17,9 @@ pub struct ChunkProvider {
 
 #[derive(Debug)]
 pub struct ChunkReader {
-    to_be_loaded: Arc<Mutex<Vec<CubeMesh>>>,
+    tx: Sender<CubeMesh>,
+    rx: Receiver<CubeMesh>,
+    thread_pool: ThreadPool,
 }
 
 impl ChunkProvider {
@@ -46,10 +48,7 @@ impl ChunkProvider {
     pub fn dequeue(&self) -> Vec<CubeMesh> {
         let mut vec = vec![];
 
-        if let Ok(mut guard) = self.reader.to_be_loaded.try_lock() {
-            vec.extend(guard.drain(..));
-        }
-
+        vec.extend(self.reader.rx.try_iter());
         vec.extend(self.generator.dequeue());
 
         vec
@@ -58,23 +57,27 @@ impl ChunkProvider {
 
 impl ChunkReader {
     pub fn new() -> Self {
-        Self {
-            to_be_loaded: Arc::new(Mutex::new(Vec::new())),
-        }
+        let (tx, rx) = unbounded();
+        let thread_pool = ThreadPoolBuilder::new()
+            .num_threads(8)
+            .build()
+            .unwrap();
+        
+        Self { tx, rx, thread_pool }
     }
 
     pub fn request(&self, path: PathBuf, pos: vec3i) {
-        let to_be_loaded = self.to_be_loaded.clone();
+        let tx = self.tx.clone();
 
-        task::spawn(async move {
+        self.thread_pool.spawn(move || {
             let bytes;
-            match tokio::fs::read(path).await {
+            match std::fs::read(path) {
                 Ok(x) => bytes = x,
                 Err(e) => return error!("Failed to read chunk file: {}", e),
             }
             let material_mesh = CubeGrid::decode(&bytes);
 
-            to_be_loaded.lock().await.push(material_mesh.to_mesh(pos));
+            tx.send(material_mesh.to_mesh(pos)).unwrap();
         });
     }
 }

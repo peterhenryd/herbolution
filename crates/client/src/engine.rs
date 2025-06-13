@@ -32,7 +32,7 @@ impl Engine {
             resolution,
             power_preference: PowerPreference::HighPerformance,
             memory_hints: MemoryHints::MemoryUsage,
-            present_mode: PresentMode::Immediate,
+            present_mode: PresentMode::AutoVsync,
         })?;
         let input = Input::default();
         let state2d = State2d::create(&gpu, resolution, surface.format());
@@ -69,9 +69,9 @@ impl Engine {
         self.state3d.update(&self.gpu);
     }
 
-    pub fn render<'a>(&self, render_pass: &mut RenderPass, facial_meshes: impl Iterator<Item = (vec3i, &'a InstanceBuffer)>) {
+    pub fn render<'a>(&self, render_pass: &mut RenderPass, offset_chunk: vec3i, facial_meshes: impl Iterator<Item = (vec3i, &'a InstanceBuffer)>) {
         let culled_meshes = facial_meshes
-            .filter(|(pos, _)| self.state3d.frustum.contains_cube(pos.cast().unwrap(), chunk::LENGTH as f32))
+            .filter(|&(pos, _)| self.state3d.frustum.contains_cube((pos - offset_chunk).cast().unwrap(), chunk::LENGTH as f32))
             .map(|(_, mesh)| mesh)
             .collect::<Vec<_>>();
 

@@ -1,4 +1,4 @@
-use lib::geometry::cuboid::face::Faces;
+use lib::geo::face::Faces;
 use lib::light::FacialLightLevels;
 use math::num::ToPrimitive;
 use math::vector::vec3i;
@@ -48,7 +48,7 @@ impl From<vec3i> for CubePosition {
 
 impl From<ChunkLocalPos> for CubePosition {
     fn from(pos: ChunkLocalPos) -> Self {
-        CubePosition(pos.chunk * chunk::LENGTH as i32 + pos.local.cast().unwrap().xyz())
+        CubePosition(pos.chunk * chunk::LENGTH as i32 + pos.local.cast().unwrap())
     }
 }
 

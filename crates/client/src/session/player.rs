@@ -6,7 +6,6 @@ use game::client::{client_input_channel, ClientInputSender, ClientOutputReceiver
 use game::entity::logic::player::ActionState;
 use game::entity::EntityTarget;
 use math::vector::{vec3i, vec3i8};
-use num::traits::ConstZero;
 use std::time::Duration;
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
