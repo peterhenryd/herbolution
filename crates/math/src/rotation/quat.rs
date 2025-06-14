@@ -1,6 +1,6 @@
-use crate::matrix::{mat4f, Mat4};
+use crate::matrix::{mat3f, Mat3};
 use crate::rotation::euler::Euler;
-use crate::vector::{vec4f, Vec4};
+use crate::vector::{vec4f, Vec3, Vec4};
 use bytemuck::{Pod, Zeroable};
 use serde::{Deserialize, Serialize};
 
@@ -30,28 +30,24 @@ impl Quat {
         ))
     }
 
-    pub fn to_matrix(self) -> mat4f {
+    pub fn to_matrix(self) -> mat3f {
         let Vec4 { x, y, z, w } = self.0;
-        Mat4::new(
-            Vec4::new(
+        Mat3::new(
+            Vec3::new(
                 1. - 2. * (y * y + z * z),
                 2. * (x * y + z * w),
                 2. * (x * z - y * w),
-                0.,
             ),
-            Vec4::new(
+            Vec3::new(
                 2. * (x * y - z * w),
                 1. - 2. * (x * x + z * z),
                 2. * (y * z + x * w),
-                0.,
             ),
-            Vec4::new(
+            Vec3::new(
                 2. * (x * z + y * w),
                 2. * (y * z - x * w),
                 1. - 2. * (x * x + y * y),
-                0.,
             ),
-            Vec4::new(0., 0., 0., 1.),
         )
     }
 }
@@ -62,7 +58,7 @@ impl From<Euler<f32>> for Quat {
     }
 }
 
-impl From<Quat> for mat4f {
+impl From<Quat> for mat3f {
     fn from(value: Quat) -> Self {
         value.to_matrix()
     }

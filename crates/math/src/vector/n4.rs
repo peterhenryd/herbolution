@@ -1,4 +1,4 @@
-use crate::vector::{count, vec_type};
+use crate::vector::vec_type;
 
 vec_type! {
     struct Vec4<T> {

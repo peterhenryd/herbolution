@@ -7,9 +7,7 @@ use std::ops::{Add, Mul};
 use num::Float;
 
 #[repr(C)]
-#[derive(
-    Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize,
-)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
 pub struct Mat4<T> {
     pub x: Vec4<T>,
     pub y: Vec4<T>,

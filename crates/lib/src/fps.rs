@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+#[derive(Debug)]
 pub struct IntervalCounter {
     acc: Duration,
     interval: Duration,

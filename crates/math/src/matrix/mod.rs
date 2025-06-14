@@ -1,6 +1,24 @@
 #![allow(non_camel_case_types)]
 
-pub mod n4;
+mod n3;
+mod n4;
+
+pub use n3::Mat3;
+
+pub type mat3u8 = Mat3<u8>;
+pub type mat3u16 = Mat3<u16>;
+pub type mat3u = Mat3<u32>;
+pub type mat3u64 = Mat3<u64>;
+pub type mat3u128 = Mat3<u128>;
+pub type mat3usize = Mat3<usize>;
+pub type mat3i8 = Mat3<i8>;
+pub type mat3i16 = Mat3<i16>;
+pub type mat3i = Mat3<i32>;
+pub type mat3i64 = Mat3<i64>;
+pub type mat3i128 = Mat3<i128>;
+pub type mat3isize = Mat3<isize>;
+pub type mat3f = Mat3<f32>;
+pub type mat3d = Mat3<f64>;
 
 pub use n4::Mat4;
 

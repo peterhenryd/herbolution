@@ -1,6 +1,7 @@
-use math::vector::vec2d;
 use std::collections::HashSet;
 use std::mem::take;
+
+use math::vector::vec2d;
 use smallvec::SmallVec;
 use winit::event::Modifiers;
 pub use winit::event::MouseButton;
@@ -11,7 +12,7 @@ pub struct Input {
     active_keys: HashSet<KeyCode>,
     active_mouse_buttons: HashSet<MouseButton>,
     mouse_pos: vec2d,
-    frame: InputFrame,
+    frame: Frame,
     modifiers: Modifiers,
     is_focused: bool,
 }
@@ -41,10 +42,7 @@ impl Input {
         }
 
         if self.active_mouse_buttons.contains(&button) {
-            self.frame.click_events.push(ClickEvent {
-                button,
-                pos: self.mouse_pos,
-            });
+            self.frame.click_events.push(ClickEvent { button, pos: self.mouse_pos });
         }
 
         self.active_mouse_buttons.remove(&button);
@@ -66,7 +64,7 @@ impl Input {
         self.frame.mouse_scroll += delta;
     }
 
-    pub fn take_frame(&mut self) -> InputFrame {
+    pub fn take_frame(&mut self) -> Frame {
         take(&mut self.frame)
     }
 
@@ -116,7 +114,7 @@ impl Input {
 }
 
 #[derive(Default)]
-pub struct InputFrame {
+pub struct Frame {
     pub mouse_movement: vec2d,
     pub mouse_scroll: f32,
     pub click_events: SmallVec<[ClickEvent; 4]>,

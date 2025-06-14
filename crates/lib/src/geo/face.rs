@@ -295,7 +295,7 @@ impl<T> PerFace<T> {
         bytemuck::cast_ref(self)
     }
 
-    pub fn iter(&self) -> PerFaceIter<T> {
+    pub fn iter(&self) -> PerFaceIter<'_, T> {
         PerFaceIter {
             value: self,
             index: 0,

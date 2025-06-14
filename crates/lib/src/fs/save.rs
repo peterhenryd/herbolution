@@ -1,10 +1,11 @@
 use std::fs::{create_dir, read_dir, read_to_string, write, ReadDir};
 use std::io;
 use std::path::{Path, PathBuf};
+
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Save {
     pub path: PathBuf,
     pub descriptor: SaveDescriptor,
@@ -16,46 +17,46 @@ impl Save {
 
         Ok(Self { path, descriptor })
     }
-    
+
     pub fn worlds(&self) -> io::Result<Worlds> {
         Worlds::new(self.path.join("worlds"))
     }
-    
+
     pub fn default_world(&self) -> Result<SaveWorld, SaveError> {
         let world_path = self.path.join("worlds").join(&self.descriptor.default_world);
-        
+
         SaveWorld::open(world_path, self.descriptor.default_world.clone())
     }
-    
+
     pub fn create(path: &Path, attributes: SaveAttributes) -> Result<Self, SaveError> {
-        if path.exists() { 
+        if path.exists() {
             return Err(SaveError::AlreadyExists);
         }
-        
+
         create_dir(path)?;
-        
+
         let worlds_path = path.join("worlds");
         if !worlds_path.exists() {
             create_dir(&worlds_path)?;
         }
-        
+
         let world_path = worlds_path.join(&attributes.default_world.name);
         if !world_path.exists() {
             create_dir(&world_path)?;
-            
+
             let world_descriptor_path = world_path.join("World.toml");
             let world_descriptor = toml::to_string(&attributes.default_world.descriptor)?;
             write(&world_descriptor_path, world_descriptor)?;
         }
-        
+
         let descriptor = attributes.into();
         let descriptor_path = path.join("Save.toml");
         write(&descriptor_path, toml::to_string(&descriptor)?)?;
-        
+
         Ok(Self { path: path.to_path_buf(), descriptor })
     }
-    
-    pub fn create_or_open(path: PathBuf, attributes: SaveAttributes) -> Result<Self, SaveError> { 
+
+    pub fn create_or_open(path: PathBuf, attributes: SaveAttributes) -> Result<Self, SaveError> {
         match Save::create(&path, attributes) {
             Ok(x) => Ok(x),
             Err(SaveError::AlreadyExists) => Save::open(path),
@@ -71,10 +72,7 @@ pub struct SaveAttributes {
 
 impl Into<SaveDescriptor> for SaveAttributes {
     fn into(self) -> SaveDescriptor {
-        SaveDescriptor {
-            title: self.title,
-            default_world: self.default_world.name,
-        }
+        SaveDescriptor { title: self.title, default_world: self.default_world.name }
     }
 }
 
@@ -89,7 +87,7 @@ pub struct WorldDescriptor {
     pub seed: i64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SaveDescriptor {
     pub title: String,
     pub default_world: String,
@@ -102,9 +100,7 @@ pub struct Saves {
 
 impl Saves {
     pub fn new(path: impl AsRef<Path>) -> io::Result<Saves> {
-        Ok(Self {
-            read_dir: read_dir(path)?
-        })
+        Ok(Self { read_dir: read_dir(path)? })
     }
 }
 
@@ -140,9 +136,7 @@ pub struct Worlds {
 
 impl Worlds {
     pub fn new(path: impl AsRef<Path>) -> io::Result<Self> {
-        Ok(Self {
-            read_dir: read_dir(path)?,
-        })
+        Ok(Self { read_dir: read_dir(path)? })
     }
 }
 
@@ -159,7 +153,6 @@ impl Iterator for Worlds {
         Some(SaveWorld::open(entry.path(), entry.file_name().to_string_lossy().into_owned()))
     }
 }
-
 
 pub struct SaveWorld {
     pub path: PathBuf,

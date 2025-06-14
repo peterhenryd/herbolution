@@ -2,6 +2,7 @@ use crossbeam::channel::{bounded, Receiver, Sender};
 use tracing::warn;
 use crate::client::{ClientInputReceiver, ClientOutputReceiver};
 
+#[derive(Debug)]
 pub struct ClientChannel {
     client_input: Sender<ClientInputReceiver>,
     client_output: Receiver<ClientOutputReceiver>,

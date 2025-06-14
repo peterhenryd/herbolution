@@ -6,6 +6,7 @@ use math::vector::{vec3i, vec3u4};
 use crate::chunk::cube::Cube;
 use crate::chunk::material::Material;
 
+#[derive(Debug)]
 pub struct ClientChunkChannel {
     load: Receiver<(vec3i, Receiver<ChunkUpdate>, Arc<AtomicBool>)>,
     unload: Receiver<vec3i>,

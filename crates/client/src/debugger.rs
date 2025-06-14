@@ -1,37 +1,40 @@
+use engine::input::Frame;
 use lib::fps::IntervalCounter;
-use math::color::{ColorConsts, Rgba};
 use math::size::Size2;
-use math::vector::{vec3d, Vec2};
-use winit::keyboard::KeyCode;
-use engine::input::InputFrame;
-use engine::video::text::{TextFrame, TextId, TextSection};
+use math::vector::vec3d;
 
+/// A manager that renders debug information on the screen, and handles whether the debugger is enabled.
+#[derive(Debug)]
 pub struct Debugger {
     is_resized: bool,
-    is_enabled: bool,
-    size: Size2<u32>,
-    crosshair_id: Option<TextId>,
-    text_ids: Option<[TextId; 4]>,
+    resolution: Size2<u32>,
+    //crosshair_id: Option<TextId>,
+    //text_ids: Option<[TextId; 4]>,
 }
 
 impl Debugger {
-    pub fn create(size: Size2<u32>) -> Self {
-        Self { is_resized: true, is_enabled: false, size, crosshair_id: None, text_ids: None }
+    pub fn new(resolution: Size2<u32>) -> Self {
+        Self { is_resized: true, resolution }
     }
 
-    pub fn set_size(&mut self, size: Size2<u32>) {
-        self.size = size;
+    pub fn set_resolution(&mut self, resolution: Size2<u32>) {
+        self.resolution = resolution;
         self.is_resized = true;
     }
 
-    pub fn update(&mut self, input: &InputFrame, text: &mut TextFrame, fps: &IntervalCounter, position: vec3d) {
+    pub fn update(&mut self, input: &Frame, fps: &IntervalCounter, position: vec3d) {
+        let _ = (input, fps, position);
+
+        // TODO: reimplement the debugger
+
+        /*
         if self.is_resized {
             if let Some(id) = self.crosshair_id.take() {
                 text.remove(id);
             }
 
             self.crosshair_id = Some(text.insert(TextSection {
-                pos: Vec2::new(self.size.width as f32 / 2.0, self.size.height as f32 / 2.0),
+                pos: Vec2::new(self.resolution.width as f32 / 2.0, self.resolution.height as f32 / 2.0),
                 content: "+".to_string(),
                 font_size: 24.0,
                 line_height: 24.0,
@@ -87,5 +90,7 @@ impl Debugger {
         });
 
         self.text_ids = Some([fps, x, y, z]);
+
+         */
     }
 }

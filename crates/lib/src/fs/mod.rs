@@ -11,9 +11,9 @@ pub struct Fs {
 }
 
 impl Fs {
-    pub fn new(data_dir: PathBuf) -> Self {
+    pub fn new(root_path: PathBuf) -> Self {
         Self {
-            path: Paths::new(data_dir),
+            path: Paths::new(root_path),
         }
     }
     

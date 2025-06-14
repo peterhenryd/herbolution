@@ -27,7 +27,6 @@ pub const DELTA_TIME: f64 = 1.0 / TICKS_PER_SECOND as f64;
 
 pub struct Game {
     world_map: HashMap<String, World>,
-    chunk_channel: ServerChunkChannel,
     delta_time: DeltaTime,
     tick_time: TickTime,
     clients: Vec<Client>,
@@ -98,7 +97,6 @@ impl Game {
 
         Self {
             world_map,
-            chunk_channel,
             delta_time: DeltaTime::new(),
             tick_time: TickTime::new(TICKS_PER_SECOND),
             clients: vec![],

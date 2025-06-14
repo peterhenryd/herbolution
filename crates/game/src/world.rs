@@ -5,7 +5,7 @@ use lib::fs::save::SaveWorld;
 
 #[derive(Debug)]
 pub struct World {
-    name: String,
+    //name: String,
     chunk_map: ChunkMap,
     pub(crate) entity_set: EntitySet,
 }
@@ -13,7 +13,7 @@ pub struct World {
 impl World {
     pub fn from_save(save: SaveWorld, channel: ServerChunkChannel) -> Self {
         Self {
-            name: save.name,
+            //name: save.name,
             chunk_map: ChunkMap::new(save.descriptor.seed, channel, save.path),
             entity_set: EntitySet::new(),
         }

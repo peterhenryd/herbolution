@@ -7,14 +7,11 @@ mod n3;
 mod n4;
 mod packed;
 
-macro_rules! count {
-    () => { 0 };
-    ($first:ident $($rest:ident)*) => {
-        1 + count!($($rest)*)
-    };
-}
-
 macro_rules! vec_type {
+    (@count) => { 0 };
+    (@count $first:ident $($rest:ident)*) => {
+        1 + vec_type!(@count $($rest)*)
+    };
     (
         struct $name:ident<$t:ident> {
             $($field:ident($constant:ident = $($literal:literal),+): $ft:ident),+ $(,)?
@@ -121,11 +118,11 @@ macro_rules! vec_type {
             }
 
             #[inline]
-            pub fn to_array(self) -> [$t; count!($($field)+)] {
+            pub fn to_array(self) -> [$t; vec_type!(@count $($field)+)] {
                 [$(self.$field),+]
             }
 
-            pub fn as_array(&self) -> &[$t; count!($($field)+)]
+            pub fn as_array(&self) -> &[$t; vec_type!(@count $($field)+)]
             where
                 T: bytemuck::Pod,
             {
@@ -348,8 +345,8 @@ macro_rules! vec_type {
             }
         }
 
-        impl<$t> From<[$t; count!($($field)+)]> for $name<$t> {
-            fn from([$($field),+]: [$t; count!($($field)+)]) -> Self {
+        impl<$t> From<[$t; vec_type!(@count $($field)+)]> for $name<$t> {
+            fn from([$($field),+]: [$t; vec_type!(@count $($field)+)]) -> Self {
                 Self {
                     $($field),+
                 }
@@ -744,7 +741,7 @@ macro_rules! vec_type {
 
         impl<$t> IntoIterator for $name<$t> {
             type Item = $t;
-            type IntoIter = std::array::IntoIter<$t, { count!($($field)+) }>;
+            type IntoIter = std::array::IntoIter<$t, { vec_type!(@count $($field)+) }>;
 
             fn into_iter(self) -> Self::IntoIter {
                 self.to_array().into_iter()
@@ -766,7 +763,7 @@ macro_rules! vec_type {
     };
 }
 
-pub(crate) use {count, vec_type};
+pub(crate) use vec_type;
 
 pub use n2::*;
 pub use n3::*;

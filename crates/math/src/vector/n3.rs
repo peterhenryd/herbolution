@@ -1,4 +1,4 @@
-use crate::vector::{count, vec_type, Vec4};
+use crate::vector::{vec_type, Vec2, Vec4};
 
 vec_type! {
     struct Vec3<T> {
@@ -28,6 +28,13 @@ impl<T> Vec3<T> {
             x: self.y * rhs.z - self.z * rhs.y,
             y: self.z * rhs.x - self.x * rhs.z,
             z: self.x * rhs.y - self.y * rhs.x,
+        }
+    }
+    
+    pub fn xy(self) -> Vec2<T> {
+        Vec2 {
+            x: self.x,
+            y: self.y,
         }
     }
 }
