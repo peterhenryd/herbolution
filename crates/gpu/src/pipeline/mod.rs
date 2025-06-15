@@ -1,10 +1,14 @@
 pub mod map;
 
+pub use map::Key;
+use wgpu::{
+    BindGroupLayout, BlendState, ColorTargetState, ColorWrites, CompareFunction, DepthStencilState, FragmentState, FrontFace, PipelineLayoutDescriptor,
+    PolygonMode, PrimitiveState, PrimitiveTopology, RenderPipeline, RenderPipelineDescriptor, TextureFormat, VertexState,
+};
 pub use wgpu::{Face, VertexBufferLayout, VertexStepMode, vertex_attr_array};
-use wgpu::{BindGroupLayout, BlendState, ColorTargetState, ColorWrites, CompareFunction, DepthStencilState, FragmentState, FrontFace, PipelineLayoutDescriptor, PolygonMode, PrimitiveState, PrimitiveTopology, RenderPipeline, RenderPipelineDescriptor, TextureFormat, VertexState};
+
 use crate::handle::Handle;
 use crate::shader;
-pub use map::Key;
 
 pub type Map<K, const N: usize> = map::PipelineMap<K, N>;
 
@@ -17,7 +21,8 @@ pub struct PipelineOptions<'a> {
 
 impl Handle {
     pub fn create_pipeline(&self, bind_group_layouts: &[&BindGroupLayout], options: PipelineOptions) -> RenderPipeline {
-        let pipeline_layout = self.device()
+        let pipeline_layout = self
+            .device()
             .create_pipeline_layout(&PipelineLayoutDescriptor {
                 label: None,
                 bind_group_layouts,
@@ -57,7 +62,7 @@ impl Handle {
                     compilation_options: Default::default(),
                     targets: &[Some(ColorTargetState {
                         format: TextureFormat::Bgra8UnormSrgb,
-                        blend: Some(BlendState::REPLACE),
+                        blend: Some(BlendState::ALPHA_BLENDING),
                         write_mask: ColorWrites::ALL,
                     })],
                 }),

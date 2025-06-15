@@ -21,7 +21,7 @@ struct Vertex {
 struct Instance {
     @location(3) model_0: vec2f,
     @location(4) model_1: vec2f,
-    @location(5) position: vec2f,
+    @location(5) model_2: vec2f,
     @location(6) color: vec4f,
     @location(7) uv_t: vec2f,
     @location(8) uv_s: vec2f,
@@ -32,11 +32,16 @@ fn vs(vert: Vertex, inst: Instance) -> Fragment {
     let model = mat3x3(
         vec3(inst.model_0, 0.0),
         vec3(inst.model_1, 0.0),
-        vec3(inst.position, 1.0)
+        vec3(inst.model_2, 1.0)
     );
 
+    let position = model * vec3(vert.position, 1.0);
+
     var frag: Fragment;
-    frag.clip_position = camera.view_proj * vec4f(vert.position, 0.0, 1.0);
+    frag.clip_position = camera.view_proj * vec4f(position, 1.0);
+    frag.world_position = position;
+    frag.uv = inst.uv_t + vert.uv * inst.uv_s;
+    frag.color = inst.color;
 
     return frag;
 }
@@ -55,6 +60,6 @@ fn fs(frag: Fragment) -> @location(0) vec4f {
     if frag.color.a != 0.0 {
         return frag.color;
     }
-    
+
     return textureSample(albedo_texture, albedo_sampler, frag.uv);
 }

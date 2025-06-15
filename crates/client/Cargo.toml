@@ -13,6 +13,8 @@ math = { package = "herbolution-math", path = "../math" }
 # External dependencies
 clap.workspace = true
 crossbeam.workspace = true
+num_cpus.workspace = true
+rayon.workspace = true
 tracing-subscriber.workspace = true
 wgpu.workspace = true
 winit.workspace = true

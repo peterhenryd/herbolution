@@ -1,4 +1,4 @@
-use engine::video::gpu::{mesh, Handle, Index, Mesh, MeshId, Vertex};
+use engine::video::gpu::{Handle, Index, Mesh, MeshId, Vertex, mesh};
 use engine::video::v3d;
 use math::vector::{Vec2, Vec3};
 
@@ -12,7 +12,7 @@ pub struct MeshIds {
 impl MeshIds {
     pub fn from_insertion_into(meshes: &mut v3d::Meshes) -> Self {
         Self {
-            solid_quad: meshes.create_and_insert_from(mesh::quad),
+            solid_quad: meshes.create_and_insert_from(mesh::c_quad),
             wireframe_quad: meshes.create_and_insert_from(wireframe_quad_fn(0.0025)),
         }
     }

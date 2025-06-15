@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 use std::time::Duration;
 
-use engine::{input, video, Engine};
+use engine::{Engine, input, video};
 use math::size::Size2;
 use math::vector::Vec2;
 use winit::application::ApplicationHandler;
@@ -54,16 +54,21 @@ pub struct Update<'w, 'a> {
 /// A portable context frame that contains data for rendering the application state.
 pub struct Render<'a> {
     // Application data
-    // ...
+    pub persist: &'a mut Persist,
 
     // Frame data
     pub drawing: video::Drawing<'a, 'a>,
+    pub resolution: Size2<u32>,
 }
 
 impl App<'_> {
     /// Creates a new Herbolution application with the specified options.
     pub fn new(options: Options) -> Self {
-        Self { persist: Persist::new(options.root_path), state: State::default(), switch: Switch::Suspended(None) }
+        Self {
+            persist: Persist::new(options.root_path),
+            state: State::default(),
+            switch: Switch::Suspended(None),
+        }
     }
 
     /// Runs the Herbolution application with `winit`.
@@ -87,31 +92,54 @@ impl ApplicationHandler for App<'_> {
         // Handle the window event and update the application accordingly.
         match event {
             WindowEvent::Resized(PhysicalSize { width, height }) => {
-                engine.video.set_resolution(Size2::new(width, height));
+                engine
+                    .video
+                    .set_resolution(Size2::new(width, height));
             }
             WindowEvent::CloseRequested | WindowEvent::Destroyed => {
                 self.state = State::Exiting;
                 update(&mut self.persist, &mut self.state, window, engine, event_loop);
             }
-            WindowEvent::CursorMoved { position: PhysicalPosition { x, y }, .. } => {
-                engine.input.set_mouse_pos(Vec2::new(x, y));
+            WindowEvent::CursorMoved {
+                position: PhysicalPosition { x, y },
+                ..
+            } => {
+                engine
+                    .input
+                    .set_mouse_pos(Vec2::new(x, y));
             }
             WindowEvent::MouseInput { button, state, .. } => {
-                engine.input.set_mouse_button_activity(button, state.is_pressed());
+                engine
+                    .input
+                    .set_mouse_button_activity(button, state.is_pressed());
             }
-            WindowEvent::MouseWheel { delta: MouseScrollDelta::PixelDelta(delta), .. } => {
-                engine.input.add_mouse_scroll(delta.y as f32);
+            WindowEvent::MouseWheel {
+                delta: MouseScrollDelta::PixelDelta(delta),
+                ..
+            } => {
+                engine
+                    .input
+                    .add_mouse_scroll(delta.y as f32);
             }
             WindowEvent::ModifiersChanged(modifiers) => {
                 engine.input.set_modifiers(modifiers);
             }
-            WindowEvent::KeyboardInput { event: KeyEvent { physical_key: PhysicalKey::Code(code), state, .. }, .. } => {
-                engine.input.push_key_activity(code, state.is_pressed());
+            WindowEvent::KeyboardInput {
+                event: KeyEvent {
+                    physical_key: PhysicalKey::Code(code),
+                    state,
+                    ..
+                },
+                ..
+            } => {
+                engine
+                    .input
+                    .push_key_activity(code, state.is_pressed());
             }
             WindowEvent::RedrawRequested => {
                 // Update and render the application.
                 update(&mut self.persist, &mut self.state, window, engine, event_loop);
-                render(&mut self.state, engine);
+                render(&mut self.persist, &mut self.state, engine);
 
                 // Request a redraw from the operating system to repeat the update and render cycle.
                 window.request_redraw();
@@ -127,7 +155,9 @@ impl ApplicationHandler for App<'_> {
 
         match event {
             DeviceEvent::MouseMotion { delta: (dx, dy) } => {
-                engine.input.push_mouse_movement(Vec2::new(dx, dy));
+                engine
+                    .input
+                    .push_mouse_movement(Vec2::new(dx, dy));
             }
             _ => {}
         }
@@ -143,14 +173,24 @@ fn update(persist: &mut Persist, state: &mut State, window: &Window, engine: &mu
     let dt = persist.delta_time.next();
     let input = engine.input.take_frame();
 
+    persist.fps.update(dt);
+
     // Update the state of the application.
-    state.update(&mut Update { persist, window, engine, event_loop, dt, input });
+    state.update(&mut Update {
+        persist,
+        window,
+        engine,
+        event_loop,
+        dt,
+        input,
+    });
 }
 
-fn render(state: &mut State, engine: &mut Engine) {
+fn render(persist: &mut Persist, state: &mut State, engine: &mut Engine) {
     // Render the state of the application to the window's surface.
+    let resolution = engine.video.resolution();
     let drawing = engine.video.start_drawing();
-    state.render(&mut Render { drawing });
+    state.render(&mut Render { persist, drawing, resolution });
 
     /* Frame is automatically submitted to the GPU for rendering. */
 }

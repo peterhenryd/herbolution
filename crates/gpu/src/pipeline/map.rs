@@ -1,12 +1,14 @@
 use std::collections::HashMap;
 use std::hash::Hash;
+
 use wgpu::{RenderPass, RenderPipeline};
+
 use crate::bind_group::BindGroup;
 use crate::handle::Handle;
 use crate::pipeline::PipelineOptions;
 
 #[derive(Debug)]
-pub struct PipelineMap<K, const N: usize>{
+pub struct PipelineMap<K, const N: usize> {
     map: HashMap<K, RenderPipeline>,
     bind_groups: [BindGroup; N],
 }
@@ -18,7 +20,8 @@ impl<R: Key<N>, const N: usize> PipelineMap<R, N> {
         let mut map = HashMap::with_capacity(N);
         for entry in R::ENTRIES {
             let bind_group_included = entry.bind_groups();
-            let bind_group_layouts = bind_groups.iter()
+            let bind_group_layouts = bind_groups
+                .iter()
                 .map(|x| &x.layout)
                 .enumerate()
                 .filter(|(i, _)| bind_group_included[*i])
@@ -31,11 +34,14 @@ impl<R: Key<N>, const N: usize> PipelineMap<R, N> {
             map.insert(*entry, render_pipeline);
         }
 
-        Self { map, bind_groups, }
+        Self { map, bind_groups }
     }
 
-    pub fn load_into_render_pass(&self, render_type: R, render_pass: &mut RenderPass<'_>) {
-        let render_pipeline = self.map.get(&render_type).expect("Unknown render type");
+    pub fn load_by_type(&self, render_type: R, render_pass: &mut RenderPass<'_>) {
+        let render_pipeline = self
+            .map
+            .get(&render_type)
+            .expect("Unknown render type");
         render_pass.set_pipeline(render_pipeline);
 
         let bind_group_enabled = render_type.bind_groups();

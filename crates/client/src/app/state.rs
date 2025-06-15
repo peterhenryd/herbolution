@@ -1,8 +1,11 @@
+use engine::video::v2d::text::Text;
 use lib::fs::save::Save;
+use math::color::{ColorConsts, Rgba};
+use math::vector::Vec2;
 
 use crate::app::{Render, Update};
-use crate::menu::config::MenuConfig;
 use crate::menu::Menu;
+use crate::menu::config::MenuConfig;
 use crate::session::Session;
 
 /// The navigable state of the application. This structure uses the senses provided by the engine and persistent data during the update phase to mutate itself
@@ -27,16 +30,17 @@ pub enum State {
 impl State {
     /// Updates the current state of the application using the provided context.
     pub fn update(&mut self, context: &mut Update) {
-        let mut selection = None;
+        let mut command = None;
+
         // Run the update logic for the current state.
         match self {
             State::Loading => {
                 // Loading...
 
-                selection = Some(Command::OpenMenu(MenuConfig::Title));
+                command = Some(Command::OpenMenu(MenuConfig::Title));
             }
             State::Browsing(menu) => {
-                selection = menu.update(context, None);
+                command = menu.update(context, None);
             }
             State::Playing {
                 overlay: menu,
@@ -45,12 +49,12 @@ impl State {
             } => {
                 // First, update the game if it is not paused.
                 if !*is_paused {
-                    selection = selection.or(session.update(context));
+                    command = command.or(session.update(context));
                 }
 
                 // Then, update the menu if one exists.
                 if let Some(menu) = menu {
-                    selection = menu.update(context, Some(is_paused));
+                    command = menu.update(context, Some(is_paused));
                 }
             }
             State::Exiting => {
@@ -59,14 +63,14 @@ impl State {
         }
 
         // If a command was returned, transition to its associated state.
-        if let Some(selection) = selection {
-            self.transition(selection, context);
+        if let Some(x) = command {
+            self.transition(x, context);
         };
     }
 
-    // Mutates the current state based on the command.
-    fn transition(&mut self, selection: Command, context: &mut Update) {
-        match selection {
+    // Replaces or mutates the current state based on the command.
+    fn transition(&mut self, command: Command, context: &mut Update) {
+        match command {
             Command::OpenMenu(config) => {
                 *self = State::Browsing(config.into());
             }
@@ -95,8 +99,7 @@ impl State {
                 // TODO: render splash screen
             }
             State::Browsing(menu) => {
-                let mut drawing = context.drawing.begin_2d();
-                menu.render(&mut drawing);
+                menu.render(&mut context.drawing.begin_2d());
             }
             State::Playing {
                 overlay: menu,
@@ -108,9 +111,46 @@ impl State {
                     session.render(context);
                 }
 
-                // Then, render the menu over the game if one exists.
+                let mut drawing = context.drawing.begin_2d();
+                let mut text_drawing = drawing.draw_text();
+
+                let font_id = text_drawing
+                    .atlas
+                    .font_coords
+                    .keys()
+                    .next()
+                    .unwrap()
+                    .font_id;
+                text_drawing.add(
+                    Vec2::ZERO,
+                    Text {
+                        font_id,
+                        content: format!("FPS: {}", context.persist.fps.get()),
+                        font_size: 36.0,
+                        color: Rgba::WHITE,
+                    },
+                );
+
+                text_drawing.add(
+                    context
+                        .resolution
+                        .to_vec2()
+                        .cast()
+                        .unwrap()
+                        / 2.0,
+                    Text {
+                        font_id,
+                        content: "+".to_owned(),
+                        font_size: 36.0,
+                        color: Rgba::WHITE,
+                    },
+                );
+
+                drop(text_drawing);
+
+                // Then, render the overlay over the game if one exists.
                 if let Some(menu) = menu {
-                    menu.render(&mut context.drawing.begin_2d());
+                    menu.render(&mut drawing);
                 }
             }
             State::Exiting => {}

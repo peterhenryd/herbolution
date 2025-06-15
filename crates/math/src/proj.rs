@@ -1,5 +1,6 @@
 use bytemuck::{Pod, Zeroable};
-use crate::matrix::{mat4f, Mat4};
+
+use crate::matrix::{Mat4, mat4f};
 use crate::size::Size2;
 use crate::vector::Vec4;
 
@@ -29,14 +30,20 @@ pub struct Perspective {
 
 impl Orthographic {
     pub const fn new(left: f32, top: f32, right: f32, bottom: f32, near: f32, far: f32) -> Self {
-        Self { left, top, right, bottom, near, far }
+        Self {
+            left,
+            top,
+            right,
+            bottom,
+            near,
+            far,
+        }
     }
 }
 
 impl From<Size2<u32>> for Orthographic {
     fn from(value: Size2<u32>) -> Self {
-        let aspect = value.width as f32 / value.height as f32;
-        Self::new(-aspect / 2.0, -0.5, aspect / 2.0, 0.5, -1.0, 1.0)
+        Self::new(0.0, 0.0, value.width as f32, value.height as f32, -100.0, 100.0)
     }
 }
 

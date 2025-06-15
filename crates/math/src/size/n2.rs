@@ -1,6 +1,9 @@
+use std::ops::Add;
+
 use num::traits::ConstZero;
 use num::{NumCast, ToPrimitive, Zero};
-use std::ops::Add;
+
+use crate::vector::Vec2;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Size2<T> {
@@ -30,6 +33,10 @@ impl<T> Size2<T> {
         T: ToPrimitive,
     {
         self.width.to_f32().unwrap() / self.height.to_f32().unwrap()
+    }
+
+    pub fn to_vec2(self) -> Vec2<T> {
+        Vec2::new(self.width, self.height)
     }
 }
 

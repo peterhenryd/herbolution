@@ -29,15 +29,25 @@ pub struct Options {
 impl<'w> Video<'w> {
     pub fn create(target: impl Into<surface::Target<'w>>, options: Options) -> Self {
         let (handle, surface) = gpu::create(target, options.resolution);
-        let r2d = v2d::Renderer::create(&handle, options.r2d);
+        let mut r2d = v2d::Renderer::create(&handle, options.r2d);
+        r2d.set_resolution(&handle, options.resolution);
         let r3d = v3d::Renderer::create(&handle, options.r3d);
 
-        Self { handle, surface, r2d, r3d, clear_color: options.clear_color }
+        Self {
+            handle,
+            surface,
+            r2d,
+            r3d,
+            clear_color: options.clear_color,
+        }
     }
 
     pub fn set_resolution(&mut self, resolution: impl Into<Size2<u32>>) {
         let resolution = resolution.into();
-        self.surface.set_resolution(&self.handle, resolution);
+        self.surface
+            .set_resolution(&self.handle, resolution);
+        self.r2d
+            .set_resolution(&self.handle, resolution);
     }
 
     pub fn resolution(&self) -> Size2<u32> {
@@ -46,7 +56,15 @@ impl<'w> Video<'w> {
 
     pub fn start_drawing(&self) -> Drawing<'_, '_> {
         Drawing {
-            frame: gpu::Frame::new(&self.handle, &self.surface, frame::Options { clear_color: Some(self.clear_color), depth: true }).into_owned(),
+            handle: &self.handle,
+            frame: gpu::Frame::new(
+                &self.handle,
+                &self.surface,
+                frame::Options {
+                    clear_color: Some(self.clear_color),
+                },
+            )
+            .into_owned(),
             r2d: &self.r2d,
             r3d: &self.r3d,
         }

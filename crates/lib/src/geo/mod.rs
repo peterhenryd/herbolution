@@ -1,3 +1,3 @@
 pub mod cuboid;
-pub mod plane;
 pub mod face;
+pub mod plane;

@@ -1,7 +1,8 @@
 use gpu::frame::{Frame, Pass};
-use gpu::{Buffer, SetId, MeshId};
-use crate::{RenderType, Renderer};
+use gpu::{Buffer, MeshId, SetId};
+
 use crate::vertex::Instance3dPayload;
+use crate::{RenderType, Renderer};
 
 pub struct Draw<'q, 'f, 'r> {
     frame: &'f mut Frame<'q>,
@@ -11,7 +12,9 @@ pub struct Draw<'q, 'f, 'r> {
 
 impl<'q, 'f, 'r> Draw<'q, 'f, 'r> {
     pub fn create(render_type: RenderType, frame: &'f mut Frame<'q>, renderer: &'r Renderer) -> Self {
-        renderer.pipeline_map.load_into_render_pass(render_type, frame.pass());
+        renderer
+            .pipeline_map
+            .load_by_type(render_type, frame.pass());
 
         Self {
             frame,
@@ -44,6 +47,6 @@ fn draw_mesh(render_pass: &mut Pass<'_>, buffer: &Buffer<Instance3dPayload>, mes
         return;
     }
 
-    render_pass.set_vertex_buffer(1, buffer.inner.slice(..));
+    render_pass.set_vertex_buffer(1, buffer.inner().slice(..));
     render_pass.draw_indexed(0..index_count, 0, 0..buffer.len() as u32);
 }

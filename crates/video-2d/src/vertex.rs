@@ -1,10 +1,10 @@
 use bytemuck::{Pod, Zeroable};
-use gpu::pipeline::{vertex_attr_array, VertexBufferLayout, VertexStepMode};
+use gpu::pipeline::{VertexBufferLayout, VertexStepMode, vertex_attr_array};
 use gpu::{AtlasTextureCoord, Payload, Vertex};
 use math::color::Rgba;
 use math::matrix::Mat3;
 use math::rotation::Quat;
-use math::vector::{vec2f, vec3f, Vec2};
+use math::vector::{vec2f, vec3f};
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Pod, Zeroable)]
@@ -48,6 +48,7 @@ impl Payload for Vertex2d {
 pub struct Instance2d {
     pub position: vec2f,
     pub rotation: Quat,
+    pub scale: vec2f,
     pub color: Rgba<f32>,
     pub texture_coord: AtlasTextureCoord,
 }
@@ -59,7 +60,7 @@ impl Instance2d {
         attributes: &vertex_attr_array![
             3 => Float32x2, // model matrix column 0
             4 => Float32x2, // model matrix column 1
-            5 => Float32x2, // position
+            5 => Float32x2, // model matrix column 2
             6 => Float32x4, // color
             7 => Float32x2, // texture translation
             8 => Float32x2, // texture scale
@@ -67,11 +68,11 @@ impl Instance2d {
     };
 
     pub fn payload(&self) -> Instance2dPayload {
-        let Mat3 { x: r0, y: r1, .. } = self.rotation.to_matrix();
+        let Mat3 { x: rx, y: ry, .. } = self.rotation.to_matrix();
 
         Instance2dPayload {
-            model_0: Vec2::new(r0.x, r1.x),
-            model_1: Vec2::new(r0.y, r1.y),
+            model_0: vec2f::new(rx.x * self.scale.x, ry.x * self.scale.y),
+            model_1: vec2f::new(rx.y * self.scale.x, ry.y * self.scale.y),
             model_2: self.position,
             color: self.color,
             uv_t: self.texture_coord.translation,

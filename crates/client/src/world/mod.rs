@@ -1,11 +1,13 @@
 use std::collections::HashMap;
+use std::rc::Rc;
 use std::time::Duration;
 
 use chunk::Chunk;
-use engine::video::{v3d, Video};
+use engine::video::{Video, v3d};
 use game::chunk::channel::ClientChunkChannel;
 use lib::TrackMut;
 use math::vector::vec3i;
+use rayon::{ThreadPool, ThreadPoolBuilder};
 
 use crate::mesh::MeshIds;
 
@@ -22,6 +24,7 @@ pub struct World {
     channel: ClientChunkChannel,
     /// The settings used by the fragment shader to render the world.
     pub(crate) render_settings: TrackMut<v3d::World>,
+    mesh_thread_pool: Rc<ThreadPool>,
 }
 
 impl World {
@@ -31,6 +34,12 @@ impl World {
             chunk_map: HashMap::new(),
             channel,
             render_settings: render_settings.into(),
+            mesh_thread_pool: Rc::new(
+                ThreadPoolBuilder::new()
+                    .num_threads(num_cpus::get())
+                    .build()
+                    .unwrap(),
+            ),
         }
     }
 
@@ -47,12 +56,14 @@ impl World {
     pub fn update(&mut self, _: Duration, video: &mut Video) {
         // If the render settings have been modified since the previous update, submit the new settings to the renderer.
         if TrackMut::check(&mut self.render_settings) {
-            video.r3d.update_world(&self.render_settings);
+            video
+                .r3d
+                .update_world(&self.render_settings);
         }
 
         // Load the chunks as requested by the logic-side world.
         while let Some((position, receiver, render_flag)) = self.channel.recv_load() {
-            let chunk = Chunk::create(&video.handle, position, receiver, render_flag);
+            let chunk = Chunk::create(&video.handle, position, receiver, render_flag, self.mesh_thread_pool.clone());
             self.chunk_map.insert(position, chunk);
         }
 

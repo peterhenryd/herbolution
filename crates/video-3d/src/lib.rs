@@ -1,18 +1,21 @@
+use std::sync::Arc;
+
+use gpu::buffer::Usage;
 use gpu::camera::{Camera, CameraPayload};
 use gpu::handle::Handle;
-use gpu::{load_shader, pipeline, sampler, shader, BindGroup, Buffer};
-use gpu::buffer::Usage;
 use gpu::pipeline::{Face, PipelineOptions};
 use gpu::sampler::Filter;
 use gpu::shader::Stage;
 use gpu::texture::AtlasTextureCoord;
+use gpu::{BindGroup, Buffer, load_shader, pipeline, sampler, shader};
 use math::proj::Perspective;
+
 use crate::pbr::{PbrTexturePaths, PbrTextures};
 
+mod draw;
+pub mod pbr;
 mod vertex;
 mod world;
-pub mod pbr;
-mod draw;
 
 pub type Vertex = vertex::Vertex3d;
 pub type Instance = vertex::Instance3d;
@@ -54,12 +57,15 @@ impl Renderer {
 
         Self {
             handle: Handle::clone(handle),
-            pipeline_map: pipeline::Map::create(handle, &RenderType3dOptions {
-                camera_buffer: &camera_buffer,
-                world_buffer: &world_buffer,
-                shader_module: &load_shader!(handle, "shaders/world.wgsl"),
-                pbr_textures: &pbr_textures,
-            }),
+            pipeline_map: pipeline::Map::create(
+                handle,
+                &RenderType3dOptions {
+                    camera_buffer: &camera_buffer,
+                    world_buffer: &world_buffer,
+                    shader_module: &load_shader!(handle, "shaders/world.wgsl"),
+                    pbr_textures: &pbr_textures,
+                },
+            ),
             camera_buffer,
             world_buffer,
             pbr_textures,
@@ -69,11 +75,15 @@ impl Renderer {
     }
 
     pub fn update_camera(&mut self, camera: &Camera<Perspective>) {
-        self.camera_buffer.write(&self.handle, 0, &[camera.payload()]).expect("Failed to update 3D camera buffer");
+        self.camera_buffer
+            .write(&self.handle, 0, &[camera.payload()])
+            .expect("Failed to update 3D camera buffer");
     }
 
     pub fn update_world(&mut self, world: &World) {
-        self.world_buffer.write(&self.handle, 0, &[world.payload()]).expect("Failed to update world buffer");
+        self.world_buffer
+            .write(&self.handle, 0, &[world.payload()])
+            .expect("Failed to update world buffer");
     }
 
     pub fn meshes(&mut self) -> &mut Meshes {
@@ -84,7 +94,7 @@ impl Renderer {
         &mut self.sets
     }
 
-    pub fn texture_coords(&self) -> &[AtlasTextureCoord] {
+    pub fn texture_coords(&self) -> &Arc<[AtlasTextureCoord]> {
         &self.pbr_textures.coords
     }
 }
@@ -105,10 +115,7 @@ pub struct RenderType3dOptions<'a> {
 
 impl pipeline::Key<3> for RenderType {
     type Options<'a> = RenderType3dOptions<'a>;
-    const ENTRIES: &'static [Self] = &[
-        Self::Terrain,
-        Self::Sky,
-    ];
+    const ENTRIES: &'static [Self] = &[Self::Terrain, Self::Sky];
 
     fn create_bind_groups(handle: &Handle, options: &Self::Options<'_>) -> [BindGroup; 3] {
         let camera_bind_group = BindGroup::build()
@@ -127,20 +134,13 @@ impl pipeline::Key<3> for RenderType {
             .with_texture(&options.pbr_textures.specular)
             .finish(handle);
 
-        [
-            camera_bind_group,
-            world_bind_group,
-            texture_bind_group,
-        ]
+        [camera_bind_group, world_bind_group, texture_bind_group]
     }
 
     fn pipeline_options<'a>(&self, _: &Handle, options: &Self::Options<'a>) -> PipelineOptions<'a> {
         PipelineOptions {
             shader_module: options.shader_module,
-            vertex_buffer_layouts: &[
-                Vertex::LAYOUT,
-                Instance::LAYOUT,
-            ],
+            vertex_buffer_layouts: &[Vertex::LAYOUT, Instance::LAYOUT],
             cull_mode: Some(match self {
                 RenderType::Terrain => Face::Front,
                 RenderType::Sky => Face::Back,

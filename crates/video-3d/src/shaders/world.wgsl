@@ -26,7 +26,6 @@ struct World {
 // Vertex shader
 
 struct Vertex {
-    @builtin(vertex_index) index: u32,
     @location(0) position: vec3f,
     @location(1) normal: vec3f,
     @location(2) uv: vec2f,

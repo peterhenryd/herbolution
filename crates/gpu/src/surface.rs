@@ -1,9 +1,9 @@
-use crate::handle::Handle;
-use crate::texture::Texture;
 use math::size::Size2;
+pub use wgpu::SurfaceTarget as Target;
 use wgpu::{CompositeAlphaMode, PresentMode, SurfaceConfiguration, TextureFormat, TextureUsages};
 
-pub use wgpu::SurfaceTarget as Target;
+use crate::handle::Handle;
+use crate::texture::Texture;
 
 pub struct Surface<'w> {
     pub(crate) inner: wgpu::Surface<'w>,
@@ -19,9 +19,9 @@ impl<'w> Surface<'w> {
             format: TextureFormat::Bgra8UnormSrgb,
             width: resolution.width,
             height: resolution.height,
-            present_mode: PresentMode::Immediate,
+            present_mode: PresentMode::AutoVsync,
             desired_maximum_frame_latency: 2,
-            alpha_mode: CompositeAlphaMode::Auto,
+            alpha_mode: CompositeAlphaMode::PostMultiplied,
             view_formats: vec![],
         };
         let depth_texture = Texture::depth(handle, resolution);
@@ -35,7 +35,8 @@ impl<'w> Surface<'w> {
         let resolution = resolution.into();
         self.config.width = resolution.width;
         self.config.height = resolution.height;
-        self.inner.configure(handle.device(), &self.config);
+        self.inner
+            .configure(handle.device(), &self.config);
 
         self.depth_texture = Texture::depth(handle, resolution);
     }

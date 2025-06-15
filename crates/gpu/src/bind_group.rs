@@ -1,6 +1,10 @@
-use wgpu::{BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType, BufferBindingType, BufferUsages, SamplerBindingType, ShaderStages, TextureSampleType, TextureViewDimension};
-use crate::handle::Handle;
+use wgpu::{
+    BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType, BufferBindingType,
+    BufferUsages, SamplerBindingType, ShaderStages, TextureSampleType, TextureViewDimension,
+};
+
 use crate::buffer::Buffer;
+use crate::handle::Handle;
 use crate::texture::Texture;
 
 #[derive(Debug)]
@@ -23,9 +27,7 @@ pub struct BindGroupBuilder<'r> {
 impl<'r> BindGroupBuilder<'r> {
     #[inline]
     pub fn new() -> Self {
-        Self {
-            pairs: Vec::new(),
-        }
+        Self { pairs: Vec::new() }
     }
 
     #[inline]
@@ -38,7 +40,7 @@ impl<'r> BindGroupBuilder<'r> {
         self.add_item(layout_entry, entry);
         self
     }
-    
+
     pub fn add_buffer<T>(&mut self, buffer: &'r Buffer<T>, visibility: ShaderStages) {
         let binding = self.pairs.len() as u32;
         self.pairs.push((
@@ -46,7 +48,10 @@ impl<'r> BindGroupBuilder<'r> {
                 binding,
                 visibility,
                 ty: BindingType::Buffer {
-                    ty: if buffer.inner.usage().contains(BufferUsages::UNIFORM) {
+                    ty: if buffer
+                        .usage()
+                        .contains(BufferUsages::UNIFORM)
+                    {
                         BufferBindingType::Uniform
                     } else {
                         BufferBindingType::Storage { read_only: true }
@@ -58,16 +63,16 @@ impl<'r> BindGroupBuilder<'r> {
             },
             BindGroupEntry {
                 binding,
-                resource: buffer.inner.as_entire_binding()
+                resource: buffer.inner().as_entire_binding(),
             },
         ));
     }
-    
+
     pub fn with_buffer<T>(mut self, buffer: &'r Buffer<T>, visibility: ShaderStages) -> Self {
         self.add_buffer(buffer, visibility);
         self
     }
-    
+
     pub fn add_sampler(&mut self, sampler: &'r wgpu::Sampler) {
         let binding = self.pairs.len() as u32;
         self.pairs.push((
@@ -83,12 +88,12 @@ impl<'r> BindGroupBuilder<'r> {
             },
         ));
     }
-    
+
     pub fn with_sampler(mut self, sampler: &'r wgpu::Sampler) -> Self {
         self.add_sampler(sampler);
         self
     }
-    
+
     pub fn add_texture(&mut self, texture: &'r Texture) {
         let binding = self.pairs.len() as u32;
         self.pairs.push((
@@ -104,37 +109,37 @@ impl<'r> BindGroupBuilder<'r> {
             },
             BindGroupEntry {
                 binding,
-                resource: BindingResource::TextureView(&texture.view),
+                resource: BindingResource::TextureView(texture.view()),
             },
         ));
     }
-    
+
     pub fn with_texture(mut self, texture: &'r Texture) -> Self {
         self.add_texture(texture);
         self
     }
 
     pub fn finish(self, handle: &Handle) -> BindGroup {
-        let (layout_entries, entries): (Vec<_>, Vec<_>) = self.pairs
+        let (layout_entries, entries): (Vec<_>, Vec<_>) = self
+            .pairs
             .into_iter()
             .map(|(layout_entry, entry)| (layout_entry, entry))
             .unzip();
 
-        let layout = handle.device()
+        let layout = handle
+            .device()
             .create_bind_group_layout(&BindGroupLayoutDescriptor {
                 label: None,
                 entries: &layout_entries,
             });
-        let inner = handle.device()
+        let inner = handle
+            .device()
             .create_bind_group(&BindGroupDescriptor {
                 label: None,
                 layout: &layout,
                 entries: &entries,
             });
 
-        BindGroup {
-            inner,
-            layout,
-        }
+        BindGroup { inner, layout }
     }
 }

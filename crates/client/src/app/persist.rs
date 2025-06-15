@@ -1,5 +1,7 @@
 use std::path::PathBuf;
+use std::time::Duration;
 
+use lib::fps::IntervalCounter;
 use lib::fs::Fs;
 use lib::time::DeltaTime;
 
@@ -9,11 +11,16 @@ use lib::time::DeltaTime;
 pub struct Persist {
     pub(crate) fs: Fs,
     pub(crate) delta_time: DeltaTime,
+    pub(crate) fps: IntervalCounter,
 }
 
 impl Persist {
     /// Creates a new instance with the specified file system root path.
     pub fn new(root_path: PathBuf) -> Self {
-        Self { fs: Fs::new(root_path), delta_time: DeltaTime::new() }
+        Self {
+            fs: Fs::new(root_path),
+            delta_time: DeltaTime::new(),
+            fps: IntervalCounter::new(Duration::SECOND),
+        }
     }
 }

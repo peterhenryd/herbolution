@@ -10,6 +10,6 @@ math = { package = "herbolution-math", path = "../math" }
 
 # External dependencies
 bytemuck.workspace = true
-#fontdue.workspace = true
+fontdue.workspace = true
 image.workspace = true
-#taffy.workspace = true
+taffy.workspace = true

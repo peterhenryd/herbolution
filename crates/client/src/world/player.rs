@@ -1,19 +1,19 @@
 use std::time::Duration;
 
+use engine::Engine;
 use engine::input::{Frame, Input};
 use engine::video::gpu::SetId;
+use engine::video::gpu::camera::View;
 use engine::video::{gpu, v3d};
-use engine::Engine;
 use game::channel::ClientChannel;
-use game::client::{client_input_channel, ClientInputSender, ClientOutputReceiver};
-use game::entity::logic::player::ActionState;
+use game::client::{ClientInputSender, ClientOutputReceiver, client_input_channel};
 use game::entity::EntityTarget;
+use game::entity::logic::player::ActionState;
 use lib::geo::face::Face;
 use math::color::{ColorConsts, Rgba};
 use math::proj::Perspective;
-use math::rotation::Euler;
 use math::size::Size2;
-use math::vector::{vec3d, vec3i, vec3i8, Vec3};
+use math::vector::{Vec3, vec3d, vec3i, vec3i8};
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
 
@@ -55,9 +55,17 @@ impl Player {
             //position: Vec3::ZERO,
             //view_bob: 0.0,
             camera: Camera::new(engine.video.resolution(), &mut engine.video.r3d),
-            targeted_cube_wireframe_id: engine.video.r3d.sets().insert_with_capacity(6),
+            targeted_cube_wireframe_id: engine
+                .video
+                .r3d
+                .sets()
+                .insert_with_capacity(6),
             sky_box_color,
-            sky_box_id: engine.video.r3d.sets().insert_raw(cube(Vec3::ZERO, sky_box_color)),
+            sky_box_id: engine
+                .video
+                .r3d
+                .sets()
+                .insert_raw(cube(Vec3::ZERO, sky_box_color)),
         }
     }
 
@@ -96,7 +104,12 @@ impl Player {
          */
 
         if let Some(x) = output_receiver.recv_camera_rotation() {
-            self.camera.video.rotation = x;
+            *self
+                .camera
+                .video
+                .view
+                .rotation()
+                .unwrap() = x;
             update_camera = true;
         }
 
@@ -183,15 +196,17 @@ impl Player {
 }
 
 fn cube(position: vec3d, color: Rgba<f32>) -> impl IntoIterator<Item = v3d::InstancePayload> {
-    Face::entries().map(Face::to_rotation).map(move |rotation| {
-        v3d::Instance {
-            position,
-            rotation,
-            color,
-            ..Default::default()
-        }
-        .payload()
-    })
+    Face::entries()
+        .map(Face::to_rotation)
+        .map(move |rotation| {
+            v3d::Instance {
+                position,
+                rotation,
+                color,
+                ..Default::default()
+            }
+            .payload()
+        })
 }
 
 /// The camera with additional information used for culling and camera-relative rendering.
@@ -205,9 +220,12 @@ pub struct Camera {
 impl Camera {
     /// Creates a new instance.
     pub fn new(resolution: Size2<u32>, r3d: &mut v3d::Renderer) -> Self {
-        let aspect = resolution.cast::<f32>().unwrap().aspect();
+        let aspect = resolution
+            .cast::<f32>()
+            .unwrap()
+            .aspect();
         let perspective = Perspective::new(70f32.to_radians(), aspect, 0.001, 500.0);
-        let video = gpu::Camera::new(Vec3::ZERO, Euler::IDENTITY, perspective);
+        let video = gpu::Camera::new(Vec3::ZERO, View::rotatable(), perspective);
         r3d.update_camera(&video);
 
         Self {
@@ -219,7 +237,10 @@ impl Camera {
 
     /// Submits the camera to the video state and calculates a new frustum and chunk position.
     fn update(&mut self, engine: &mut Engine) {
-        engine.video.r3d.update_camera(&self.video);
+        engine
+            .video
+            .r3d
+            .update_camera(&self.video);
         self.frustum = Frustum::new(self.video.view_proj());
         self.chunk_position = self.video.position.cast().unwrap() / game::chunk::LENGTH as i32;
     }

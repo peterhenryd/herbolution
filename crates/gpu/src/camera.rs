@@ -1,42 +1,68 @@
 use bytemuck::{Pod, Zeroable};
-use math::matrix::{mat4f, Mat4};
+use math::matrix::{Mat4, mat4f};
 use math::proj::Proj;
 use math::rotation::Euler;
-use math::vector::{vec3d, vec3f, vec3i, vec3if};
+use math::vector::{Vec3, vec3d, vec3f, vec3if, vec4f, vec4i};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Camera<P> {
     pub position: vec3d,
-    pub rotation: Euler<f32>,
-    pub proj: P
+    pub view: View,
+    pub proj: P,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum View {
+    Rotate { rotation: Euler<f32> },
+    Forward,
+}
+
+impl View {
+    pub fn rotatable() -> Self {
+        View::Rotate { rotation: Euler::IDENTITY }
+    }
+
+    pub fn rotation(&mut self) -> Option<&mut Euler<f32>> {
+        match self {
+            View::Rotate { rotation } => Some(rotation),
+            View::Forward => None,
+        }
+    }
+
+    pub fn get_eye(self) -> vec3f {
+        match self {
+            View::Rotate { .. } => Vec3::ZERO,
+            View::Forward => -Vec3::Z,
+        }
+    }
+
+    pub fn get_dir(self) -> vec3f {
+        match self {
+            View::Rotate { rotation } => rotation.into_view_center(),
+            View::Forward => Vec3::Z,
+        }
+    }
 }
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Pod, Zeroable)]
 pub struct CameraPayload {
-    pub view_proj: mat4f,
-    pub position: vec3f,
-    pub _padding_0: u32,
-    pub position_int: vec3i,
-    pub _padding_1: u32,
-    pub position_fract: vec3f,
-    pub _padding_2: u32,
+    view_proj: mat4f,
+    position: vec4f,
+    position_int: vec4i,
+    position_fract: vec4f,
 }
 
 impl<P> Camera<P> {
-    pub fn new(position: vec3d, rotation: Euler<f32>, proj: P) -> Self {
-        Self {
-            position,
-            rotation,
-            proj,
-        }
+    pub fn new(position: vec3d, view: View, proj: P) -> Self {
+        Self { position, view, proj }
     }
 
     pub fn view_proj(&self) -> mat4f
     where
         P: Proj,
     {
-        self.proj.to_matrix() * Mat4::view_origin(self.rotation)
+        self.proj.to_matrix() * Mat4::look_to(self.view.get_eye(), self.view.get_dir(), Vec3::Y)
     }
 
     pub fn payload(&self) -> CameraPayload
@@ -46,12 +72,13 @@ impl<P> Camera<P> {
         let vec3if { integral, fractional } = self.position.into();
         CameraPayload {
             view_proj: self.view_proj(),
-            position: self.position.cast().unwrap(),
-            _padding_0: 0,
-            position_int: integral,
-            _padding_1: 0,
-            position_fract: fractional,
-            _padding_2: 0,
+            position: self
+                .position
+                .cast()
+                .unwrap()
+                .extend(0.0),
+            position_int: integral.extend(0),
+            position_fract: fractional.extend(0.0),
         }
     }
 }

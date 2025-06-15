@@ -1,8 +1,8 @@
-use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::LazyLock;
+use std::sync::atomic::{AtomicU32, Ordering};
 
 use bytemuck::NoUninit;
-use math::vector::{vec2f, vec3f, Vec2, Vec3};
+use math::vector::{Vec2, Vec3, vec2f, vec3f};
 use wgpu::{BufferUsages, IndexFormat};
 
 use crate::buffer::Buffer;
@@ -11,8 +11,8 @@ use crate::payload::Payload;
 
 #[derive(Debug)]
 pub struct Mesh<V, I> {
-    pub vertex_buffer: Buffer<V>,
-    pub index_buffer: Buffer<I>,
+    vertex_buffer: Buffer<V>,
+    index_buffer: Buffer<I>,
 }
 
 impl<V, I> Mesh<V, I> {
@@ -21,7 +21,10 @@ impl<V, I> Mesh<V, I> {
         V: NoUninit,
         I: NoUninit,
     {
-        Self { vertex_buffer: Buffer::create(handle, vertices, BufferUsages::VERTEX), index_buffer: Buffer::create(handle, indices, BufferUsages::INDEX) }
+        Self {
+            vertex_buffer: Buffer::create(handle, vertices, BufferUsages::VERTEX),
+            index_buffer: Buffer::create(handle, indices, BufferUsages::INDEX),
+        }
     }
 
     pub fn new(vertex_buffer: Buffer<V>, index_buffer: Buffer<I>) -> Self {
@@ -32,8 +35,8 @@ impl<V, I> Mesh<V, I> {
     where
         I: Index,
     {
-        render_pass.set_index_buffer(self.index_buffer.inner.slice(..), I::FORMAT);
-        render_pass.set_vertex_buffer(0, self.vertex_buffer.inner.slice(..));
+        render_pass.set_index_buffer(self.index_buffer.inner().slice(..), I::FORMAT);
+        render_pass.set_vertex_buffer(0, self.vertex_buffer.inner().slice(..));
         self.index_buffer.len() as u32
     }
 }
@@ -49,7 +52,11 @@ pub struct Meshes<V, I> {
 
 impl<V, I> Meshes<V, I> {
     pub fn new(handle: &Handle) -> Self {
-        Self { handle: Handle::clone(handle), vec: Vec::new(), id: MESHES_ID_COUNTER.fetch_add(1, Ordering::Relaxed) }
+        Self {
+            handle: Handle::clone(handle),
+            vec: Vec::new(),
+            id: MESHES_ID_COUNTER.fetch_add(1, Ordering::Relaxed),
+        }
     }
 
     pub fn create_and_insert(&mut self, vertices: &[V::Source], indices: &[I::Source]) -> MeshId
@@ -57,8 +64,14 @@ impl<V, I> Meshes<V, I> {
         V: Payload,
         I: Payload,
     {
-        let vertices = vertices.iter().map(V::from_source).collect::<Vec<_>>();
-        let indices = indices.iter().map(I::from_source).collect::<Vec<_>>();
+        let vertices = vertices
+            .iter()
+            .map(V::from_source)
+            .collect::<Vec<_>>();
+        let indices = indices
+            .iter()
+            .map(I::from_source)
+            .collect::<Vec<_>>();
         let mesh = Mesh::create(&self.handle, &vertices, &indices);
 
         self.insert(mesh)
@@ -116,7 +129,8 @@ impl Index for u32 {
     }
 }
 
-pub fn quad<V: Vertex, I: Index>(handle: &Handle) -> Mesh<V, I> {
+/// Returns a mesh of a quad with the origin at the center.
+pub fn c_quad<V: Vertex, I: Index>(handle: &Handle) -> Mesh<V, I> {
     Mesh::create(
         handle,
         &[
@@ -125,6 +139,25 @@ pub fn quad<V: Vertex, I: Index>(handle: &Handle) -> Mesh<V, I> {
             V::new_3d(Vec3::new(-0.5, -0.5, 0.5), Vec3::new(0.0, 0.0, 1.0), Vec2::new(0.0, 1.0)),
             V::new_3d(Vec3::new(0.5, -0.5, 0.5), Vec3::new(0.0, 0.0, 1.0), Vec2::new(1.0, 1.0)),
         ],
+        &[0, 2, 1, 3, 1, 2].map(I::new_u16),
+    )
+}
+
+/// Returns a mesh of a quad with the origin at the top-left.
+pub fn tl_quad<V: Vertex, I: Index>(handle: &Handle) -> Mesh<V, I> {
+    Mesh::create(
+        handle,
+        &[
+            // Top-left
+            V::new_3d(Vec3::new(0.0, 0.0, 0.5), Vec3::new(0.0, 0.0, 1.0), Vec2::new(0.0, 0.0)),
+            // Top-right
+            V::new_3d(Vec3::new(1.0, 0.0, 0.5), Vec3::new(0.0, 0.0, 1.0), Vec2::new(1.0, 0.0)),
+            // Bottom-left
+            V::new_3d(Vec3::new(0.0, 1.0, 0.5), Vec3::new(0.0, 0.0, 1.0), Vec2::new(0.0, 1.0)),
+            // Bottom-right
+            V::new_3d(Vec3::new(1.0, 1.0, 0.5), Vec3::new(0.0, 0.0, 1.0), Vec2::new(1.0, 1.0)),
+        ],
+        // The indices remain the same as the vertex order is preserved
         &[0, 2, 1, 3, 1, 2].map(I::new_u16),
     )
 }

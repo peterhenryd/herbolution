@@ -1,10 +1,12 @@
-use crate::rotation::Euler;
-use crate::vector::{Vec3, Vec4};
+use std::ops::{Add, Mul};
+
 use bytemuck::{Pod, Zeroable};
+use num::Float;
 use num::traits::{ConstOne, ConstZero};
 use serde::{Deserialize, Serialize};
-use std::ops::{Add, Mul};
-use num::Float;
+
+use crate::rotation::Euler;
+use crate::vector::{Vec3, Vec4};
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
@@ -20,8 +22,26 @@ impl<T> Mat4<T> {
         Self { x, y, z, w }
     }
 
+    pub fn look_to(eye: Vec3<T>, dir: Vec3<T>, up: Vec3<T>) -> Self
+    where
+        T: Float + ConstZero + ConstOne,
+    {
+        let f = -dir.normalize();
+        let s = f.cross(up).normalize();
+        let u = s.cross(f);
+
+        Mat4::new(
+            Vec4::new(s.x, u.x, -f.x, T::ZERO),
+            Vec4::new(s.y, u.y, -f.y, T::ZERO),
+            Vec4::new(s.z, u.z, -f.z, T::ZERO),
+            Vec4::new(-eye.dot(s), -eye.dot(u), eye.dot(f), T::ONE),
+        )
+    }
+
     pub fn view_origin(rot: Euler<T>) -> Self
-    where T: Float + ConstZero + ConstOne {
+    where
+        T: Float + ConstZero + ConstOne,
+    {
         let f = -rot.into_view_center().cast().unwrap();
         let s = f.cross(Vec3::Y).normalize();
         let u = s.cross(f);
