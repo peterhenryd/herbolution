@@ -1,8 +1,8 @@
 use bytemuck::{Pod, Zeroable};
-use math::matrix::{Mat4, mat4f};
+use math::mat::{Mat4, mat4f};
 use math::proj::Proj;
 use math::rotation::Euler;
-use math::vector::{Vec3, vec3d, vec3f, vec3if, vec4f, vec4i};
+use math::vec::{Vec3, vec3d, vec3f, vec3if, vec4f, vec4i};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Camera<P> {

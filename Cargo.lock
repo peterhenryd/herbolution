@@ -1091,17 +1091,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "herbolution-video"
-version = "0.1.0"
-dependencies = [
- "herbolution-gpu",
- "herbolution-math",
- "herbolution-video-2d",
- "herbolution-video-3d",
-]
-
-[[package]]
-name = "herbolution-video-2d"
+name = "herbolution-painter"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
@@ -1113,13 +1103,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "herbolution-video-3d"
+name = "herbolution-sculptor"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
  "herbolution-gpu",
  "herbolution-math",
  "image",
+]
+
+[[package]]
+name = "herbolution-video"
+version = "0.1.0"
+dependencies = [
+ "herbolution-gpu",
+ "herbolution-math",
+ "herbolution-painter",
+ "herbolution-sculptor",
 ]
 
 [[package]]

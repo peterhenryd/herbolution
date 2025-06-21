@@ -1,7 +1,7 @@
-use engine::video::v2d::text::Text;
+use engine::video::painter::text::Text;
 use lib::fs::save::Save;
 use math::color::{ColorConsts, Rgba};
-use math::vector::Vec2;
+use math::vec::Vec2;
 
 use crate::app::{Render, Update};
 use crate::menu::Menu;
@@ -99,7 +99,7 @@ impl State {
                 // TODO: render splash screen
             }
             State::Browsing(menu) => {
-                menu.render(&mut context.drawing.begin_2d());
+                menu.render(&mut context.drawing.draw_2d());
             }
             State::Playing {
                 overlay: menu,
@@ -111,7 +111,7 @@ impl State {
                     session.render(context);
                 }
 
-                let mut drawing = context.drawing.begin_2d();
+                let mut drawing = context.drawing.draw_2d();
                 let mut text_drawing = drawing.draw_text();
 
                 let font_id = text_drawing

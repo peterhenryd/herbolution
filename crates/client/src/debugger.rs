@@ -1,23 +1,23 @@
 use engine::input::Frame;
 use lib::fps::IntervalCounter;
-use math::size::Size2;
-use math::vector::vec3d;
+use math::ext::ext2u;
+use math::vec::vec3d;
 
 /// A manager that renders debug information on the screen, and handles whether the debugger is enabled.
 #[derive(Debug)]
 pub struct Debugger {
     is_resized: bool,
-    resolution: Size2<u32>,
+    resolution: ext2u,
     //crosshair_id: Option<TextId>,
     //text_ids: Option<[TextId; 4]>,
 }
 
 impl Debugger {
-    pub fn new(resolution: Size2<u32>) -> Self {
+    pub fn new(resolution: ext2u) -> Self {
         Self { is_resized: true, resolution }
     }
 
-    pub fn set_resolution(&mut self, resolution: Size2<u32>) {
+    pub fn set_resolution(&mut self, resolution: ext2u) {
         self.resolution = resolution;
         self.is_resized = true;
     }

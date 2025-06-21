@@ -3,7 +3,7 @@ use std::ops::{Add, AddAssign, Neg};
 use math::num::{Float, Num, NumCast, ToPrimitive};
 use math::num::traits::ConstZero;
 use math::num::traits::real::Real;
-use math::vector::Vec3;
+use math::vec::Vec3;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Cuboid<T> {

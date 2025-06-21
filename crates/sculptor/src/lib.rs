@@ -5,38 +5,32 @@ use gpu::camera::{Camera, CameraPayload};
 use gpu::handle::Handle;
 use gpu::pipeline::{Face, PipelineOptions};
 use gpu::sampler::Filter;
-use gpu::shader::Stage;
 use gpu::texture::AtlasTextureCoord;
 use gpu::{BindGroup, Buffer, load_shader, pipeline, sampler, shader};
 use math::proj::Perspective;
+pub use chisel::Chisel;
+use gpu::pipeline::map::PipelineMap;
+use gpu::shader::Stage;
+pub use pbr::{PbrTexturePaths, PbrTextures};
+pub use vertex::{Vertex3d, Instance3d, Instance3dPayload};
+pub use world::{World, WorldPayload};
 
-use crate::pbr::{PbrTexturePaths, PbrTextures};
-
-mod draw;
-pub mod pbr;
+mod chisel;
+mod pbr;
 mod vertex;
 mod world;
 
-pub type Vertex = vertex::Vertex3d;
-pub type Instance = vertex::Instance3d;
-pub type InstancePayload = vertex::Instance3dPayload;
+pub type Mesh = gpu::Mesh<Vertex3d, u16>;
+pub type Meshes = gpu::Meshes<Vertex3d, u16>;
 
-pub type World = world::World;
-pub type WorldPayload = world::WorldPayload;
-
-pub type Mesh = gpu::Mesh<Vertex, u16>;
-pub type Meshes = gpu::Meshes<Vertex, u16>;
-
-pub type GrowBuffer3d = gpu::GrowBuffer<InstancePayload>;
-pub type Buffer3d = Buffer<InstancePayload>;
-pub type Sets = gpu::Sets<InstancePayload>;
-
-pub type Drawing<'q, 'f, 'r> = draw::Draw<'q, 'f, 'r>;
+pub type GrowBuffer3d = gpu::GrowBuffer<Instance3dPayload>;
+pub type Buffer3d = Buffer<Instance3dPayload>;
+pub type Sets = gpu::Sets<Instance3dPayload>;
 
 #[derive(Debug)]
-pub struct Renderer {
+pub struct Sculptor {
     handle: Handle,
-    pub(crate) pipeline_map: pipeline::Map<RenderType, 3>,
+    pub(crate) pipeline_map: PipelineMap<RenderType, 3>,
     camera_buffer: Buffer<CameraPayload>,
     world_buffer: Buffer<WorldPayload>,
     pub(crate) meshes: Meshes,
@@ -48,7 +42,7 @@ pub struct Options {
     pub pbr_texture_paths: PbrTexturePaths,
 }
 
-impl Renderer {
+impl Sculptor {
     pub fn create(handle: &Handle, options: Options) -> Self {
         let camera_buffer = Buffer::with_capacity(handle, 1, Usage::UNIFORM | Usage::COPY_DST);
         let world_buffer = Buffer::with_capacity(handle, 1, Usage::UNIFORM | Usage::COPY_DST);
@@ -57,7 +51,7 @@ impl Renderer {
 
         Self {
             handle: Handle::clone(handle),
-            pipeline_map: pipeline::Map::create(
+            pipeline_map: PipelineMap::create(
                 handle,
                 &RenderType3dOptions {
                     camera_buffer: &camera_buffer,
@@ -140,7 +134,7 @@ impl pipeline::Key<3> for RenderType {
     fn pipeline_options<'a>(&self, _: &Handle, options: &Self::Options<'a>) -> PipelineOptions<'a> {
         PipelineOptions {
             shader_module: options.shader_module,
-            vertex_buffer_layouts: &[Vertex::LAYOUT, Instance::LAYOUT],
+            vertex_buffer_layouts: &[Vertex3d::LAYOUT, Instance3d::LAYOUT],
             cull_mode: Some(match self {
                 RenderType::Terrain => Face::Front,
                 RenderType::Sky => Face::Back,

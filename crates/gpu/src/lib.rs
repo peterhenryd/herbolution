@@ -21,13 +21,14 @@ pub use camera::{Camera, CameraPayload};
 pub use frame::Frame;
 pub use handle::Handle;
 pub use instance::{SetId, Sets};
+use math::ext::ext2u;
 pub use mesh::{Index, Mesh, MeshId, Meshes, Vertex};
 pub use payload::Payload;
 pub use sampler::Sampler;
 pub use surface::Surface;
 pub use texture::{AtlasError, AtlasTextureCoord, Texture};
 
-pub fn create<'w>(target: impl Into<wgpu::SurfaceTarget<'w>>, resolution: impl Into<math::size::Size2<u32>>) -> (Handle, Surface<'w>) {
+pub fn create<'w>(target: impl Into<wgpu::SurfaceTarget<'w>>, resolution: impl Into<ext2u>) -> (Handle, Surface<'w>) {
     let instance = wgpu::Instance::default();
     let surface = instance
         .create_surface(target)

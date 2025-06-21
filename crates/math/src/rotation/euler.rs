@@ -1,4 +1,4 @@
-use crate::vector::Vec3;
+use crate::vec::Vec3;
 use num::traits::ConstZero;
 use serde::{Deserialize, Serialize};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};

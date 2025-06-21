@@ -1,72 +1,71 @@
 pub extern crate gpu;
-pub extern crate video_2d as v2d;
-pub extern crate video_3d as v3d;
+pub extern crate painter;
+pub extern crate sculptor;
 
-use gpu::{frame, surface};
-use math::size::Size2;
+use gpu::surface;
+use math::ext::ext2u;
 
-mod draw;
-
+pub use frame::Frame;
 use math::color::Rgba;
+use painter::Painter;
+use sculptor::Sculptor;
 
-pub type Drawing<'q, 'r> = draw::Drawing<'q, 'r>;
+mod frame;
 
 pub struct Video<'w> {
     pub handle: gpu::Handle,
     surface: gpu::Surface<'w>,
-    pub r2d: v2d::Renderer,
-    pub r3d: v3d::Renderer,
+    pub painter: Painter,
+    pub sculptor: Sculptor,
     clear_color: Rgba<f64>,
 }
 
 pub struct Options {
-    pub resolution: Size2<u32>,
+    pub resolution: ext2u,
     pub clear_color: Rgba<f64>,
-    pub r2d: v2d::Options,
-    pub r3d: v3d::Options,
+    pub painter: painter::Options,
+    pub sculptor: sculptor::Options,
 }
 
 impl<'w> Video<'w> {
     pub fn create(target: impl Into<surface::Target<'w>>, options: Options) -> Self {
         let (handle, surface) = gpu::create(target, options.resolution);
-        let mut r2d = v2d::Renderer::create(&handle, options.r2d);
-        r2d.set_resolution(&handle, options.resolution);
-        let r3d = v3d::Renderer::create(&handle, options.r3d);
+        let mut painter = Painter::create(&handle, options.painter);
+        painter.set_resolution(&handle, options.resolution);
+        let sculptor = Sculptor::create(&handle, options.sculptor);
 
         Self {
             handle,
             surface,
-            r2d,
-            r3d,
+            painter: painter,
+            sculptor: sculptor,
             clear_color: options.clear_color,
         }
     }
 
-    pub fn set_resolution(&mut self, resolution: impl Into<Size2<u32>>) {
+    pub fn set_resolution(&mut self, resolution: impl Into<ext2u>) {
         let resolution = resolution.into();
         self.surface
             .set_resolution(&self.handle, resolution);
-        self.r2d
+        self.painter
             .set_resolution(&self.handle, resolution);
     }
 
-    pub fn resolution(&self) -> Size2<u32> {
+    pub fn resolution(&self) -> ext2u {
         self.surface.resolution()
     }
 
-    pub fn start_drawing(&self) -> Drawing<'_, '_> {
-        Drawing {
-            handle: &self.handle,
+    pub fn start_drawing(&self) -> Frame<'_, '_> {
+        Frame {
             frame: gpu::Frame::new(
                 &self.handle,
                 &self.surface,
-                frame::Options {
+                gpu::frame::Options {
                     clear_color: Some(self.clear_color),
                 },
-            )
-            .into_owned(),
-            r2d: &self.r2d,
-            r3d: &self.r3d,
+            ),
+            painter: &self.painter,
+            sculptor: &self.sculptor,
         }
     }
 }

@@ -1,4 +1,4 @@
-use math::vector::vec3u5;
+use math::vec::vec3u5;
 use std::fmt::{Debug, Formatter};
 
 #[repr(C)]

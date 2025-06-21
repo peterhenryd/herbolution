@@ -1,5 +1,4 @@
-use engine::video::v2d;
-
+use engine::video::painter::Brush;
 use crate::app::state::Command;
 use crate::app::Update;
 use crate::menu::options::OptionsMenu;
@@ -30,11 +29,11 @@ impl Menu {
     }
 
     /// Renders the active menu using the provided context.
-    pub fn render<'t>(&'t mut self, drawing: &mut v2d::Drawing<'_, '_, 't>) {
+    pub fn render<'t>(&'t mut self, brush: &mut Brush<'_, '_, 't>) {
         match self {
-            Menu::Title(x) => x.render(drawing),
-            Menu::Options(x) => x.render(drawing),
-            Menu::Play(x) => x.render(drawing),
+            Menu::Title(x) => x.render(brush),
+            Menu::Options(x) => x.render(brush),
+            Menu::Play(x) => x.render(brush),
         }
     }
 }

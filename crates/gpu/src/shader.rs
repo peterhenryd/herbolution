@@ -1,7 +1,7 @@
-pub type Module = wgpu::ShaderModule;
-pub type Stage = wgpu::ShaderStages;
-
 pub use wgpu::include_wgsl;
+
+pub use wgpu::ShaderModule as Module;
+pub use wgpu::ShaderStages as Stage;
 
 #[macro_export]
 macro_rules! load_shader {

@@ -1,4 +1,4 @@
-use crate::vector::{vec_type, Vec3};
+use crate::vec::{vec_type, Vec3};
 
 vec_type! {
     struct Vec2<T> {

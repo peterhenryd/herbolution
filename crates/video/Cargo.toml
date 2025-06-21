@@ -7,5 +7,5 @@ edition = "2024"
 # Internal dependencies
 gpu = { package = "herbolution-gpu", path = "../gpu" }
 math = { package = "herbolution-math", path = "../math" }
-video-2d = { package = "herbolution-video-2d", path = "../video-2d" }
-video-3d = { package = "herbolution-video-3d", path = "../video-3d" }
+painter = { package = "herbolution-painter", path = "../painter" }
+sculptor = { package = "herbolution-sculptor", path = "../sculptor" }

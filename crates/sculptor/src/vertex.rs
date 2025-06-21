@@ -3,7 +3,7 @@ use gpu::pipeline::{vertex_attr_array, VertexBufferLayout, VertexStepMode};
 use gpu::{AtlasTextureCoord, Payload, Vertex};
 use math::color::Rgba;
 use math::rotation::Quat;
-use math::vector::{vec2f, vec3d, vec3f, vec3i, vec3if, vec4f, Vec3};
+use math::vec::{vec2f, vec3d, vec3f, vec3i, vec3if, vec4f, Vec3};
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Pod, Zeroable)]

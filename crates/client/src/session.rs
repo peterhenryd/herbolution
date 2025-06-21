@@ -1,7 +1,13 @@
 use std::time::Duration;
 
+use crate::app::state::Command;
+use crate::app::{Render, Update};
+use crate::debugger::Debugger;
+use crate::mesh::MeshIds;
+use crate::world::player::Player;
+use crate::world::World;
 use engine::input::Frame;
-use engine::video::v3d;
+use engine::video::sculptor;
 use engine::Engine;
 use game::channel::ClientChannel;
 use game::{Game, Options};
@@ -9,18 +15,11 @@ use lib::fps::IntervalCounter;
 use lib::fs::save::Save;
 use lib::time::DeltaTime;
 use math::color::{Color, Rgb};
-use math::size::Size2;
-use math::vector::Vec3;
+use math::ext::ext2u;
+use math::vec::Vec3;
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
 use winit::window::{CursorGrabMode, Window};
-
-use crate::app::state::Command;
-use crate::app::{Render, Update};
-use crate::debugger::Debugger;
-use crate::mesh::MeshIds;
-use crate::world::player::Player;
-use crate::world::World;
 
 /// The render-side representation of a game session.
 #[derive(Debug)]
@@ -39,7 +38,7 @@ impl Session {
     /// Creates a new instance, and spawns an associated logic-side game.
     pub fn create(save: Save, engine: &mut Engine) -> Self {
         let (channel, chunk_channel) = Game::spawn(Options { save });
-        let world_render_settings = v3d::World {
+        let world_render_settings = sculptor::World {
             ambient_light: Vec3::splat(0.5),
             light_dir: Vec3::new(0.2, 1.0, -0.7).normalize(),
             fog_color: Rgb::<u8>::from_rgb(177, 242, 255).into(),
@@ -54,7 +53,7 @@ impl Session {
             world: World::new(chunk_channel, world_render_settings),
             channel,
             is_focused: false,
-            mesh_ids: MeshIds::from_insertion_into(engine.video.r3d.meshes()),
+            mesh_ids: MeshIds::from_insertion_into(engine.video.sculptor.meshes()),
         }
     }
 
@@ -80,23 +79,23 @@ impl Session {
     /// Renders the game.
     pub fn render(&mut self, context: &mut Render) {
         {
-            let mut draw_sky = context.drawing.begin_3d(v3d::RenderType::Sky);
-            draw_sky.load_mesh(self.mesh_ids.solid_quad);
-            draw_sky.draw_from_set(self.player.sky_box_id);
+            let mut chisel = context.drawing.draw_3d(sculptor::RenderType::Sky);
+            chisel.load_mesh(self.mesh_ids.solid_quad);
+            chisel.draw_from_set(self.player.sky_box_id);
         }
 
         {
-            let mut draw_terrain = context.drawing.begin_3d(v3d::RenderType::Terrain);
+            let mut chisel = context.drawing.draw_3d(sculptor::RenderType::Terrain);
 
-            self.world.render(&self.player.camera, &self.mesh_ids, &mut draw_terrain);
+            self.world.render(&self.player.camera, &self.mesh_ids, &mut chisel);
 
-            draw_terrain.load_mesh(self.mesh_ids.wireframe_quad);
-            draw_terrain.draw_from_set(self.player.targeted_cube_wireframe_id);
+            chisel.load_mesh(self.mesh_ids.wireframe_quad);
+            chisel.draw_from_set(self.player.targeted_cube_wireframe_id);
         }
     }
 
-    pub fn set_resolution(&mut self, size: Size2<u32>) {
-        self.debugger.set_resolution(size);
+    pub fn set_resolution(&mut self, resolution: ext2u) {
+        self.debugger.set_resolution(resolution);
     }
 
     /// Sends a signal to the logic-side game to exit.

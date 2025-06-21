@@ -4,8 +4,8 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use engine::{Engine, input, video};
-use math::size::Size2;
-use math::vector::Vec2;
+use math::ext::{ext2u, Ext2};
+use math::vec::Vec2;
 use winit::application::ApplicationHandler;
 use winit::dpi::{PhysicalPosition, PhysicalSize};
 use winit::error::EventLoopError;
@@ -13,19 +13,18 @@ use winit::event::{DeviceEvent, DeviceId, KeyEvent, MouseScrollDelta, WindowEven
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::keyboard::PhysicalKey;
 use winit::window::{Window, WindowId};
+pub use crate::app::state::State;
+pub use crate::app::store::Store;
+pub use crate::app::switch::Switch;
 
-pub mod persist;
+pub mod store;
 pub mod state;
 pub mod switch;
-
-pub type Persist = persist::Persist;
-pub type State = state::State;
-pub type Switch<'w> = switch::Switch<'w>;
 
 /// An Herbolution application.
 pub struct App<'w> {
     /// The data that persists through the entire duration of the program irrespective of the operating system or user directive.
-    persist: Persist,
+    store: Store,
     /// The state for the active portion of the application as determined by the user.
     state: State,
     /// The suspended or resumed window and engine as determined by the operating system.
@@ -41,7 +40,7 @@ pub struct Options {
 /// A portable context frame that contains data for updating the application state.
 pub struct Update<'w, 'a> {
     // Application data
-    pub persist: &'a mut Persist,
+    pub persist: &'a mut Store,
     pub window: &'a Window,
     pub engine: &'a mut Engine<'w>,
     pub event_loop: &'a ActiveEventLoop,
@@ -54,18 +53,18 @@ pub struct Update<'w, 'a> {
 /// A portable context frame that contains data for rendering the application state.
 pub struct Render<'a> {
     // Application data
-    pub persist: &'a mut Persist,
+    pub persist: &'a mut Store,
 
     // Frame data
-    pub drawing: video::Drawing<'a, 'a>,
-    pub resolution: Size2<u32>,
+    pub drawing: video::Frame<'a, 'a>,
+    pub resolution: ext2u,
 }
 
 impl App<'_> {
     /// Creates a new Herbolution application with the specified options.
     pub fn new(options: Options) -> Self {
         Self {
-            persist: Persist::new(options.root_path),
+            store: Store::new(options.root_path),
             state: State::default(),
             switch: Switch::Suspended(None),
         }
@@ -94,11 +93,11 @@ impl ApplicationHandler for App<'_> {
             WindowEvent::Resized(PhysicalSize { width, height }) => {
                 engine
                     .video
-                    .set_resolution(Size2::new(width, height));
+                    .set_resolution(Ext2::new(width, height));
             }
             WindowEvent::CloseRequested | WindowEvent::Destroyed => {
                 self.state = State::Exiting;
-                update(&mut self.persist, &mut self.state, window, engine, event_loop);
+                update(&mut self.store, &mut self.state, window, engine, event_loop);
             }
             WindowEvent::CursorMoved {
                 position: PhysicalPosition { x, y },
@@ -138,8 +137,8 @@ impl ApplicationHandler for App<'_> {
             }
             WindowEvent::RedrawRequested => {
                 // Update and render the application.
-                update(&mut self.persist, &mut self.state, window, engine, event_loop);
-                render(&mut self.persist, &mut self.state, engine);
+                update(&mut self.store, &mut self.state, window, engine, event_loop);
+                render(&mut self.store, &mut self.state, engine);
 
                 // Request a redraw from the operating system to repeat the update and render cycle.
                 window.request_redraw();
@@ -168,7 +167,7 @@ impl ApplicationHandler for App<'_> {
     }
 }
 
-fn update(persist: &mut Persist, state: &mut State, window: &Window, engine: &mut Engine, event_loop: &ActiveEventLoop) {
+fn update(persist: &mut Store, state: &mut State, window: &Window, engine: &mut Engine, event_loop: &ActiveEventLoop) {
     // Get the duration of time passed and user inputs that occurred between now and the previous update.
     let dt = persist.delta_time.next();
     let input = engine.input.take_frame();
@@ -186,7 +185,7 @@ fn update(persist: &mut Persist, state: &mut State, window: &Window, engine: &mu
     });
 }
 
-fn render(persist: &mut Persist, state: &mut State, engine: &mut Engine) {
+fn render(persist: &mut Store, state: &mut State, engine: &mut Engine) {
     // Render the state of the application to the window's surface.
     let resolution = engine.video.resolution();
     let drawing = engine.video.start_drawing();

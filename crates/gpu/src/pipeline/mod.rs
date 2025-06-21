@@ -10,8 +10,6 @@ pub use wgpu::{Face, VertexBufferLayout, VertexStepMode, vertex_attr_array};
 use crate::handle::Handle;
 use crate::shader;
 
-pub type Map<K, const N: usize> = map::PipelineMap<K, N>;
-
 pub struct PipelineOptions<'a> {
     pub shader_module: &'a shader::Module,
     pub vertex_buffer_layouts: &'a [VertexBufferLayout<'a>],

@@ -4,7 +4,7 @@ use crate::entity::set::EntityId;
 use crate::entity::EntityTarget;
 use crossbeam::channel::{bounded, Receiver, Sender};
 use math::rotation::Euler;
-use math::vector::{vec2d, vec3d, vec3i8, Vec2};
+use math::vec::{vec2d, vec3d, vec3i8, Vec2};
 use std::f32::consts::FRAC_PI_2;
 
 #[derive(Debug)]

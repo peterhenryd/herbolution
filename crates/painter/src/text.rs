@@ -1,18 +1,17 @@
 use gpu::buffer::Usage;
-use gpu::{GrowBuffer, Handle};
+use gpu::GrowBuffer;
 use math::color::Rgba;
 use math::rotation::Quat;
-use math::vector::{Vec2, vec2f};
+use math::vec::{vec2f, Vec2};
 
-use crate::Drawing;
 use crate::atlas::Atlas;
 use crate::font::FontId;
 use crate::vertex::{Instance2d, Instance2dPayload};
+use crate::Brush;
 
-pub struct DrawText<'q, 'f, 'r, 'd, 'g> {
-    handle: &'q Handle,
-    drawing: &'d mut Drawing<'q, 'f, 'r>,
-    pub atlas: &'g Atlas,
+pub struct TextBrush<'h, 'f, 'a, 'b> {
+    brush: &'b mut Brush<'h, 'f, 'a>,
+    pub atlas: &'b Atlas,
     instances: Vec<Instance2dPayload>,
     instance_buffer: GrowBuffer<Instance2dPayload>,
 }
@@ -24,16 +23,16 @@ pub struct Text {
     pub color: Rgba<f32>,
 }
 
-impl<'q, 'f, 'r, 'd, 'g> DrawText<'q, 'f, 'r, 'd, 'g> {
-    pub fn new(handle: &'q Handle, drawing: &'d mut Drawing<'q, 'f, 'r>, atlas: &'g Atlas) -> Self {
-        drawing.load_mesh(drawing.renderer.quad_mesh);
+impl<'h, 'f, 'a, 'b> TextBrush<'h, 'f, 'a, 'b> {
+    pub fn new(brush: &'b mut Brush<'h, 'f, 'a>, atlas: &'b Atlas) -> Self {
+        brush.load_mesh(brush.painter.quad_mesh);
+        let instance_buffer = GrowBuffer::empty(brush.frame.handle, Usage::VERTEX | Usage::COPY_DST);
 
         Self {
-            handle,
-            drawing,
+            brush,
             atlas,
             instances: vec![],
-            instance_buffer: GrowBuffer::empty(handle, Usage::VERTEX | Usage::COPY_DST),
+            instance_buffer,
         }
     }
 
@@ -64,14 +63,14 @@ impl<'q, 'f, 'r, 'd, 'g> DrawText<'q, 'f, 'r, 'd, 'g> {
     }
 }
 
-impl Drop for DrawText<'_, '_, '_, '_, '_> {
+impl Drop for TextBrush<'_, '_, '_, '_> {
     fn drop(&mut self) {
         if self.instances.is_empty() {
             return;
         }
 
         self.instance_buffer
-            .write(self.handle, &self.instances);
-        self.drawing.draw(&self.instance_buffer);
+            .write(self.brush.frame.handle, &self.instances);
+        self.brush.render(&self.instance_buffer);
     }
 }

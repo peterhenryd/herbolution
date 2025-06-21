@@ -1,6 +1,6 @@
-use crate::matrix::{mat3f, Mat3};
+use crate::mat::{mat3f, Mat3};
 use crate::rotation::euler::Euler;
-use crate::vector::{vec4f, Vec3, Vec4};
+use crate::vec::{vec4f, Vec3, Vec4};
 use bytemuck::{Pod, Zeroable};
 use serde::{Deserialize, Serialize};
 
@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 #[derive(
     Debug, Copy, Clone, PartialEq, PartialOrd, Deserialize, Serialize, Pod, Zeroable,
 )]
-pub struct Quat(vec4f);
+pub struct Quat(pub vec4f);
 
 impl Quat {
     pub const IDENTITY: Self = Self(Vec4::W);

@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use crossbeam::channel::{unbounded, Receiver, Sender};
 use hashbrown::HashMap;
-use math::vector::{vec3i, vec3u4};
+use math::vec::{vec3i, vec3u4};
 use crate::chunk::cube::Cube;
 use crate::chunk::material::Material;
 

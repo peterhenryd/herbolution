@@ -1,6 +1,6 @@
 use engine::video::gpu::{Handle, Index, Mesh, MeshId, Vertex, mesh};
-use engine::video::v3d;
-use math::vector::{Vec2, Vec3};
+use engine::video::sculptor;
+use math::vec::{Vec2, Vec3};
 
 /// A utility structure that holds the mesh handles used for rendering the game.
 #[derive(Debug)]
@@ -10,7 +10,7 @@ pub struct MeshIds {
 }
 
 impl MeshIds {
-    pub fn from_insertion_into(meshes: &mut v3d::Meshes) -> Self {
+    pub fn from_insertion_into(meshes: &mut sculptor::Meshes) -> Self {
         Self {
             solid_quad: meshes.create_and_insert_from(mesh::c_quad),
             wireframe_quad: meshes.create_and_insert_from(wireframe_quad_fn(0.0025)),

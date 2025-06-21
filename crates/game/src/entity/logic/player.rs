@@ -5,7 +5,7 @@ use crate::entity::body::EntityBody;
 use crate::entity::logic::EntityLogic;
 use crate::entity::{EntityData, EntityTarget};
 use lib::geo::cuboid::Cuboid;
-use math::vector::Vec3;
+use math::vec::Vec3;
 
 #[derive(Debug)]
 pub struct PlayerLogic {

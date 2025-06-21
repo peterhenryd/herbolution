@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
-use engine::video::v3d::pbr::PbrTexturePaths;
-use engine::video::{v2d, v3d};
 use engine::{video, Engine};
 use math::color::{Color, Rgba};
 use winit::dpi::PhysicalSize;
 use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window, WindowAttributes};
+use engine::video::{painter, sculptor};
+use engine::video::sculptor::PbrTexturePaths;
 
 /// A switch that allows the application to be resumed or suspended by the operating system gracefully.
 pub enum Switch<'w> {
@@ -31,8 +31,8 @@ impl Switch<'_> {
                 video: video::Options {
                     resolution: RESOLUTION.into(),
                     clear_color: Rgba::<u8>::from_rgb(117, 255, 250).into(),
-                    r2d: v2d::Options { texture_paths: vec!["assets/texture/dirt.png".into()] },
-                    r3d: v3d::Options {
+                    painter: painter::Options { texture_paths: vec!["assets/texture/dirt.png".into()] },
+                    sculptor: sculptor::Options {
                         pbr_texture_paths: PbrTexturePaths::new_suffixed("assets/texture", &["stone", "dirt", "grass", "grass_side"], "normal", "specular"),
                     },
                 },

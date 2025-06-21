@@ -9,7 +9,7 @@ use crossbeam::channel::bounded;
 use lib::geo::face::{Face, Faces};
 use lib::geo::cuboid::Cuboid;
 use line_drawing::{VoxelOrigin, WalkVoxels};
-use math::vector::{vec3d, vec3f, vec3i, vec3u4, Vec3};
+use math::vec::{vec3d, vec3f, vec3i, vec3u4, Vec3};
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use std::collections::HashMap;
 use std::ops::Add;

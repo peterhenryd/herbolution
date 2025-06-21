@@ -1,7 +1,7 @@
 use lib::geo::face::Faces;
 use lib::light::FacialLightLevels;
 use math::num::ToPrimitive;
-use math::vector::vec3i;
+use math::vec::vec3i;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
 use crate::chunk;

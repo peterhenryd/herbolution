@@ -3,25 +3,25 @@ use std::ops::Add;
 use num::traits::ConstZero;
 use num::{NumCast, ToPrimitive, Zero};
 
-use crate::vector::Vec2;
+use crate::vec::Vec2;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub struct Size2<T> {
+pub struct Ext2<T> {
     pub width: T,
     pub height: T,
 }
 
-impl<T> Size2<T> {
+impl<T> Ext2<T> {
     pub const fn new(width: T, height: T) -> Self {
         Self { width, height }
     }
 
     #[inline]
-    pub fn cast<U: NumCast>(self) -> Option<Size2<U>>
+    pub fn cast<U: NumCast>(self) -> Option<Ext2<U>>
     where
         T: ToPrimitive,
     {
-        Some(Size2 {
+        Some(Ext2 {
             width: NumCast::from(self.width)?,
             height: NumCast::from(self.height)?,
         })
@@ -40,7 +40,7 @@ impl<T> Size2<T> {
     }
 }
 
-impl<T: Zero> Zero for Size2<T> {
+impl<T: Zero> Zero for Ext2<T> {
     fn zero() -> Self {
         Self::new(T::zero(), T::zero())
     }
@@ -50,7 +50,7 @@ impl<T: Zero> Zero for Size2<T> {
     }
 }
 
-impl<T: Add<Output = T>> Add for Size2<T> {
+impl<T: Add<Output = T>> Add for Ext2<T> {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -58,11 +58,11 @@ impl<T: Add<Output = T>> Add for Size2<T> {
     }
 }
 
-impl<T: ConstZero> ConstZero for Size2<T> {
+impl<T: ConstZero> ConstZero for Ext2<T> {
     const ZERO: Self = Self::new(T::ZERO, T::ZERO);
 }
 
-impl<T> From<(T, T)> for Size2<T> {
+impl<T> From<(T, T)> for Ext2<T> {
     fn from((width, height): (T, T)) -> Self {
         Self::new(width, height)
     }

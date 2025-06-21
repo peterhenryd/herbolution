@@ -4,7 +4,7 @@ use crate::chunk::material::{Material, OptionMaterialExt};
 use crossbeam::channel::Sender;
 use hashbrown::HashMap;
 use lib::geo::face::{Face, Faces};
-use math::vector::{vec3i, vec3u4, Vec3};
+use math::vec::{vec3i, vec3u4, Vec3};
 use parking_lot::RwLock;
 use rayon::ThreadPool;
 use std::ops::{BitAnd, Not, Range};

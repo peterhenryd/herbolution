@@ -1,23 +1,23 @@
 use std::time::Duration;
 
-use engine::Engine;
+use crate::world::frustum::Frustum;
 use engine::input::{Frame, Input};
-use engine::video::gpu::SetId;
 use engine::video::gpu::camera::View;
-use engine::video::{gpu, v3d};
+use engine::video::gpu::SetId;
+use engine::video::sculptor::{Instance3d, Instance3dPayload, Sculptor};
+use engine::video::{gpu, sculptor};
+use engine::Engine;
 use game::channel::ClientChannel;
-use game::client::{ClientInputSender, ClientOutputReceiver, client_input_channel};
-use game::entity::EntityTarget;
+use game::client::{client_input_channel, ClientInputSender, ClientOutputReceiver};
 use game::entity::logic::player::ActionState;
+use game::entity::EntityTarget;
 use lib::geo::face::Face;
-use math::color::{ColorConsts, Rgba};
+use math::ext::ext2u;
 use math::proj::Perspective;
-use math::size::Size2;
-use math::vector::{Vec3, vec3d, vec3i, vec3i8};
+use math::vec::{vec3d, vec3i, vec3i8, Vec3};
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
-
-use crate::world::frustum::Frustum;
+use math::color::{ColorConsts, Rgba};
 
 /// The render-side representation of the player within the world.
 #[derive(Debug)]
@@ -54,16 +54,16 @@ impl Player {
             //prev_position: Vec3::ZERO,
             //position: Vec3::ZERO,
             //view_bob: 0.0,
-            camera: Camera::new(engine.video.resolution(), &mut engine.video.r3d),
+            camera: Camera::new(engine.video.resolution(), &mut engine.video.sculptor),
             targeted_cube_wireframe_id: engine
                 .video
-                .r3d
+                .sculptor
                 .sets()
                 .insert_with_capacity(6),
             sky_box_color,
             sky_box_id: engine
                 .video
-                .r3d
+                .sculptor
                 .sets()
                 .insert_raw(cube(Vec3::ZERO, sky_box_color)),
         }
@@ -87,7 +87,7 @@ impl Player {
 
             engine
                 .video
-                .r3d
+                .sculptor
                 .sets()
                 .write_raw(self.sky_box_id, cube(x.cast().unwrap(), self.sky_box_color))
                 .expect("Failed to update sky box");
@@ -121,14 +121,14 @@ impl Player {
         match output_receiver.recv_target() {
             Some(Some(EntityTarget::Cube(pos))) => {
                 if self.prev_target != Some(pos) {
-                    self.set_targeted_cube(engine.video.r3d.sets(), Some(pos));
+                    self.set_targeted_cube(engine.video.sculptor.sets(), Some(pos));
                     self.prev_target = Some(pos);
                 }
             }
             Some(Some(EntityTarget::Entity(_))) => {}
             Some(None) => {
                 if self.prev_target.is_some() {
-                    self.set_targeted_cube(engine.video.r3d.sets(), None);
+                    self.set_targeted_cube(engine.video.sculptor.sets(), None);
                     self.prev_target = None;
                 }
             }
@@ -140,7 +140,7 @@ impl Player {
         }
     }
 
-    fn set_targeted_cube(&mut self, sets: &mut v3d::Sets, position: Option<vec3i>) {
+    fn set_targeted_cube(&mut self, sets: &mut sculptor::Sets, position: Option<vec3i>) {
         match position {
             None => sets.write(self.targeted_cube_wireframe_id, []),
             Some(x) => sets.write_raw(self.targeted_cube_wireframe_id, cube(x.cast().unwrap(), Rgba::BLACK)),
@@ -195,11 +195,11 @@ impl Player {
     }
 }
 
-fn cube(position: vec3d, color: Rgba<f32>) -> impl IntoIterator<Item = v3d::InstancePayload> {
+fn cube(position: vec3d, color: Rgba<f32>) -> impl IntoIterator<Item = Instance3dPayload> {
     Face::entries()
         .map(Face::to_rotation)
         .map(move |rotation| {
-            v3d::Instance {
+            Instance3d {
                 position,
                 rotation,
                 color,
@@ -219,14 +219,14 @@ pub struct Camera {
 
 impl Camera {
     /// Creates a new instance.
-    pub fn new(resolution: Size2<u32>, r3d: &mut v3d::Renderer) -> Self {
+    pub fn new(resolution: ext2u, sculptor: &mut Sculptor) -> Self {
         let aspect = resolution
             .cast::<f32>()
             .unwrap()
             .aspect();
         let perspective = Perspective::new(70f32.to_radians(), aspect, 0.001, 500.0);
         let video = gpu::Camera::new(Vec3::ZERO, View::rotatable(), perspective);
-        r3d.update_camera(&video);
+        sculptor.update_camera(&video);
 
         Self {
             frustum: Frustum::new(video.view_proj()),
@@ -239,7 +239,7 @@ impl Camera {
     fn update(&mut self, engine: &mut Engine) {
         engine
             .video
-            .r3d
+            .sculptor
             .update_camera(&self.video);
         self.frustum = Frustum::new(self.video.view_proj());
         self.chunk_position = self.video.position.cast().unwrap() / game::chunk::LENGTH as i32;

@@ -2,7 +2,7 @@ use crate::chunk;
 use crate::chunk::material::Material;
 use crate::chunk::CubeMesh;
 use crossbeam::channel::{unbounded, Receiver, Sender, TryIter};
-use math::vector::{vec3i, vec3u4};
+use math::vec::{vec3i, vec3u4};
 use noise::{NoiseFn, Simplex};
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use std::sync::Arc;

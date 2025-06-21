@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::mem::take;
 
-use math::vector::vec2d;
+use math::vec::vec2d;
 use smallvec::SmallVec;
 use winit::event::Modifiers;
 pub use winit::event::MouseButton;

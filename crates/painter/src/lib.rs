@@ -10,15 +10,14 @@ use gpu::instance::Sets;
 use gpu::mesh::{Mesh, Meshes};
 use gpu::pipeline::PipelineOptions;
 use gpu::sampler::Filter;
-use gpu::shader::Stage;
 use gpu::texture::Texture;
-use gpu::{MeshId, load_shader, mesh, pipeline, sampler, shader};
+use gpu::{load_shader, mesh, pipeline, sampler, shader, MeshId};
 use math::proj::Orthographic;
 
 use crate::vertex::{Instance2d, Instance2dPayload, Vertex2d};
 
 mod atlas;
-mod draw;
+mod brush;
 mod font;
 pub mod text;
 pub mod ui;
@@ -31,16 +30,18 @@ pub type GrowBuffer2d = GrowBuffer<Instance2dPayload>;
 pub type Buffer2d = Buffer<Instance2dPayload>;
 pub type Sets2d = Sets<Instance2dPayload>;
 
-pub use draw::Drawing;
-use math::size::Size2;
-use math::vector::Vec3;
+pub use brush::Brush;
+use gpu::pipeline::map::PipelineMap;
+use gpu::shader::Stage;
+use math::ext::ext2u;
+use math::vec::Vec3;
 
 use crate::atlas::Atlas;
 use crate::font::Fonts;
 
 #[derive(Debug)]
-pub struct Renderer {
-    pub(crate) pipeline_map: pipeline::Map<RenderType, 2>,
+pub struct Painter {
+    pub(crate) pipeline_map: PipelineMap<RenderType, 2>,
     camera_buffer: Buffer<CameraPayload>,
     pub(crate) meshes: Meshes2d,
     pub(crate) instance_sets: Sets2d,
@@ -56,7 +57,7 @@ fn filter(c: char) -> bool {
     matches!(c, 'a'..='z' | 'A'..='Z' | '0'..='9' | ' ' | '.' | ',' | '?' | '!' | '-' | '_' | ':' | ';' | '\'' | '"' | '(' | ')' | '[' | ']' | '{' | '}' | '/' | '\\')
 }
 
-impl Renderer {
+impl Painter {
     pub fn create(handle: &Handle, _: Options) -> Self {
         let camera_buffer = Buffer::with_capacity(handle, 1, Usage::UNIFORM | Usage::COPY_DST);
 
@@ -73,7 +74,7 @@ impl Renderer {
         let quad_mesh = meshes.create_and_insert_from(mesh::tl_quad);
 
         Self {
-            pipeline_map: pipeline::Map::create(
+            pipeline_map: PipelineMap::create(
                 handle,
                 &RenderType2dOptions {
                     camera_buffer: &camera_buffer,
@@ -103,7 +104,7 @@ impl Renderer {
         &self.atlas
     }
 
-    pub fn set_resolution(&mut self, handle: &Handle, resolution: Size2<u32>) {
+    pub fn set_resolution(&mut self, handle: &Handle, resolution: ext2u) {
         self.update_camera(
             handle,
             &Camera {

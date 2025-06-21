@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use crate::vector::Vec3;
+use crate::vec::Vec3;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]

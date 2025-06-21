@@ -1,4 +1,4 @@
-use math::size::Size2;
+use math::ext::{ext2u, Ext2};
 pub use wgpu::SurfaceTarget as Target;
 use wgpu::{CompositeAlphaMode, PresentMode, SurfaceConfiguration, TextureFormat, TextureUsages};
 
@@ -12,7 +12,7 @@ pub struct Surface<'w> {
 }
 
 impl<'w> Surface<'w> {
-    pub fn new(handle: &Handle, inner: wgpu::Surface<'w>, resolution: impl Into<Size2<u32>>) -> Self {
+    pub fn new(handle: &Handle, inner: wgpu::Surface<'w>, resolution: impl Into<ext2u>) -> Self {
         let resolution = resolution.into();
         let config = SurfaceConfiguration {
             usage: TextureUsages::RENDER_ATTACHMENT,
@@ -31,7 +31,7 @@ impl<'w> Surface<'w> {
         Self { inner, config, depth_texture }
     }
 
-    pub fn set_resolution(&mut self, handle: &Handle, resolution: impl Into<Size2<u32>>) {
+    pub fn set_resolution(&mut self, handle: &Handle, resolution: impl Into<ext2u>) {
         let resolution = resolution.into();
         self.config.width = resolution.width;
         self.config.height = resolution.height;
@@ -41,7 +41,7 @@ impl<'w> Surface<'w> {
         self.depth_texture = Texture::depth(handle, resolution);
     }
 
-    pub fn resolution(&self) -> Size2<u32> {
-        Size2::new(self.config.width, self.config.height)
+    pub fn resolution(&self) -> ext2u {
+        Ext2::new(self.config.width, self.config.height)
     }
 }

@@ -1,7 +1,7 @@
 use crate::chunk::generator::{ChunkGenerator, GenerationParams};
 use crate::chunk::{CubeGrid, CubeMesh};
 use lib::display;
-use math::vector::vec3i;
+use math::vec::vec3i;
 use std::path::PathBuf;
 use std::sync::Arc;
 use crossbeam::channel::{unbounded, Receiver, Sender};

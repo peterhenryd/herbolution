@@ -2,10 +2,9 @@
 
 use bytemuck::{Pod, Zeroable};
 
-mod n2;
-mod n3;
-mod n4;
-mod packed;
+mod vec2;
+mod vec3;
+mod vec4;
 
 macro_rules! vec_type {
     (@count) => { 0 };
@@ -765,10 +764,9 @@ macro_rules! vec_type {
 
 pub(crate) use vec_type;
 
-pub use n2::*;
-pub use n3::*;
-pub use n4::*;
-pub use packed::*;
+pub use vec2::*;
+pub use vec3::*;
+pub use vec4::*;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Pod, Zeroable)]

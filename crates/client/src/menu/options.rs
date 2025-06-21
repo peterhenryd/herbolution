@@ -1,5 +1,4 @@
-use engine::video::v2d;
-
+use engine::video::painter::Brush;
 use crate::app::state::Command;
 use crate::app::Update;
 
@@ -21,7 +20,7 @@ impl OptionsMenu {
     }
 
     /// Renders the options menu.
-    pub fn render<'t>(&'t mut self, _: &mut v2d::Drawing<'_, '_, '_>) {
+    pub fn render<'t>(&'t mut self, _: &mut Brush<'_, '_, '_>) {
         // TODO: render the options menu
     }
 }

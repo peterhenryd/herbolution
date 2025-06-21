@@ -1,7 +1,6 @@
 use std::random::random;
 use std::time::Duration;
-
-use engine::video::v2d;
+use engine::video::painter::Brush;
 use lib::fs::save::{SaveAttributes, WorldAttributes, WorldDescriptor};
 
 use crate::app::state::Command;
@@ -46,7 +45,7 @@ impl TitleMenu {
     }
 
     /// Renders the title menu.
-    pub fn render<'t>(&'t mut self, drawing: &mut v2d::Drawing<'_, '_, 't>) {
+    pub fn render<'t>(&'t mut self, drawing: &mut Brush<'_, '_, 't>) {
         let _ = drawing;
 
         // TODO: render the title menu

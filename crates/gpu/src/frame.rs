@@ -1,17 +1,16 @@
-use std::borrow::Cow;
-use std::mem::{ManuallyDrop, transmute};
+use std::mem::transmute;
 
 use math::color::Rgba;
 pub use wgpu::RenderPass as Pass;
 use wgpu::{
-    Color, CommandEncoder, Device, LoadOp, Operations, Queue, RenderPassColorAttachment, RenderPassDepthStencilAttachment, StoreOp, SurfaceTexture, TextureView,
+    Color, CommandEncoder, Device, LoadOp, Operations, RenderPassColorAttachment, RenderPassDepthStencilAttachment, StoreOp, SurfaceTexture, TextureView,
 };
 
 use crate::{Handle, Surface};
 
 /// A specialized command encoder for rendering to a surface with automatic queue submission and texture presentation.
-pub struct Frame<'q> {
-    queue: Cow<'q, Queue>,
+pub struct Frame<'a> {
+    pub handle: &'a Handle,
     state: Option<State>,
 }
 
@@ -19,8 +18,8 @@ pub struct Options {
     pub clear_color: Option<Rgba<f64>>,
 }
 
-impl<'q> Frame<'q> {
-    pub fn new(handle: &'q Handle, surface: &Surface, options: Options) -> Self {
+impl<'h> Frame<'h> {
+    pub fn new(handle: &'h Handle, surface: &Surface, options: Options) -> Self {
         let surface_texture = surface
             .inner
             .get_current_texture()
@@ -32,7 +31,7 @@ impl<'q> Frame<'q> {
             .map(|Rgba { r, g, b, a }| Color { r, g, b, a });
 
         Self {
-            queue: Cow::Borrowed(handle.queue()),
+            handle,
             state: Some(State::create(handle.device(), surface_texture, clear_color, depth_view)),
         }
     }
@@ -50,15 +49,6 @@ impl<'q> Frame<'q> {
         drop(state.pass.take());
         state.pass = Some(create_pass(&mut state.encoder, &state.surface_view, None, &state.depth_view).forget_lifetime());
     }
-
-    pub fn into_owned(self) -> Frame<'static> {
-        let mut frame = ManuallyDrop::new(self);
-
-        Frame {
-            queue: Cow::Owned(frame.queue.clone().into_owned()),
-            state: frame.state.take(),
-        }
-    }
 }
 
 impl Drop for Frame<'_> {
@@ -70,7 +60,7 @@ impl Drop for Frame<'_> {
         drop(state.pass);
 
         let command_buffer = state.encoder.finish();
-        self.queue.submit(Some(command_buffer));
+        self.handle.queue().submit(Some(command_buffer));
 
         state.surface.present();
     }

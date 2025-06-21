@@ -1,22 +1,21 @@
 use std::ops::Mul;
 use std::rc::Rc;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
-use crossbeam::channel::{Receiver, Sender, bounded};
+use crate::world::player;
+use crossbeam::channel::{bounded, Receiver, Sender};
 use engine::video::gpu::AtlasTextureCoord;
-use engine::video::v3d::GrowBuffer3d;
-use engine::video::{gpu, v3d};
+use engine::video::sculptor::{Chisel, GrowBuffer3d, Instance3d, Instance3dPayload};
+use engine::video::gpu;
 use game::chunk;
 use game::chunk::channel::ChunkUpdate;
 use game::chunk::cube::Cube;
 use game::chunk::material::Material;
 use math::color::Rgba;
-use math::vector::{vec3i, vec3u4};
+use math::vec::{vec3i, vec3u4};
 use rayon::ThreadPool;
 use wgpu::BufferUsages;
-
-use crate::world::player;
 
 /// The render-side representation of a chunk within the world.
 #[derive(Debug)]
@@ -38,13 +37,13 @@ pub struct Chunk {
 }
 
 // TODO: this may not be the best way to multithread the chunk remeshing process
-// instead of moving the entire context, we could just move the cached quad instances and the updated values in the mesh function, make it so the vector is
+// instead of moving the entire context, we could just move the cached quad instances and the updated values in the mesh function, make it so the vec is
 // linearized instead of sequential, and only remesh the chunk data that has been changed. this will remove the potential for stale mesh data to be rendered, as
 // the current cloning of GrowBuffer3d is hacky due to the instance count not necessarily matching the instances in the buffer.
 #[derive(Debug)]
 struct MovableContext {
     position: vec3i,
-    cached_quad_instances: Vec<v3d::InstancePayload>,
+    cached_quad_instances: Vec<Instance3dPayload>,
     data: Box<[Cube<Option<Material>>; chunk::SIZE]>,
     mesh: GrowBuffer3d,
 }
@@ -77,9 +76,9 @@ impl Chunk {
     ///
     /// # Panics
     ///
-    /// This function assumes that there is a unit-size quad mesh (e.g., see [gpu::mesh::c_quad]) already loaded in the drawing context. If no mesh is
+    /// This function assumes that there is a unit-ext quad mesh (e.g., see [gpu::mesh::c_quad]) already loaded in the drawing context. If no mesh is
     /// loaded, the function will result in a panic.
-    pub fn render(&self, camera: &player::Camera, drawing: &mut v3d::Drawing) {
+    pub fn render(&self, camera: &player::Camera, chisel: &mut Chisel) {
         // Offset the chunk position by the camera's chunk position because of camera-relative rendering.
         let chunk = self.position - camera.chunk_position;
 
@@ -96,7 +95,7 @@ impl Chunk {
             return;
         }
 
-        drawing.draw(&self.mesh);
+        chisel.draw(&self.mesh);
     }
 
     /// Regenerates the mesh for this chunk if the logic-side chunk has sent updates.
@@ -147,7 +146,7 @@ impl Chunk {
                                 let texture_coord = textures[material.texture_index(face)];
 
                                 context.cached_quad_instances.push(
-                                    v3d::Instance {
+                                    Instance3d {
                                         position: chunk_position + position.cast().unwrap(),
                                         rotation: face.to_rotation(),
                                         texture_coord,

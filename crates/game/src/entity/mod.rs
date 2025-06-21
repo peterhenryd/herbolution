@@ -5,7 +5,7 @@ use crate::entity::logic::player::PlayerLogic;
 use crate::entity::logic::EntityLogic;
 use crate::entity::set::EntityId;
 use hashbrown::HashSet;
-use math::vector::{vec3d, vec3i, Vec3};
+use math::vec::{vec3d, vec3i, Vec3};
 
 pub mod logic;
 pub mod body;

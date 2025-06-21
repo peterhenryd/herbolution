@@ -6,7 +6,7 @@ use num::traits::{ConstOne, ConstZero};
 use serde::{Deserialize, Serialize};
 
 use crate::rotation::Euler;
-use crate::vector::{Vec3, Vec4};
+use crate::vec::{Vec3, Vec4};
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]

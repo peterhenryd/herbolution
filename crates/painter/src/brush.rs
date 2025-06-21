@@ -1,46 +1,44 @@
 use gpu::frame::{Frame, Pass};
-use gpu::{Buffer, Handle, MeshId, SetId};
+use gpu::{Buffer, MeshId, SetId};
 
-use crate::text::DrawText;
+use crate::text::TextBrush;
 use crate::vertex::Instance2dPayload;
-use crate::{RenderType, Renderer};
+use crate::{Painter, RenderType};
 
-pub struct Drawing<'q, 'f, 'r> {
-    handle: &'q Handle,
-    frame: &'f mut Frame<'q>,
-    pub(crate) renderer: &'r Renderer,
+pub struct Brush<'h, 'f, 'a> {
+    pub frame: &'f mut Frame<'h>,
+    pub painter: &'a Painter,
     mesh_index_count: Option<u32>,
 }
 
-impl<'q, 'f, 'r> Drawing<'q, 'f, 'r> {
-    pub fn create(render_type: RenderType, handle: &'q Handle, frame: &'f mut Frame<'q>, renderer: &'r Renderer) -> Self {
+impl<'h, 'f, 'a> Brush<'h, 'f, 'a> {
+    pub fn create(render_type: RenderType, frame: &'f mut Frame<'h>, renderer: &'a Painter) -> Self {
         renderer
             .pipeline_map
             .load_by_type(render_type, frame.pass());
 
         Self {
-            handle,
             frame,
-            renderer,
+            painter: renderer,
             mesh_index_count: None,
         }
     }
 
     pub fn load_mesh(&mut self, id: MeshId) {
-        let mesh = self.renderer.meshes.get(id);
+        let mesh = self.painter.meshes.get(id);
         self.mesh_index_count = Some(mesh.load_into_render_pass(&mut self.frame.pass()));
     }
 
-    pub fn draw(&mut self, buffer: impl AsRef<Buffer<Instance2dPayload>>) {
+    pub fn render(&mut self, buffer: impl AsRef<Buffer<Instance2dPayload>>) {
         draw_mesh(self.frame.pass(), buffer.as_ref(), self.mesh_index_count);
     }
 
-    pub fn draw_text(&mut self) -> DrawText<'q, 'f, 'r, '_, '_> {
-        DrawText::new(self.handle, self, &self.renderer.atlas)
+    pub fn render_by_id(&mut self, id: SetId) {
+        self.render(self.painter.instance_sets.get(id));
     }
 
-    pub fn draw_from_set(&mut self, id: SetId) {
-        self.draw(self.renderer.instance_sets.get(id));
+    pub fn draw_text(&mut self) -> TextBrush<'h, 'f, 'a, '_> {
+        TextBrush::new(self, &self.painter.atlas)
     }
 }
 

@@ -1,8 +1,8 @@
 use bytemuck::{Pod, Zeroable};
 
-use crate::matrix::{Mat4, mat4f};
-use crate::size::Size2;
-use crate::vector::Vec4;
+use crate::ext::ext2u;
+use crate::mat::{mat4f, Mat4};
+use crate::vec::Vec4;
 
 pub trait Proj {
     fn to_matrix(&self) -> mat4f;
@@ -41,8 +41,8 @@ impl Orthographic {
     }
 }
 
-impl From<Size2<u32>> for Orthographic {
-    fn from(value: Size2<u32>) -> Self {
+impl From<ext2u> for Orthographic {
+    fn from(value: ext2u) -> Self {
         Self::new(0.0, 0.0, value.width as f32, value.height as f32, -100.0, 100.0)
     }
 }
@@ -69,10 +69,6 @@ impl Proj for Orthographic {
 impl Perspective {
     pub fn new(fov_y: f32, aspect: f32, z_near: f32, z_far: f32) -> Self {
         Self { fov_y, aspect, z_near, z_far }
-    }
-
-    pub fn set_size(&mut self, size: Size2<u32>) {
-        self.aspect = size.width as f32 / size.height as f32;
     }
 }
 

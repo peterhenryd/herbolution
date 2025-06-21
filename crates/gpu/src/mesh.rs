@@ -2,7 +2,7 @@ use std::sync::LazyLock;
 use std::sync::atomic::{AtomicU32, Ordering};
 
 use bytemuck::NoUninit;
-use math::vector::{Vec2, Vec3, vec2f, vec3f};
+use math::vec::{Vec2, Vec3, vec2f, vec3f};
 use wgpu::{BufferUsages, IndexFormat};
 
 use crate::buffer::Buffer;

@@ -1,5 +1,5 @@
 use lib::geo::cuboid::Cuboid;
-use math::vector::{vec3d, vec3f, vec3i8, Vec3};
+use math::vec::{vec3d, vec3f, vec3i8, Vec3};
 use std::ops::Add;
 use math::rotation::Euler;
 use crate::chunk::map::ChunkMap;

@@ -2,16 +2,16 @@ use gpu::frame::{Frame, Pass};
 use gpu::{Buffer, MeshId, SetId};
 
 use crate::vertex::Instance3dPayload;
-use crate::{RenderType, Renderer};
+use crate::{RenderType, Sculptor};
 
-pub struct Draw<'q, 'f, 'r> {
+pub struct Chisel<'q, 'f, 'r> {
     frame: &'f mut Frame<'q>,
-    renderer: &'r Renderer,
+    renderer: &'r Sculptor,
     mesh_index_count: Option<u32>,
 }
 
-impl<'q, 'f, 'r> Draw<'q, 'f, 'r> {
-    pub fn create(render_type: RenderType, frame: &'f mut Frame<'q>, renderer: &'r Renderer) -> Self {
+impl<'q, 'f, 'r> Chisel<'q, 'f, 'r> {
+    pub fn create(render_type: RenderType, frame: &'f mut Frame<'q>, renderer: &'r Sculptor) -> Self {
         renderer
             .pipeline_map
             .load_by_type(render_type, frame.pass());

@@ -5,8 +5,8 @@ use bytemuck::{Pod, Zeroable};
 use image::{DynamicImage, GenericImageView, GrayImage, RgbaImage};
 pub use image_atlas::AtlasError;
 use image_atlas::{AtlasDescriptor, AtlasEntry, AtlasEntryMipOption, AtlasMipOption};
-use math::size::Size2;
-use math::vector::{Vec2, vec2f};
+use math::ext::ext2u;
+use math::vec::{vec2f, Vec2};
 use wgpu::{Extent3d, TexelCopyBufferLayout, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView};
 
 use crate::handle::Handle;
@@ -18,7 +18,7 @@ pub struct Texture {
 }
 
 impl Texture {
-    pub fn empty(handle: &Handle, size: impl Into<Size2<u32>>, format: TextureFormat) -> Self {
+    pub fn empty(handle: &Handle, size: impl Into<ext2u>, format: TextureFormat) -> Self {
         let size = size.into();
         let inner = handle
             .device()
@@ -41,11 +41,11 @@ impl Texture {
         Self { inner, view }
     }
 
-    pub fn depth(handle: &Handle, size: impl Into<Size2<u32>>) -> Self {
+    pub fn depth(handle: &Handle, size: impl Into<ext2u>) -> Self {
         Self::empty(handle, size, TextureFormat::Depth32Float)
     }
 
-    pub fn from_data(handle: &Handle, size: impl Into<Size2<u32>>, data: impl AsRef<[u8]>, format: TextureFormat) -> Self {
+    pub fn from_data(handle: &Handle, size: impl Into<ext2u>, data: impl AsRef<[u8]>, format: TextureFormat) -> Self {
         let size = size.into();
         let texture = Self::empty(handle, size, format);
 

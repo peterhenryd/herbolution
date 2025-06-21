@@ -13,7 +13,7 @@ use crate::entity::logic::player::PlayerLogic;
 use crate::entity::{ChunkLoader, Entity, EntityAbilities, EntityData, EntityLogicVariant};
 use lib::geo::cuboid::Cuboid;
 use lib::time::{DeltaTime, TickTime};
-use math::vector::Vec3;
+use math::vec::Vec3;
 use crate::world::World;
 
 pub mod client;

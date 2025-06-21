@@ -1,7 +1,7 @@
 use bitflags::bitflags;
 use lazy_static::lazy_static;
 use math::rotation::{Euler, Quat};
-use math::vector::{vec3i, Vec3};
+use math::vec::{vec3i, Vec3};
 use std::array::IntoIter;
 use std::f32::consts::{FRAC_PI_2, PI};
 use std::fmt::Debug;
