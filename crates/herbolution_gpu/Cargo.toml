@@ -1,0 +1,17 @@
+[package]
+name = "herbolution_gpu"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# Internal dependencies
+herbolution_math = { path = "../herbolution_math" }
+
+# External dependencies
+bytemuck.workspace = true
+image-atlas.workspace = true
+image.workspace = true
+pollster.workspace = true
+serde = { workspace = true, features = ["derive"] }
+toml.workspace = true
+wgpu.workspace = true

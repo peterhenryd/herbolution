@@ -1,0 +1,20 @@
+#![allow(non_camel_case_types)]
+
+mod size2;
+
+pub use size2::Size2;
+
+pub type size2u8 = Size2<u8>;
+pub type size2u16 = Size2<u16>;
+pub type size2u = Size2<u32>;
+pub type size2u64 = Size2<u64>;
+pub type size2u128 = Size2<u128>;
+pub type size2usize = Size2<usize>;
+pub type size2i8 = Size2<i8>;
+pub type size2i16 = Size2<i16>;
+pub type size2i32 = Size2<i32>;
+pub type size2i64 = Size2<i64>;
+pub type size2i128 = Size2<i128>;
+pub type size2isize = Size2<isize>;
+pub type size2f = Size2<f32>;
+pub type size2d = Size2<f64>;

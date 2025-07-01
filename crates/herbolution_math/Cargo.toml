@@ -1,0 +1,10 @@
+[package]
+name = "herbolution_math"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bytemuck = { workspace = true, features = ["derive"] }
+num.workspace = true
+serde = { workspace = true, features = ["derive"] }
+static_assertions.workspace = true
