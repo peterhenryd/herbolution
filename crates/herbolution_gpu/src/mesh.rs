@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::LazyLock;
 
 use bytemuck::NoUninit;
-use math::vec::{vec2f, vec3f};
+use math::vector::{vec2f, vec3f};
 use serde::{Deserialize, Serialize};
 use wgpu::{BufferUsages, IndexFormat};
 

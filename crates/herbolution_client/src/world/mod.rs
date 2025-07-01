@@ -6,9 +6,9 @@ use engine::{sculptor, Engine};
 use game::chunk::handle::ChunkLoad;
 use game::handle::GameHandle;
 use lib::point::ChunkPt;
-use lib::ptr::TrackMut;
+use lib::ptr::DetectMut;
 use math::color::{Color, Rgb};
-use math::vec::Vec3;
+use math::vector::Vec3;
 
 use crate::app::Update;
 use crate::mesh::MeshIds;
@@ -27,7 +27,7 @@ pub struct World {
     chunk_map: HashMap<ChunkPt, Chunk>,
     /// The channel used for communicating with the behavior-side world.
     /// The settings used by the fragment shader to render the world.
-    pub(crate) render_settings: TrackMut<sculptor::World>,
+    pub(crate) render_settings: DetectMut<sculptor::World>,
     pub(crate) player: Player,
     particles: Particles,
 }
@@ -45,7 +45,7 @@ impl World {
 
         Self {
             chunk_map: HashMap::new(),
-            render_settings: TrackMut::new(render_settings),
+            render_settings: DetectMut::new(render_settings),
             player: Player::create(render_settings.fog_color.to_rgba(), engine),
             particles: Particles::create(&engine.video.handle),
         }
@@ -75,7 +75,7 @@ impl World {
         }
 
         // If the render settings have been modified since the previous update, submit the new settings to the renderer.
-        if TrackMut::check(&mut self.render_settings) {
+        if DetectMut::check(&mut self.render_settings) {
             ctx.engine
                 .video
                 .sculptor

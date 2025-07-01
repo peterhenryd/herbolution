@@ -1,5 +1,4 @@
-use gpu::frame::Frame;
-use gpu::{Buffer, MeshId, SetId};
+use gpu::{Buffer, Frame, MeshId, SetId};
 
 use crate::sculptor::{Instance3dPayload, RenderType, Sculptor};
 

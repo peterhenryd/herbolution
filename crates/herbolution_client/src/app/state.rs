@@ -1,10 +1,9 @@
-use herbolution_lib::save::Save;
-
 use crate::app::{Render, Update};
 use crate::menu::config::MenuConfig;
 use crate::menu::Menu;
 use crate::session::Session;
 use crate::splash::Splash;
+use lib::save::Save;
 
 /// The navigable state of the application. This structure uses the senses provided by the herbolution_engine and persistent data during the update phase to
 /// mutate itself for the following cycles.

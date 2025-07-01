@@ -2,16 +2,10 @@ use std::fs::read;
 use std::path::PathBuf;
 
 use fontdue::{Font, FontSettings};
-use gpu::bind_group::BindGroup;
-use gpu::buffer::{Buffer, GrowBuffer, Usage};
-use gpu::camera::{Camera, CameraPayload, View};
-use gpu::handle::Handle;
-use gpu::instance::Sets;
-use gpu::mesh::{Mesh, Meshes};
-use gpu::pipeline::PipelineOptions;
-use gpu::sampler::Filter;
-use gpu::texture::{SampleCount, Texture};
-use gpu::{pipeline, sampler, shader, MeshId};
+use gpu::{
+    BindGroup, Buffer, BufferUsage, Camera, CameraPayload, CompiledShaders, Filter, GrowBuffer, Handle, Mesh, MeshId, Meshes, PipelineMap, PipelineOptions,
+    PipelineType, SampleCount, SamplerOptions, Sets, ShaderModule, ShaderSources, ShaderStage, Texture, View,
+};
 use math::proj::Orthographic;
 
 pub mod atlas;
@@ -27,10 +21,8 @@ pub type GrowBuffer2d = GrowBuffer<Instance2dPayload>;
 pub type Buffer2d = Buffer<Instance2dPayload>;
 pub type Sets2d = Sets<Instance2dPayload>;
 
-use gpu::pipeline::map::PipelineMap;
-use gpu::shader::{CompiledShaders, ShaderSources, Stage};
 use math::size::size2u;
-use math::vec::Vec3;
+use math::vector::Vec3;
 
 use crate::painter::atlas::Atlas;
 use crate::painter::font::Fonts;
@@ -57,7 +49,7 @@ fn filter(c: char) -> bool {
 
 impl Painter {
     pub fn create(gpu: &Handle, sample_count: SampleCount) -> Self {
-        let camera_buffer = Buffer::with_capacity(gpu, 1, Usage::UNIFORM | Usage::COPY_DST);
+        let camera_buffer = Buffer::with_capacity(gpu, 1, BufferUsage::UNIFORM | BufferUsage::COPY_DST);
         let shaders = ShaderSources::default()
             .with("core", include_str!("shader.wgsl"))
             .compile(gpu)
@@ -138,20 +130,20 @@ pub struct RenderType;
 #[derive(Debug)]
 pub struct RenderType2dOptions<'a> {
     camera_buffer: &'a Buffer<CameraPayload>,
-    shader_module: &'a shader::Module,
+    shader_module: &'a ShaderModule,
     texture: &'a Texture,
 }
 
-impl pipeline::Key for RenderType {
+impl PipelineType for RenderType {
     type Options<'a> = RenderType2dOptions<'a>;
     const ENTRIES: &'static [Self] = &[Self];
 
     fn create_bind_groups(gpu: &Handle, options: &Self::Options<'_>) -> Vec<BindGroup> {
         let camera_bind_group = BindGroup::build()
-            .with_buffer(options.camera_buffer, Stage::VERTEX_FRAGMENT)
+            .with_buffer(options.camera_buffer, ShaderStage::VERTEX_FRAGMENT)
             .finish(gpu);
 
-        let sampler = gpu.create_sampler(sampler::Options { filter: Filter::Pixelated });
+        let sampler = gpu.create_sampler(SamplerOptions { filter: Filter::Pixelated });
         let texture_bind_group = BindGroup::build()
             .with_sampler(&sampler)
             .with_texture(options.texture)

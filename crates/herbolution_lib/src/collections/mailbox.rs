@@ -1,12 +1,12 @@
 use crossbeam::channel::{Receiver, Sender};
 
 #[derive(Debug)]
-pub struct Channel<T> {
+pub struct Mailbox<T> {
     tx: Sender<T>,
     rx: Receiver<T>,
 }
 
-impl<T> Channel<T> {
+impl<T> Mailbox<T> {
     pub fn sender(&self) -> Sender<T> {
         self.tx.clone()
     }
@@ -16,17 +16,17 @@ impl<T> Channel<T> {
     }
 }
 
-pub fn unbounded<T>() -> Channel<T> {
+pub fn unbounded<T>() -> Mailbox<T> {
     let (tx, rx) = crossbeam::channel::unbounded();
-    Channel { tx, rx }
+    Mailbox { tx, rx }
 }
 
-pub fn bounded<T>(cap: usize) -> Channel<T> {
+pub fn bounded<T>(cap: usize) -> Mailbox<T> {
     let (tx, rx) = crossbeam::channel::bounded(cap);
-    Channel { tx, rx }
+    Mailbox { tx, rx }
 }
 
-impl<'a, T> IntoIterator for &'a Channel<T> {
+impl<'a, T> IntoIterator for &'a Mailbox<T> {
     type Item = T;
     type IntoIter = crossbeam::channel::TryIter<'a, T>;
 

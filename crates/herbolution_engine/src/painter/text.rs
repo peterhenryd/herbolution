@@ -1,8 +1,7 @@
-use gpu::buffer::Usage;
-use gpu::GrowBuffer;
+use gpu::{BufferUsage, GrowBuffer};
 use math::color::Rgba;
 use math::rotation::Quat;
-use math::vec::{vec2f, Vec2};
+use math::vector::{vec2f, Vec2};
 
 use crate::painter::atlas::Atlas;
 use crate::painter::brush::Brush;
@@ -26,7 +25,7 @@ pub struct Text {
 impl<'h, 'f, 'a, 'b> TextBrush<'h, 'f, 'a, 'b> {
     pub fn new(brush: &'b mut Brush<'h, 'f, 'a>, atlas: &'b Atlas) -> Self {
         brush.load_mesh(brush.painter.quad_mesh);
-        let instance_buffer = GrowBuffer::empty(brush.frame.handle, Usage::VERTEX | Usage::COPY_DST);
+        let instance_buffer = GrowBuffer::empty(brush.frame.handle, BufferUsage::VERTEX | BufferUsage::COPY_DST);
 
         Self {
             brush,

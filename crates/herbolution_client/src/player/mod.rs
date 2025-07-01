@@ -6,9 +6,9 @@ use engine::{sculptor, Engine};
 use game::entity::{ActionState, ActionTarget};
 use game::player::handle::ServerPlayerHandle;
 use gpu::SetId;
-use herbolution_lib::face::Face;
+use herbolution_math::spatial::face::Face;
 use math::color::{ColorConsts, Rgba};
-use math::vec::{vec3d, vec3i, vec3i8, Vec3};
+use math::vector::{vec3d, vec3i, vec3i8, Vec3};
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
 
@@ -78,7 +78,7 @@ impl Player {
                 .video
                 .sculptor
                 .sets()
-                .write_raw(self.sky_box_id, cube(x.cast().unwrap(), self.sky_box_color))
+                .write_raw(self.sky_box_id, cube(x.cast(), self.sky_box_color))
                 .expect("Failed to update sky box");
         }
 
@@ -101,29 +101,29 @@ impl Player {
             self.camera.update(ctx.engine);
         }
 
+        let sets = ctx.engine.video.sculptor.sets();
         // Overwrite the targeted cube wireframe with the latest target from the behavior-side player.
         match handle.transform.next_target() {
             Some(Some(ActionTarget::Cube(position))) => {
                 if self.prev_target != Some(position) {
-                    self.set_targeted_cube(ctx.engine.video.sculptor.sets(), Some(position));
+                    self.set_targeted_cube(sets, Some(position));
                     self.prev_target = Some(position);
                 }
             }
             Some(Some(ActionTarget::Entity(_))) => {}
             Some(None) => {
-                if self.prev_target.is_some() {
-                    self.set_targeted_cube(ctx.engine.video.sculptor.sets(), None);
-                    self.prev_target = None;
-                }
+                sets.get_mut(self.targeted_cube_wireframe_id)
+                    .shorten_to(0);
+                self.prev_target = None;
             }
-            None => {}
+            _ => {}
         }
     }
 
     fn set_targeted_cube(&mut self, sets: &mut sculptor::Sets, position: Option<vec3i>) {
         match position {
             None => sets.write(self.targeted_cube_wireframe_id, []),
-            Some(x) => sets.write_raw(self.targeted_cube_wireframe_id, cube(x.cast().unwrap(), Rgba::BLACK)),
+            Some(x) => sets.write_raw(self.targeted_cube_wireframe_id, cube(x.cast(), Rgba::BLACK)),
         }
         .expect("Failed to clear targeted cube wireframe instances");
     }
@@ -180,7 +180,7 @@ impl Player {
 }
 
 fn cube(position: vec3d, color: Rgba<f32>) -> impl IntoIterator<Item = Instance3dPayload> {
-    Face::entries()
+    Face::values()
         .map(Face::to_rotation)
         .map(move |rotation| {
             Instance3d {

@@ -6,7 +6,7 @@ use image::{DynamicImage, GenericImageView, GrayImage, RgbaImage};
 pub use image_atlas::AtlasError;
 use image_atlas::{AtlasDescriptor, AtlasEntry, AtlasEntryMipOption, AtlasMipOption};
 use math::size::size2u;
-use math::vec::{vec2f, Vec2};
+use math::vector::{vec2f, Vec2};
 pub use wgpu::TextureView;
 use wgpu::{Extent3d, TexelCopyBufferLayout, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages};
 

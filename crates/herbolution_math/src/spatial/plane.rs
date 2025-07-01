@@ -1,4 +1,4 @@
-use math::num::Float;
+use num::Float;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Plane<T> {

@@ -1,10 +1,10 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
-use num::Float;
 use num::traits::ConstZero;
+use num::Float;
 use serde::{Deserialize, Serialize};
 
-use crate::vec::Vec3;
+use crate::vector::Vec3;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]

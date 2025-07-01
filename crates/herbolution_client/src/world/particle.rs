@@ -1,9 +1,8 @@
 use crate::app::Update;
 use engine::sculptor::{Chisel, GrowBuffer3d, Instance3d, Instance3dPayload};
 use game::handle::{GameHandle, Particle};
-use gpu::buffer::Usage;
-use gpu::{GrowBuffer, Handle};
-use lib::default;
+use gpu::{BufferUsage, GrowBuffer, Handle};
+use lib::util::default;
 use math::rotation::Quat;
 use std::time::Duration;
 
@@ -18,7 +17,7 @@ impl Particles {
     pub fn create(gpu: &Handle) -> Self {
         Self {
             vec: Vec::new(),
-            buffer: GrowBuffer::empty(gpu, Usage::VERTEX | Usage::COPY_DST),
+            buffer: GrowBuffer::empty(gpu, BufferUsage::VERTEX | BufferUsage::COPY_DST),
             instances: Vec::new(),
         }
     }

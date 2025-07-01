@@ -1,5 +1,4 @@
-use gpu::surface;
-use gpu::texture::SampleCount;
+use gpu::{FrameOptions, SampleCount, SurfaceTarget};
 use math::color::Rgba;
 use math::size::size2u;
 
@@ -25,7 +24,7 @@ pub struct Options {
 }
 
 impl<'w> Video<'w> {
-    pub fn create(target: impl Into<surface::Target<'w>>, options: Options) -> Self {
+    pub fn create(target: impl Into<SurfaceTarget<'w>>, options: Options) -> Self {
         let (handle, surface) = gpu::create(target, options.resolution, options.sample_count);
         let mut painter = Painter::create(&handle, options.sample_count);
         painter.set_resolution(&handle, options.resolution);
@@ -66,7 +65,7 @@ impl<'w> Video<'w> {
             frame: gpu::Frame::new(
                 &self.handle,
                 &self.surface,
-                gpu::frame::Options {
+                FrameOptions {
                     clear_color: Some(self.clear_color),
                 },
             ),

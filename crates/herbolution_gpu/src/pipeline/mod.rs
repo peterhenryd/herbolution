@@ -1,18 +1,17 @@
 pub mod map;
 
-pub use map::Key;
-pub use wgpu::{vertex_attr_array, Face, VertexBufferLayout, VertexStepMode};
+pub use wgpu::{vertex_attr_array, Face, Face as CullMode, VertexBufferLayout, VertexStepMode};
 use wgpu::{
     BindGroupLayout, BlendState, ColorTargetState, ColorWrites, CompareFunction, DepthStencilState, FragmentState, FrontFace, MultisampleState,
-    PipelineLayoutDescriptor, PolygonMode, PrimitiveState, PrimitiveTopology, RenderPipeline, RenderPipelineDescriptor, TextureFormat, VertexState,
+    PipelineLayoutDescriptor, PolygonMode, PrimitiveState, PrimitiveTopology, RenderPipeline, RenderPipelineDescriptor, ShaderModule, TextureFormat,
+    VertexState,
 };
 
 use crate::handle::Handle;
-use crate::shader;
 use crate::texture::SampleCount;
 
 pub struct PipelineOptions<'a> {
-    pub shader_module: &'a shader::Module,
+    pub shader_module: &'a ShaderModule,
     pub vertex_buffer_layouts: &'a [VertexBufferLayout<'a>],
     pub cull_mode: Option<Face>,
     pub depth_write_enabled: bool,

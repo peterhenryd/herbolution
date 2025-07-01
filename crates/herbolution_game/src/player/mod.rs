@@ -1,13 +1,13 @@
 pub mod handle;
 
-use herbolution_lib::aabb::Aabb;
-use math::vec::{Vec2, Vec3};
-use std::any::Any;
-use std::f32::consts::FRAC_PI_2;
-
 use crate::entity::behavior::{EntityBehavior, EntityBehaviorType, EntityContext};
 use crate::entity::{ActionState, ActionTarget};
 use crate::player::handle::ClientPlayerHandle;
+use herbolution_math::spatial::aabb::Aabb;
+use lib::util::default;
+use math::rotation::Euler;
+use math::vector::{Vec2, Vec3};
+use std::any::Any;
 
 #[derive(Debug)]
 pub struct Player {
@@ -26,16 +26,14 @@ impl Player {
     }
 
     fn update_actions(&mut self, ctx: &mut EntityContext) {
-        let origin = ctx.data.body.eye_pos();
-        let direction = ctx.data.body.rotation.into_view_center();
+        let origin = ctx.entity.body().eye_position();
+        let direction = ctx.entity.body().rotation().into_view_center();
         let ray = ctx.chunk_map.cast_ray(origin, direction, 5.0);
         let position = ray.map(|(x, _)| x);
         let target = position.map(ActionTarget::Cube);
 
-        if target != self.prev_target {
-            self.handle.transform.set_target(target);
-            self.prev_target = target;
-        }
+        self.handle.transform.set_target(target);
+        self.prev_target = target;
 
         let Some(position) = position else {
             return;
@@ -74,9 +72,9 @@ impl Player {
                 Vec3::new(position.x as f32 + 1.0, position.y as f32 + 1.0, position.z as f32 + 1.0),
             );
             if !collider
-                .cast()
+                .try_cast()
                 .unwrap()
-                .intersects(&ctx.data.body.bounds())
+                .intersects(&ctx.entity.body().bounds())
             {
                 ctx.chunk_map
                     .set_cube(position, ("herbolution", "stone"));
@@ -87,26 +85,26 @@ impl Player {
 
 impl EntityBehavior for Player {
     fn update(&mut self, ctx: &mut EntityContext) {
-        let body = &mut ctx.data.body;
+        let body = ctx.entity.body_mut();
 
         if let Some(command) = self.handle.input.next_movement() {
             body.apply_motion_command(command);
         }
 
         while let Some(Vec2 { x: dx, y: dy }) = self.handle.input.next_mouse_movement() {
-            // TODO: Implement mouse sensitivity
-            body.rotation.yaw -= dx.to_radians() as f32;
-            body.rotation.pitch -= dy.to_radians() as f32;
+            *body.rotation_mut() -= Euler {
+                yaw: dx.to_radians() as f32,
+                pitch: dy.to_radians() as f32,
+                ..default()
+            };
         }
 
-        body.rotation.pitch = body
-            .rotation
-            .pitch
-            .clamp(-FRAC_PI_2 + f32::EPSILON, FRAC_PI_2 - f32::EPSILON)
-            .into();
-
-        self.handle.transform.set_position(body.eye_pos());
-        self.handle.transform.set_rotation(body.rotation);
+        self.handle
+            .transform
+            .set_position(body.eye_position());
+        self.handle
+            .transform
+            .set_rotation(*body.rotation());
 
         if let Some(action_state) = self.handle.input.next_action_state() {
             if self.prev_target.is_some() {
@@ -117,7 +115,7 @@ impl EntityBehavior for Player {
         self.update_actions(ctx);
     }
 
-    fn from_mut(behavior: &mut EntityBehaviorType) -> Option<&mut Self>
+    fn select_from(behavior: &mut EntityBehaviorType) -> Option<&mut Self>
     where
         Self: Sized,
     {

@@ -4,10 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# Internal dependencies
 herbolution_lib = { path = "../herbolution_lib" }
 herbolution_math = { path = "../herbolution_math" }
 
+# External dependencies
 crossbeam.workspace = true
+derive_more = { workspace = true, features = ["deref", "deref_mut", "from"] }
 generational-arena.workspace = true
 hashbrown.workspace = true
 line_drawing.workspace = true
@@ -15,5 +18,5 @@ noise.workspace = true
 parking_lot.workspace = true
 rayon.workspace = true
 serde.workspace = true
-tracing.workspace = true
 smallvec.workspace = true
+tracing.workspace = true

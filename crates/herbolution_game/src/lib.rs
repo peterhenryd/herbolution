@@ -9,14 +9,15 @@ extern crate herbolution_math as math;
 use std::thread;
 
 use hashbrown::HashMap;
-use herbolution_lib::aabb::Aabb;
-use herbolution_lib::save::Save;
-use lib::time::{DeltaTime, TickTime};
-use math::vec::Vec3;
+use herbolution_lib::util::time::{DeltaTime, TickTime};
+use lib::save::Save;
+use math::spatial::aabb::Aabb;
+use math::vector::Vec3;
 
 use crate::entity::behavior::EntityBehaviors;
-use crate::entity::body::{Boundary, EntityBody};
-use crate::entity::{ChunkLoader, Entity, EntityAbilities, EntityData};
+use crate::entity::body::{Boundary, EntityAbilities, EntityBody};
+use crate::entity::components::ChunkLoader;
+use crate::entity::{Entity, EntityData};
 use crate::handle::{ClientHandle, GameHandle};
 use crate::player::Player;
 use crate::world::World;
@@ -77,11 +78,11 @@ impl Game {
                         aabb: Aabb::new(Vec3::ZERO, Vec3::new(0.9, 1.9, 0.9)),
                         eye_offset: Vec3::new(0., 1.0, 0.),
                     },
+                    EntityAbilities {
+                        is_affected_by_gravity: true,
+                        speed: 1.0,
+                    },
                 ),
-                abilities: EntityAbilities {
-                    is_affected_by_gravity: false,
-                    speed: 2.0,
-                },
             },
             behaviors: EntityBehaviors::new()
                 .with(Player::new(client_handle))

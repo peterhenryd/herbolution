@@ -3,7 +3,7 @@ use std::ops::Add;
 use num::traits::ConstZero;
 use num::{NumCast, ToPrimitive, Zero};
 
-use crate::vec::Vec2;
+use crate::vector::Vec2;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Size2<T> {
@@ -50,7 +50,7 @@ impl<T: Zero> Zero for Size2<T> {
     }
 }
 
-impl<T: Add<Output = T>> Add for Size2<T> {
+impl<T: Add<Output=T>> Add for Size2<T> {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {

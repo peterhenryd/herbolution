@@ -5,7 +5,7 @@ use crate::Handle;
 use bytemuck::{bytes_of, cast_slice, NoUninit};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::BufferDescriptor;
-pub use wgpu::BufferUsages as Usage;
+pub use wgpu::BufferUsages as BufferUsage;
 
 #[derive(Debug, Clone)]
 pub struct Buffer<T> {
@@ -15,7 +15,7 @@ pub struct Buffer<T> {
 }
 
 impl<T> Buffer<T> {
-    pub fn create(gpu: &Handle, data: &[T], usage: Usage) -> Self
+    pub fn create(gpu: &Handle, data: &[T], usage: BufferUsage) -> Self
     where
         T: NoUninit,
     {
@@ -32,7 +32,7 @@ impl<T> Buffer<T> {
         }
     }
 
-    pub fn with_capacity(gpu: &Handle, capacity: u64, usage: Usage) -> Self {
+    pub fn with_capacity(gpu: &Handle, capacity: u64, usage: BufferUsage) -> Self {
         Self {
             inner: gpu.device().create_buffer(&BufferDescriptor {
                 label: None,
@@ -87,13 +87,19 @@ impl<T> Buffer<T> {
     }
 
     #[inline]
-    pub fn usage(&self) -> Usage {
+    pub fn usage(&self) -> BufferUsage {
         self.inner.usage()
     }
 
     #[inline]
     pub fn inner(&self) -> &wgpu::Buffer {
         &self.inner
+    }
+
+    pub fn shorten_to(&mut self, new_len: u64) {
+        if new_len < self.len {
+            self.len = new_len;
+        }
     }
 }
 
@@ -110,14 +116,14 @@ pub struct GrowBuffer<T> {
 
 impl<T> GrowBuffer<T> {
     #[inline]
-    pub fn with_capacity(gpu: &Handle, capacity: u64, usage: Usage) -> Self {
+    pub fn with_capacity(gpu: &Handle, capacity: u64, usage: BufferUsage) -> Self {
         Self {
             buffer: Buffer::with_capacity(gpu, capacity, usage),
         }
     }
 
     #[inline]
-    pub fn empty(gpu: &Handle, usage: Usage) -> Self {
+    pub fn empty(gpu: &Handle, usage: BufferUsage) -> Self {
         Self {
             buffer: Buffer::with_capacity(gpu, 0, usage),
         }

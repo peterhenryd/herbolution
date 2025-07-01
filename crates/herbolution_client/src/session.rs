@@ -1,22 +1,21 @@
 use std::time::Duration;
 
-use engine::painter::text::Text;
-use engine::{sculptor, Engine};
-use game::handle::GameHandle;
-use game::{Game, Options};
-use herbolution_lib::save::Save;
-use lib::time::IntervalCounter;
-use math::color::{ColorConsts, Rgba};
-use math::size::size2u;
-use winit::event::MouseButton;
-use winit::keyboard::KeyCode;
-use winit::window::CursorGrabMode;
-
 use crate::app::state::Command;
 use crate::app::{Render, Update};
 use crate::debugger::Debugger;
 use crate::mesh::MeshIds;
 use crate::world::World;
+use engine::painter::text::Text;
+use engine::{sculptor, Engine};
+use game::handle::GameHandle;
+use game::{Game, Options};
+use herbolution_lib::util::time::IntervalCounter;
+use lib::save::Save;
+use math::color::{ColorConsts, Rgba};
+use math::size::size2u;
+use winit::event::MouseButton;
+use winit::keyboard::KeyCode;
+use winit::window::CursorGrabMode;
 
 /// The render-side representation of a herbolution_game session.
 #[derive(Debug)]
@@ -108,7 +107,7 @@ impl Session {
 
             let font_id = text_brush.font_id();
             text_brush.add(
-                ctx.resolution.to_vec2().cast().unwrap() / 2.0,
+                ctx.resolution.to_vec2().cast() / 2.0,
                 &Text {
                     font_id,
                     content: "+".to_string(),

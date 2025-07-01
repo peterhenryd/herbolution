@@ -1,8 +1,8 @@
 use bytemuck::{Pod, Zeroable};
 
-use crate::mat::{Mat4, mat4f};
+use crate::matrix::{Mat4, mat4f};
 use crate::size::size2u;
-use crate::vec::Vec4;
+use crate::vector::Vec4;
 
 pub trait Proj {
     fn to_matrix(&self) -> mat4f;

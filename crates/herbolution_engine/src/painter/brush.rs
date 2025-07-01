@@ -1,5 +1,4 @@
-use gpu::frame::{Frame, Pass};
-use gpu::{Buffer, MeshId, SetId};
+use gpu::{Buffer, Frame, MeshId, Pass, SetId};
 
 use crate::painter::text::TextBrush;
 use crate::painter::vertex::Instance2dPayload;

@@ -1,6 +1,6 @@
 use bytemuck::{Pod, Zeroable};
 use math::color::{Color, Rgb, Rgba};
-use math::vec::{vec3f, vec4f, Vec4};
+use math::vector::{vec3f, vec4f, Vec4};
 
 #[derive(Debug, Copy, Clone)]
 pub struct World {

@@ -3,14 +3,15 @@ use crate::chunk::material::{Material, PaletteMaterialId};
 use crate::chunk::provider::ChunkProvider;
 use crate::chunk::{handle, Chunk};
 use crate::handle::ClientHandle;
-use herbolution_lib::aabb::Aabb;
-use herbolution_lib::face::{Face, Faces};
-use lib::channel::Channel;
-use lib::group_key::GroupKey;
+use herbolution_lib::collections::mailbox;
+use herbolution_lib::collections::mailbox::Mailbox;
+use herbolution_lib::util::group_key::GroupKey;
+use herbolution_math::spatial::aabb::Aabb;
+use herbolution_math::spatial::face::{Face, Faces};
+use lib::chunk;
 use lib::point::{ChunkCubePt, ChunkPt, CubePt};
-use lib::{channel, chunk};
 use line_drawing::{VoxelOrigin, WalkVoxels};
-use math::vec::{vec3d, vec3f, vec3i, vec3u5, Vec3};
+use math::vector::{vec3d, vec3f, vec3i, vec3u5, Vec3};
 use std::collections::HashMap;
 use std::ops::Add;
 use std::path::PathBuf;
@@ -20,7 +21,7 @@ use std::sync::Arc;
 pub struct ChunkMap {
     map: HashMap<ChunkPt, Chunk>,
     provider: ChunkProvider,
-    unloader: Channel<ChunkPt>,
+    unloader: Mailbox<ChunkPt>,
 }
 
 impl ChunkMap {
@@ -28,13 +29,13 @@ impl ChunkMap {
         Self {
             map: HashMap::new(),
             provider: ChunkProvider::new(dir_path, seed),
-            unloader: channel::unbounded(),
+            unloader: mailbox::unbounded(),
         }
     }
 
     pub fn get_near_colliders(&self, aabb: Aabb<f64>, colliders: &mut Vec<Aabb<f64>>) {
-        let min = aabb.min.floor().cast().unwrap() - 1;
-        let max = aabb.max.ceil().cast().unwrap() + 1;
+        let min = aabb.min.floor().cast() - 1;
+        let max = aabb.max.ceil().cast() + 1;
 
         colliders.clear();
         for x in min.x..max.x {
@@ -111,7 +112,7 @@ impl ChunkMap {
             let mut mesh = chunk.mesh.write();
             mesh.data[index].mesh.insert_faces(face);
 
-            let Vec3 { x, y, z } = local.cast::<i32>().unwrap().add(offset);
+            let Vec3 { x, y, z } = local.try_cast::<i32>().unwrap().add(offset);
             if x == 0 || x == 15 && material_key.is_none() {
                 mesh.exposed_faces.set(
                     Face::from_normal(Vec3::new(x / 15 * 2 - 1, 0, 0))
@@ -179,7 +180,7 @@ impl ChunkMap {
 
     pub fn cast_ray(&mut self, mut origin: vec3d, direction: vec3f, range: f32) -> Option<(vec3i, Face)> {
         origin += 0.5;
-        let end = origin + direction.cast().unwrap() * range as f64;
+        let end = origin + direction.cast() * range as f64;
 
         let origin = origin.to_tuple();
         let dest = end.to_tuple();
@@ -188,7 +189,7 @@ impl ChunkMap {
             let normal = Vec3::from(prev) - position;
 
             if self.has_collider(position) {
-                return Some((position, Face::from(normal)));
+                return Some((position, Face::from_normal(normal).unwrap()));
             }
         }
 
@@ -205,7 +206,7 @@ impl ChunkMap {
                 .chunks
                 .load(ChunkLoad { position, handle: game_handle });
 
-            for face in Face::entries() {
+            for face in Face::values() {
                 // Get the adjacent chunk if it exists.
                 let Some(other) = self.get_chunk(position + face.to_normal()) else {
                     continue;

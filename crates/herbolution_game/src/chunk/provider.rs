@@ -2,14 +2,13 @@ use std::iter::Chain;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use crossbeam::channel::{unbounded, Receiver, Sender, TryIter};
-use lib::display;
-use lib::point::ChunkPt;
-use tracing::error;
-
 use crate::chunk::codec::CubeGrid;
 use crate::chunk::mesh::CubeMesh;
 use crate::generator::{ChunkGenerator, GenerationParams};
+use crossbeam::channel::{unbounded, Receiver, Sender, TryIter};
+use lib::point::ChunkPt;
+use lib::util::display;
+use tracing::error;
 
 #[derive(Debug)]
 pub struct ChunkProvider {

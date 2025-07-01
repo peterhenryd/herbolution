@@ -1,14 +1,13 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
+use crate::chunk::material::{Material, PaletteCube};
 use crossbeam::channel::{unbounded, Receiver, Sender};
-use lib::display::Join;
+use herbolution_lib::util::display::Join;
 use lib::point::ChunkPt;
-use math::vec::vec3u5;
+use math::vector::vec3u5;
 use smallvec::SmallVec;
 use tracing::error;
-
-use crate::chunk::material::{Material, PaletteCube};
 
 #[derive(Debug)]
 pub struct ChunkLoad {

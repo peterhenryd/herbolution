@@ -1,6 +1,6 @@
 use crossbeam::channel::{bounded, Receiver, Sender};
 use math::rotation::Euler;
-use math::vec::{vec2d, vec3d, vec3i8};
+use math::vector::{vec2d, vec3d, vec3i8};
 
 use crate::entity::{ActionState, ActionTarget};
 

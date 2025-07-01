@@ -1,11 +1,10 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use lib::point::ChunkPt;
-use parking_lot::RwLock;
-
 use crate::chunk::handle::{ChunkCube, ClientChunkHandle, CubeUpdate};
 use crate::chunk::mesh::CubeMesh;
+use lib::point::ChunkPt;
+use parking_lot::RwLock;
 
 pub mod codec;
 pub mod cube;

@@ -14,7 +14,7 @@ pub struct PipelineMap<K> {
     sample_count: SampleCount,
 }
 
-impl<R: Key> PipelineMap<R> {
+impl<R: PipelineType> PipelineMap<R> {
     pub fn create<'a>(gpu: &Handle, state: &R::Options<'_>, sample_count: SampleCount) -> Self {
         let bind_groups = R::create_bind_groups(gpu, state);
 
@@ -78,7 +78,7 @@ impl<R: Key> PipelineMap<R> {
     }
 }
 
-pub trait Key: Copy + Eq + Hash + 'static {
+pub trait PipelineType: Copy + Eq + Hash + 'static {
     type Options<'a>;
 
     const ENTRIES: &'static [Self];

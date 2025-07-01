@@ -1,19 +1,19 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::ops::Mul;
 
+use crate::player::PlayerCamera;
 use crossbeam::channel::{bounded, Receiver, Sender};
 use engine::sculptor::{Chisel, GrowBuffer3d, Instance3d, Instance3dPayload};
 use fastrand::Rng;
 use game::chunk::cube::Cube;
 use game::chunk::handle::{ChunkCube, GameChunkHandle};
 use game::chunk::material::{Palette, PaletteCube};
-use lib::face::PerFace;
+use herbolution_math::spatial::face::PerFace;
+use lib::chunk;
 use lib::point::ChunkPt;
-use lib::{chunk, default};
-use math::vec::vec3u5;
+use lib::util::default;
+use math::vector::vec3u5;
 use wgpu::BufferUsages;
-
-use crate::player::PlayerCamera;
 
 /// The render-side representation of a chunk within the world.
 #[derive(Debug)]
@@ -33,7 +33,7 @@ pub struct Chunk {
 }
 
 // TODO: this may not be the best way to multithread the chunk remeshing process
-// instead of moving the entire context, we could just move the cached quad instances and the updated values in the mesh function, make it so the vec is
+// instead of moving the entire context, we could just move the cached quad instances and the updated values in the mesh function, make it so the vector is
 // linearized instead of sequential, and only remesh the chunk data that has been changed. this will remove the potential for stale mesh data to be rendered, as
 // the current cloning of GrowBuffer3d is hacky due to the instance count not necessarily matching the instances in the buffer.
 #[derive(Debug)]
@@ -81,7 +81,7 @@ impl Chunk {
         // If the chunk is not within the camera's frustum, don't render it.
         if !camera
             .frustum
-            .contains_cube(chunk.cast().unwrap(), chunk::LENGTH as f32)
+            .contains_cube(chunk.cast(), chunk::LENGTH as f32)
         {
             return;
         }
@@ -135,8 +135,7 @@ impl Chunk {
                 .position
                 .0
                 .mul(chunk::LENGTH as i32)
-                .cast::<f64>()
-                .unwrap();
+                .cast::<f64>();
 
             // Clear the instance cache and remesh the chunk.
             context.cached_quad_instances.clear();
@@ -159,12 +158,12 @@ impl Chunk {
                                 return;
                             };
 
-                            for face in cube.mesh.faces().variant_iter() {
+                            for face in cube.mesh.faces() {
                                 let color = material.get_color(perms[face]);
 
                                 context.cached_quad_instances.push(
                                     Instance3d {
-                                        position: chunk_position + position.cast().unwrap(),
+                                        position: chunk_position + position.try_cast().unwrap(),
                                         rotation: face.to_rotation(),
                                         color,
                                         ..default()

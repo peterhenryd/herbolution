@@ -49,7 +49,7 @@ impl Fs {
 
 fn root_dir() -> PathBuf {
     home_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
+        .unwrap_or_else(|| PathBuf::from("../../../../../../.."))
         .join(".herbolution")
 }
 

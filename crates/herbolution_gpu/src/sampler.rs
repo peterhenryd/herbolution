@@ -3,7 +3,7 @@ use wgpu::{AddressMode, FilterMode, SamplerDescriptor};
 
 use crate::handle::Handle;
 
-pub struct Options {
+pub struct SamplerOptions {
     pub filter: Filter,
 }
 
@@ -13,7 +13,7 @@ pub enum Filter {
 }
 
 impl Handle {
-    pub fn create_sampler(&self, options: Options) -> Sampler {
+    pub fn create_sampler(&self, options: SamplerOptions) -> Sampler {
         self.device().create_sampler(&SamplerDescriptor {
             label: None,
             address_mode_u: AddressMode::Repeat,

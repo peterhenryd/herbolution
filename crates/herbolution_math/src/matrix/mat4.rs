@@ -5,7 +5,7 @@ use num::traits::{ConstOne, ConstZero};
 use num::Float;
 use serde::{Deserialize, Serialize};
 
-use crate::vec::{Vec3, Vec4};
+use crate::vector::{Vec3, Vec4};
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]

@@ -8,11 +8,9 @@ pub mod sculptor;
 pub mod ui;
 pub mod video;
 
-use gpu::surface;
-use video::Video;
-
 use crate::audio::Audio;
 use crate::input::Input;
+use crate::video::Video;
 
 pub struct Engine<'w> {
     pub audio: Audio,
@@ -25,7 +23,7 @@ pub struct Options {
 }
 
 impl<'w> Engine<'w> {
-    pub fn create(target: impl Into<surface::Target<'w>>, options: Options) -> Self {
+    pub fn create(target: impl Into<gpu::SurfaceTarget<'w>>, options: Options) -> Self {
         let audio = Audio::new();
         let video = Video::create(target, options.video);
         let input = Input::default();

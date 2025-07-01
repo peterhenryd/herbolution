@@ -1,9 +1,8 @@
+use crate::chunk::material::{Palette, PaletteMaterialId};
+use crate::chunk::mesh::CubeMesh;
 use lib::chunk;
 use lib::point::ChunkPt;
 use rayon::prelude::{IndexedParallelIterator, IntoParallelRefIterator, IntoParallelRefMutIterator, ParallelIterator};
-
-use crate::chunk::material::{Palette, PaletteMaterialId};
-use crate::chunk::mesh::CubeMesh;
 
 pub struct CubeGrid {
     data: Box<[Option<PaletteMaterialId>]>,

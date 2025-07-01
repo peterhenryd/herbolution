@@ -1,12 +1,11 @@
 use std::mem::transmute;
 
-use math::color::Rgba;
-pub use wgpu::RenderPass as Pass;
-use wgpu::{Color, CommandEncoder, LoadOp, Operations, RenderPassColorAttachment, RenderPassDepthStencilAttachment, StoreOp, TextureView};
-
 use crate::surface::SurfaceTexture;
 use crate::texture::SampleCount;
 use crate::{Handle, Surface, Texture};
+use math::color::Rgba;
+pub use wgpu::RenderPass as Pass;
+use wgpu::{Color, CommandEncoder, LoadOp, Operations, RenderPassColorAttachment, RenderPassDepthStencilAttachment, StoreOp, TextureView};
 
 /// A specialized command encoder for rendering to a surface with automatic queue submission and texture presentation.
 pub struct Frame<'h> {
@@ -14,12 +13,12 @@ pub struct Frame<'h> {
     state: Option<State>,
 }
 
-pub struct Options {
+pub struct FrameOptions {
     pub clear_color: Option<Rgba<f64>>,
 }
 
 impl<'h> Frame<'h> {
-    pub fn new(handle: &'h Handle, surface: &Surface, options: Options) -> Self {
+    pub fn new(handle: &'h Handle, surface: &Surface, options: FrameOptions) -> Self {
         let surface_texture = surface
             .create_texture()
             .expect("Failed to get current texture");

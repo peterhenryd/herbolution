@@ -1,13 +1,13 @@
-use herbolution_lib::plane::Plane;
-use math::mat::{Mat4, mat4f};
-use math::vec::{Vec3, vec3f};
+use herbolution_math::spatial::plane::Plane;
+use math::matrix::{Mat4, mat4f};
+use math::vector::{Vec3, vec3f};
 
 /// A frustum used for culling objects that are outside the camera's view volume.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Frustum([Plane<f32>; 6]);
 
 impl Frustum {
-    /// Creates a new frustum from the provided view-projection mat.
+    /// Creates a new frustum from the provided view-projection matrix.
     pub fn new(view_proj: mat4f) -> Self {
         let Mat4 { x, y, z, w } = view_proj;
 

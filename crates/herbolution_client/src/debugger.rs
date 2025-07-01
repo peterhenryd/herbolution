@@ -1,6 +1,6 @@
 use engine::painter::text::{Text, TextBrush};
 use math::color::{ColorConsts, Rgba};
-use math::vec::{vec3d, Vec2};
+use math::vector::{vec3d, Vec2};
 use winit::keyboard::KeyCode;
 
 use crate::app::Update;

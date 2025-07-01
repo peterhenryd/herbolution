@@ -3,12 +3,12 @@ use std::ops::{Deref, DerefMut};
 
 /// A smart pointer that tracks whether the contained value has been modified.
 #[derive(Debug)]
-pub struct TrackMut<T> {
+pub struct DetectMut<T> {
     value: T,
     was_modified: bool,
 }
 
-impl<T> TrackMut<T> {
+impl<T> DetectMut<T> {
     /// Creates a new instance with the provided value marked as updated.
     pub fn new(value: T) -> Self {
         Self { value, was_modified: true }
@@ -20,7 +20,7 @@ impl<T> TrackMut<T> {
     }
 }
 
-impl<T> Deref for TrackMut<T> {
+impl<T> Deref for DetectMut<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -28,7 +28,7 @@ impl<T> Deref for TrackMut<T> {
     }
 }
 
-impl<T> DerefMut for TrackMut<T> {
+impl<T> DerefMut for DetectMut<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.was_modified = true;
         &mut self.value

@@ -1,8 +1,8 @@
 use bytemuck::{Pod, Zeroable};
-use math::mat::{mat4f, Mat4};
+use math::matrix::{mat4f, Mat4};
 use math::proj::Proj;
 use math::rotation::Euler;
-use math::vec::{vec3d, vec3f, vec3if, vec4f, vec4i, Vec3};
+use math::vector::{vec3d, vec3f, vec4f, vec4i, Vec3};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Camera<P> {
@@ -69,10 +69,10 @@ impl<P> Camera<P> {
     where
         P: Proj,
     {
-        let vec3if { integral, fractional } = self.position.into();
+        let (integral, fractional) = self.position.split_int_fract();
         CameraPayload {
             view_proj: self.view_proj(),
-            position: self.position.cast().unwrap().extend(0.0),
+            position: self.position.cast().extend(0.0),
             position_int: integral.extend(0),
             position_fract: fractional.extend(0.0),
         }

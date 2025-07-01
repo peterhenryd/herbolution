@@ -1,10 +1,12 @@
+use crate::vector::macros::vector;
+use crate::vector::vec4u8;
 use bytemuck::{Pod, Zeroable};
 use num::NumCast;
 use serde::{Deserialize, Serialize};
 
-use crate::vec::vec_type;
+// Vec4<T>
 
-vec_type! {
+vector! {
     struct Vec4<T> {
         x(X = 1, 0, 0, 0): T,
         y(Y = 0, 1, 0, 0): T,
@@ -63,6 +65,8 @@ impl<T> Vec4<T> {
         }
     }
 }
+
+// vec4u4
 
 #[repr(transparent)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Pod, Zeroable, Deserialize, Serialize)]
@@ -147,18 +151,3 @@ impl<T: NumCast> From<Vec4<T>> for vec4u4 {
         )
     }
 }
-
-pub type vec4u8 = Vec4<u8>;
-pub type vec4u16 = Vec4<u16>;
-pub type vec4u = Vec4<u32>;
-pub type vec4u64 = Vec4<u64>;
-pub type vec4u128 = Vec4<u128>;
-pub type vec4usize = Vec4<usize>;
-pub type vec4i8 = Vec4<i8>;
-pub type vec4i16 = Vec4<i16>;
-pub type vec4i = Vec4<i32>;
-pub type vec4i64 = Vec4<i64>;
-pub type vec4i128 = Vec4<i128>;
-pub type vec4isize = Vec4<isize>;
-pub type vec4f = Vec4<f32>;
-pub type vec4d = Vec4<f64>;

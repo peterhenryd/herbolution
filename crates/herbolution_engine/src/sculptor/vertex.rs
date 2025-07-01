@@ -1,9 +1,8 @@
 use bytemuck::{Pod, Zeroable};
-use gpu::pipeline::{vertex_attr_array, VertexBufferLayout, VertexStepMode};
-use gpu::{Payload, Vertex};
+use gpu::{vertex_attr_array, Payload, Vertex, VertexBufferLayout, VertexStepMode};
 use math::color::Rgba;
 use math::rotation::Quat;
-use math::vec::{vec2f, vec3d, vec3f, vec3i, vec3if, vec4f, Vec3};
+use math::vector::{vec2f, vec3d, vec3f, vec3i, vec4f, Vec3};
 use serde::{Deserialize, Serialize};
 
 #[repr(C)]
@@ -81,7 +80,7 @@ impl Instance3d {
 
     pub fn payload(&self) -> Instance3dPayload {
         let rotation_matrix = self.rotation.to_matrix();
-        let vec3if { integral, fractional } = self.position.into();
+        let (integral, fractional) = self.position.split_int_fract();
 
         Instance3dPayload {
             model_0: rotation_matrix.x.extend(0.0),

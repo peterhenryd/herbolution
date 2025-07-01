@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use math::vec::{vec3d, Vec3};
+use math::vector::{vec3d, Vec3};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Motile {

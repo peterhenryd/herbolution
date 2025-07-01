@@ -1,5 +1,5 @@
 use math::size::{size2u, Size2};
-pub use wgpu::SurfaceTarget as Target;
+pub use wgpu::SurfaceTarget;
 use wgpu::{CompositeAlphaMode, PresentMode, SurfaceConfiguration, TextureFormat, TextureUsages, TextureView};
 
 use crate::handle::Handle;

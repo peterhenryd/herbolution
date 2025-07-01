@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-use herbolution_lib::fs::Fs;
-use lib::time::DeltaTime;
+use herbolution_lib::util::time::DeltaTime;
+use lib::fs::Fs;
 
 /// The data that persists through the entire duration of the application execution irrespective of the operating system or user directive.
 ///

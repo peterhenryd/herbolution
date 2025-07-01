@@ -1,9 +1,9 @@
 use bytemuck::{Pod, Zeroable};
 use serde::{Deserialize, Serialize};
 
-use crate::mat::{Mat3, mat3f};
+use crate::matrix::{mat3f, Mat3};
 use crate::rotation::euler::Euler;
-use crate::vec::{Vec3, Vec4, vec4f};
+use crate::vector::{vec4f, Vec3, Vec4};
 
 #[repr(transparent)]
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Deserialize, Serialize, Pod, Zeroable)]

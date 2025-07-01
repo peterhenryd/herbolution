@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use engine::{painter, sculptor, video, Engine};
-use gpu::texture::SampleCount;
+use gpu::SampleCount;
 use math::color::{Color, Rgba};
 use winit::dpi::PhysicalSize;
 use winit::event_loop::ActiveEventLoop;

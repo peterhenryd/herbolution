@@ -1,33 +1,15 @@
 use std::num::NonZeroU16;
 use std::ops::Sub;
 
+use crate::vector::macros::vector;
+use crate::vector::{vec3d, vec3f, vec3i, vec3u8, Vec2, Vec4};
 use num::NumCast;
 use serde::{Deserialize, Serialize};
 use static_assertions::assert_eq_size;
 
-use crate::vec::{vec_type, Vec2, Vec4};
-
-assert_eq_size!(Option<vec3u4>, vec3u4);
-assert_eq_size!(Option<vec3u5>, vec3u5);
-
-pub type vec3u8 = Vec3<u8>;
-pub type vec3u16 = Vec3<u16>;
-pub type vec3u = Vec3<u32>;
-pub type vec3u64 = Vec3<u64>;
-pub type vec3u128 = Vec3<u128>;
-pub type vec3usize = Vec3<usize>;
-pub type vec3i8 = Vec3<i8>;
-pub type vec3i16 = Vec3<i16>;
-pub type vec3i = Vec3<i32>;
-pub type vec3i64 = Vec3<i64>;
-pub type vec3i128 = Vec3<i128>;
-pub type vec3isize = Vec3<isize>;
-pub type vec3f = Vec3<f32>;
-pub type vec3d = Vec3<f64>;
-
 // Vec3<T>
 
-vec_type! {
+vector! {
     struct Vec3<T> {
         x(X = 1, 0, 0): T,
         y(Y = 0, 1, 0): T,
@@ -60,6 +42,12 @@ impl<T> Vec3<T> {
 
     pub fn xy(self) -> Vec2<T> {
         Vec2 { x: self.x, y: self.y }
+    }
+}
+
+impl vec3d {
+    pub fn split_int_fract(self) -> (vec3i, vec3f) {
+        (self.cast::<i32>(), self.cast::<f32>().fract())
     }
 }
 
@@ -140,6 +128,8 @@ impl vec3u4 {
     }
 }
 
+assert_eq_size!(Option<vec3u4>, vec3u4);
+
 impl<T: NumCast> From<Vec3<T>> for vec3u4 {
     fn from(vec: Vec3<T>) -> Self {
         Self::new(NumCast::from(vec.x).unwrap(), NumCast::from(vec.y).unwrap(), NumCast::from(vec.z).unwrap())
@@ -190,8 +180,20 @@ impl vec3u5 {
     }
 
     #[inline]
+    pub const fn set_x(&mut self, x: u8) {
+        debug_assert!(x < 32, "x out of range");
+        self.0 = NonZeroU16::new((self.0.get() & !(31 << 11)) | ((x as u16) << 11)).unwrap();
+    }
+
+    #[inline]
     pub const fn y(self) -> u8 {
         ((self.0.get() >> 6) & 31) as u8
+    }
+
+    #[inline]
+    pub const fn set_y(&mut self, y: u8) {
+        debug_assert!(y < 32, "y out of range");
+        self.0 = NonZeroU16::new((self.0.get() & !(31 << 6)) | ((y as u16) << 6)).unwrap();
     }
 
     #[inline]
@@ -200,17 +202,28 @@ impl vec3u5 {
     }
 
     #[inline]
+    pub const fn set_z(&mut self, z: u8) {
+        debug_assert!(z < 32, "z out of range");
+        self.0 = NonZeroU16::new((self.0.get() & !(31 << 1)) | ((z as u16) << 1)).unwrap();
+    }
+
+    #[inline]
     pub const fn into_u8(self) -> vec3u8 {
         Vec3::new(self.x(), self.y(), self.z())
     }
 
     #[inline]
-    pub fn cast<U: NumCast>(self) -> Option<Vec3<U>> {
+    pub fn try_cast<U: NumCast>(self) -> Option<Vec3<U>> {
         Some(Vec3 {
             x: NumCast::from(self.x())?,
             y: NumCast::from(self.y())?,
             z: NumCast::from(self.z())?,
         })
+    }
+
+    #[inline]
+    pub fn cast<U: NumCast>(self) -> Vec3<U> {
+        self.try_cast().unwrap()
     }
 
     #[inline]
@@ -223,6 +236,8 @@ impl vec3u5 {
         self.x() as usize * 32usize.pow(2) + self.z() as usize * 32 + self.y() as usize
     }
 }
+
+assert_eq_size!(Option<vec3u5>, vec3u5);
 
 impl<T: NumCast> From<Vec3<T>> for vec3u5 {
     fn from(vec: Vec3<T>) -> Self {

@@ -1,8 +1,7 @@
-use herbolution_lib::save::SaveWorld;
-
 use crate::chunk::map::ChunkMap;
 use crate::entity::set::EntitySet;
 use crate::handle::ClientHandle;
+use lib::save::SaveWorld;
 
 #[derive(Debug)]
 pub struct World {

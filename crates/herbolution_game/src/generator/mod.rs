@@ -1,13 +1,12 @@
 use std::sync::Arc;
 
+use crate::chunk::material::Material;
+use crate::chunk::mesh::CubeMesh;
 use crossbeam::channel::{unbounded, Receiver, Sender, TryIter};
 use lib::chunk;
 use lib::point::ChunkPt;
-use math::vec::vec3u5;
+use math::vector::vec3u5;
 use noise::{NoiseFn, Simplex};
-
-use crate::chunk::material::Material;
-use crate::chunk::mesh::CubeMesh;
 
 #[derive(Debug)]
 pub struct ChunkGenerator {

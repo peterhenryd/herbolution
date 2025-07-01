@@ -1,6 +1,6 @@
 use ambisonic::rodio::Source;
 use ambisonic::{Ambisonic, AmbisonicBuilder, SoundController};
-use math::vec::vec3f;
+use math::vector::vec3f;
 
 pub struct Audio {
     scene: Ambisonic,
@@ -15,7 +15,7 @@ impl Audio {
         }
     }
 
-    pub fn add_sound(&mut self, source: impl Source<Item = f32> + Send + 'static, position: vec3f) -> SoundId {
+    pub fn add_sound(&mut self, source: impl Source<Item=f32> + Send + 'static, position: vec3f) -> SoundId {
         let controller = self.scene.play_at(source, position.to_array());
 
         let index = self.sounds.len();

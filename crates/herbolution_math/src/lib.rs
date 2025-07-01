@@ -5,8 +5,9 @@
 pub extern crate num;
 
 pub mod color;
-pub mod mat;
+pub mod matrix;
 pub mod proj;
 pub mod rotation;
 pub mod size;
-pub mod vec;
+pub mod spatial;
+pub mod vector;

@@ -5,8 +5,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
 use hashbrown::{Equivalent, HashMap};
-use lib::face::Faces;
-use lib::group_key::{group_key, GroupKeyBuf};
+use herbolution_lib::util::group_key::{group_key, GroupKeyBuf};
+use herbolution_math::spatial::face::Faces;
 use math::color::Rgba;
 use serde::{Deserialize, Serialize};
 
@@ -103,7 +103,7 @@ impl Material {
 
         let encoded_0 = bytes.next()?;
         let has_collider = (encoded_0 >> 6) != 0;
-        let cullable_faces = Faces::from_bits_truncate(encoded_0);
+        let cullable_faces = Faces::from(encoded_0);
 
         let texture;
         match bytes.next()? {
@@ -213,7 +213,7 @@ pub trait PaletteMaterialOptionExt: Copy {
 
     fn cullable_faces(self, palette: &Palette) -> Faces {
         self.using(palette, |material| material.cullable_faces)
-            .unwrap_or(Faces::empty())
+            .unwrap_or(Faces::none())
     }
 }
 

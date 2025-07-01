@@ -1,8 +1,8 @@
 use crate::Handle;
 use std::collections::{HashMap, HashSet};
 use thiserror::Error;
-pub use wgpu::ShaderModule as Module;
-pub use wgpu::ShaderStages as Stage;
+pub use wgpu::ShaderModule;
+pub use wgpu::ShaderStages as ShaderStage;
 
 #[derive(Debug, Default)]
 pub struct ShaderSources {
@@ -12,7 +12,7 @@ pub struct ShaderSources {
 
 #[derive(Debug)]
 pub struct CompiledShaders {
-    modules: HashMap<String, Module>,
+    modules: HashMap<String, ShaderModule>,
 }
 
 #[derive(Debug, Error)]
@@ -117,7 +117,7 @@ struct ParsedSource<'a> {
 }
 
 impl CompiledShaders {
-    pub fn get_module(&self, name: impl AsRef<str>) -> Option<&Module> {
+    pub fn get_module(&self, name: impl AsRef<str>) -> Option<&ShaderModule> {
         self.modules.get(name.as_ref())
     }
 }

@@ -1,11 +1,10 @@
-use std::iter::zip;
-use std::ops::{Not, Range};
-
 use lib::chunk;
 use lib::chunk::VOLUME;
-use lib::face::{Face, Faces};
 use lib::point::ChunkPt;
-use math::vec::{vec3u5, Vec3};
+use math::spatial::face::{Face, Faces};
+use math::vector::{vec3u5, Vec3};
+use std::iter::zip;
+use std::ops::{Not, Range};
 
 use crate::chunk::cube::Cube;
 use crate::chunk::material::{Palette, PaletteCube, PaletteMaterialId, PaletteMaterialOptionExt};
@@ -164,22 +163,34 @@ impl CubeMesh {
                 .is_empty()
         {
             let present = self.data[i].mesh.faces();
-            self.data[i].mesh.set_opaque(Faces::empty());
+            self.data[i].mesh.set_opaque(Faces::none());
             self.add_neighboring_faces(present, position);
         }
 
         let (x, y, z) = (position.x(), position.y(), position.z());
         if x == 0 || x == 15 && new_material.is_none() {
-            self.exposed_faces
-                .set(Face::from(Vec3::new(if x == 0 { -1 } else { 1 }, 0, 0)).into(), true);
+            self.exposed_faces.set(
+                Face::from_normal(Vec3::new(if x == 0 { -1 } else { 1 }, 0, 0))
+                    .unwrap()
+                    .into(),
+                true,
+            );
         }
         if y == 0 || y == 15 && new_material.is_none() {
-            self.exposed_faces
-                .set(Face::from(Vec3::new(0, if y == 0 { -1 } else { 1 }, 0)).into(), true);
+            self.exposed_faces.set(
+                Face::from_normal(Vec3::new(0, if y == 0 { -1 } else { 1 }, 0))
+                    .unwrap()
+                    .into(),
+                true,
+            );
         }
         if z == 0 || z == 15 && new_material.is_none() {
-            self.exposed_faces
-                .set(Face::from(Vec3::new(0, 0, if y == 0 { -1 } else { 1 })).into(), true);
+            self.exposed_faces.set(
+                Face::from_normal(Vec3::new(0, 0, if y == 0 { -1 } else { 1 }))
+                    .unwrap()
+                    .into(),
+                true,
+            );
         }
 
         self.updated_positions.push(position);
@@ -187,11 +198,11 @@ impl CubeMesh {
 
     fn remove_neighboring_faces(&mut self, faces: Faces, position: vec3u5) {
         faces
-            .variant_iter()
+            .iter()
             .map(|f| (f, f.to_normal()))
-            .map(|(f, v)| (f, position.cast::<i32>().unwrap() + v))
+            .map(|(f, v)| (f, position.try_cast::<i32>().unwrap() + v))
             //.filter(|(_, x)| in_bounds(*x))
-            .filter_map(|(f, v)| v.cast::<u8>().map(|x| (f, x)))
+            .filter_map(|(f, v)| v.try_cast::<u8>().map(|x| (f, x)))
             .filter_map(|(f, v)| vec3u5::try_from(v).map(|x| (f, x)))
             .for_each(|(f, v)| {
                 let index = v.linearize();
@@ -214,11 +225,11 @@ impl CubeMesh {
     }
 
     fn add_neighboring_faces(&mut self, faces: Faces, position: vec3u5) {
-        let position = position.cast::<i32>().unwrap();
+        let position = position.try_cast::<i32>().unwrap();
 
-        let in_chunk = faces.not().variant_iter().filter_map(|a| {
+        let in_chunk = faces.not().iter().filter_map(|a| {
             (a.to_normal() + position)
-                .cast::<u8>()
+                .try_cast::<u8>()
                 .map(|v| vec3u5::try_from(v))
                 .flatten()
                 .map(|b| (a, b))

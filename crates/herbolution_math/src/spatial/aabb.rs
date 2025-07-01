@@ -1,10 +1,9 @@
+use crate::vector::Vec3;
+use num::traits::real::Real;
+use num::traits::ConstZero;
+use num::{Float, Num, NumCast, ToPrimitive};
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Neg};
-
-use math::num::traits::real::Real;
-use math::num::traits::ConstZero;
-use math::num::{Float, Num, NumCast, ToPrimitive};
-use math::vec::Vec3;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Aabb<T> {
@@ -266,7 +265,7 @@ impl<T> Aabb<T> {
         (self.min.z + self.max.z) * T::from(0.5).unwrap()
     }
 
-    pub fn cast<U: NumCast>(self) -> Option<Aabb<U>>
+    pub fn try_cast<U: NumCast>(self) -> Option<Aabb<U>>
     where
         T: ToPrimitive,
     {
@@ -274,6 +273,13 @@ impl<T> Aabb<T> {
             min: Vec3::new(NumCast::from(self.min.x)?, NumCast::from(self.min.y)?, NumCast::from(self.min.z)?),
             max: Vec3::new(NumCast::from(self.max.x)?, NumCast::from(self.max.y)?, NumCast::from(self.max.z)?),
         })
+    }
+
+    pub fn cast<U: NumCast>(self) -> Aabb<U>
+    where
+        T: ToPrimitive,
+    {
+        self.try_cast().unwrap()
     }
 }
 

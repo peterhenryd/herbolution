@@ -1,12 +1,8 @@
 pub use chisel::Chisel;
-use gpu::buffer::Usage;
-use gpu::camera::{Camera, CameraPayload};
-use gpu::handle::Handle;
-use gpu::pipeline::map::PipelineMap;
-use gpu::pipeline::{Face, PipelineOptions};
-use gpu::shader::{CompiledShaders, ShaderSources, Stage};
-use gpu::texture::SampleCount;
-use gpu::{pipeline, shader, BindGroup, Buffer};
+use gpu::{
+    BindGroup, Buffer, BufferUsage, Camera, CameraPayload, CompiledShaders, CullMode, Handle, PipelineMap, PipelineOptions, PipelineType, SampleCount,
+    ShaderModule, ShaderSources, ShaderStage,
+};
 use math::proj::Perspective;
 pub use vertex::{Instance3d, Instance3dPayload, Vertex3d};
 pub use world::{World, WorldPayload};
@@ -37,8 +33,8 @@ pub struct Options {}
 
 impl Sculptor {
     pub fn create(gpu: &Handle, sample_count: SampleCount) -> Self {
-        let camera_buffer = Buffer::with_capacity(gpu, 1, Usage::UNIFORM | Usage::COPY_DST);
-        let world_buffer = Buffer::with_capacity(gpu, 1, Usage::UNIFORM | Usage::COPY_DST);
+        let camera_buffer = Buffer::with_capacity(gpu, 1, BufferUsage::UNIFORM | BufferUsage::COPY_DST);
+        let world_buffer = Buffer::with_capacity(gpu, 1, BufferUsage::UNIFORM | BufferUsage::COPY_DST);
         let shaders = ShaderSources::default()
             .with("world", include_str!("shaders/world.wgsl"))
             .compile(gpu)
@@ -106,20 +102,20 @@ pub enum RenderType {
 pub struct RenderType3dOptions<'a> {
     camera_buffer: &'a Buffer<CameraPayload>,
     world_buffer: &'a Buffer<WorldPayload>,
-    shader_module: &'a shader::Module,
+    shader_module: &'a ShaderModule,
 }
 
-impl pipeline::Key for RenderType {
+impl PipelineType for RenderType {
     type Options<'a> = RenderType3dOptions<'a>;
     const ENTRIES: &'static [Self] = &[Self::Terrain, Self::Sky];
 
     fn create_bind_groups(gpu: &Handle, options: &Self::Options<'_>) -> Vec<BindGroup> {
         let camera_bind_group = BindGroup::build()
-            .with_buffer(options.camera_buffer, Stage::VERTEX_FRAGMENT)
+            .with_buffer(options.camera_buffer, ShaderStage::VERTEX_FRAGMENT)
             .finish(gpu);
 
         let world_bind_group = BindGroup::build()
-            .with_buffer(options.world_buffer, Stage::VERTEX_FRAGMENT)
+            .with_buffer(options.world_buffer, ShaderStage::VERTEX_FRAGMENT)
             .finish(gpu);
 
         vec![camera_bind_group, world_bind_group]
@@ -130,8 +126,8 @@ impl pipeline::Key for RenderType {
             shader_module: options.shader_module,
             vertex_buffer_layouts: &[Vertex3d::LAYOUT, Instance3d::LAYOUT],
             cull_mode: Some(match self {
-                RenderType::Terrain => Face::Back,
-                RenderType::Sky => Face::Front,
+                RenderType::Terrain => CullMode::Back,
+                RenderType::Sky => CullMode::Front,
             }),
             depth_write_enabled: matches!(self, RenderType::Terrain),
         }

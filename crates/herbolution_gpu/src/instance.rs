@@ -84,6 +84,11 @@ impl<I: Payload> Sets<I> {
         debug_assert!(id.parent_id == self.id, "InstanceSetId does not belong to this InstanceSets instance");
         self.buffers.get(id.index).unwrap()
     }
+
+    pub fn get_mut(&mut self, id: SetId) -> &mut Buffer<I> {
+        debug_assert!(id.parent_id == self.id, "InstanceSetId does not belong to this InstanceSets instance");
+        self.buffers.get_mut(id.index).unwrap()
+    }
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]

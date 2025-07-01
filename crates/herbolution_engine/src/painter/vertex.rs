@@ -1,10 +1,9 @@
 use bytemuck::{Pod, Zeroable};
-use gpu::pipeline::{VertexBufferLayout, VertexStepMode, vertex_attr_array};
-use gpu::{AtlasTextureCoord, Payload, Vertex};
+use gpu::{vertex_attr_array, AtlasTextureCoord, Payload, Vertex, VertexBufferLayout, VertexStepMode};
 use math::color::Rgba;
-use math::mat::Mat3;
+use math::matrix::Mat3;
 use math::rotation::Quat;
-use math::vec::{vec2f, vec3f};
+use math::vector::{vec2f, vec3f};
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Pod, Zeroable)]
@@ -58,9 +57,9 @@ impl Instance2d {
         array_stride: size_of::<Instance2dPayload>() as u64,
         step_mode: VertexStepMode::Instance,
         attributes: &vertex_attr_array![
-            3 => Float32x2, // model mat column 0
-            4 => Float32x2, // model mat column 1
-            5 => Float32x2, // model mat column 2
+            3 => Float32x2, // model matrix column 0
+            4 => Float32x2, // model matrix column 1
+            5 => Float32x2, // model matrix column 2
             6 => Float32x4, // color
             7 => Float32x2, // texture translation
             8 => Float32x2, // texture scale

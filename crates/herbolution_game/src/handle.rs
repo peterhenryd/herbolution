@@ -4,12 +4,11 @@ use crossbeam::channel::{bounded, unbounded, Receiver, Sender};
 use lib::motile::Motile;
 use lib::point::ChunkPt;
 use math::color::Rgba;
-use math::vec::vec3d;
+use math::vector::vec3d;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tracing::warn;
-
 // Game-side handles
 
 #[derive(Debug)]

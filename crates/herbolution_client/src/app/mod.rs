@@ -8,9 +8,9 @@ pub use crate::app::store::Store;
 pub use crate::app::switch::Switch;
 use engine::input::InputFrame;
 use engine::{video, Engine};
-use gpu::texture::SampleCount;
+use gpu::SampleCount;
 use math::size::{size2u, Size2};
-use math::vec::Vec2;
+use math::vector::Vec2;
 use winit::application::ApplicationHandler;
 use winit::dpi::{PhysicalPosition, PhysicalSize};
 use winit::error::EventLoopError;
@@ -36,7 +36,7 @@ pub struct App<'w> {
 
 /// Options for configuring an Herbolution application.
 pub struct Options {
-    /// The root directory path of the application. See [lib::fs::Fs::new] for more details.
+    /// The root directory path of the application. See [herbolution_lib::world::fs::Fs::new] for more details.
     pub root_dir: Option<PathBuf>,
 }
 

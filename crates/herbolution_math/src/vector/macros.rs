@@ -1,15 +1,7 @@
-#![allow(non_camel_case_types)]
-
-use bytemuck::{Pod, Zeroable};
-
-mod vec2;
-mod vec3;
-mod vec4;
-
-macro_rules! vec_type {
+macro_rules! vector {
     (@count) => { 0 };
     (@count $first:ident $($rest:ident)*) => {
-        1 + vec_type!(@count $($rest)*)
+        1 + vector!(@count $($rest)*)
     };
     (
         struct $name:ident<$t:ident> {
@@ -100,7 +92,7 @@ macro_rules! vec_type {
             }
 
             #[inline]
-            pub fn cast<U: num::traits::NumCast>(self) -> Option<$name<U>>
+            pub fn try_cast<U: num::traits::NumCast>(self) -> Option<$name<U>>
             where
                 $t: num::traits::ToPrimitive,
             {
@@ -112,16 +104,24 @@ macro_rules! vec_type {
             }
 
             #[inline]
+            pub fn cast<U: num::traits::NumCast>(self) -> $name<U>
+            where
+                $t: num::traits::ToPrimitive,
+            {
+                self.try_cast().unwrap()
+            }
+
+            #[inline]
             pub fn to_tuple(self) -> ($($ft),+) {
                 ($(self.$field),+)
             }
 
             #[inline]
-            pub fn to_array(self) -> [$t; vec_type!(@count $($field)+)] {
+            pub fn to_array(self) -> [$t; vector!(@count $($field)+)] {
                 [$(self.$field),+]
             }
 
-            pub fn as_array(&self) -> &[$t; vec_type!(@count $($field)+)]
+            pub fn as_array(&self) -> &[$t; vector!(@count $($field)+)]
             where
                 T: bytemuck::Pod,
             {
@@ -344,8 +344,8 @@ macro_rules! vec_type {
             }
         }
 
-        impl<$t> From<[$t; vec_type!(@count $($field)+)]> for $name<$t> {
-            fn from([$($field),+]: [$t; vec_type!(@count $($field)+)]) -> Self {
+        impl<$t> From<[$t; vector!(@count $($field)+)]> for $name<$t> {
+            fn from([$($field),+]: [$t; vector!(@count $($field)+)]) -> Self {
                 Self {
                     $($field),+
                 }
@@ -740,7 +740,7 @@ macro_rules! vec_type {
 
         impl<$t> IntoIterator for $name<$t> {
             type Item = $t;
-            type IntoIter = std::array::IntoIter<$t, { vec_type!(@count $($field)+) }>;
+            type IntoIter = std::array::IntoIter<$t, { vector!(@count $($field)+) }>;
 
             fn into_iter(self) -> Self::IntoIter {
                 self.to_array().into_iter()
@@ -762,26 +762,4 @@ macro_rules! vec_type {
     };
 }
 
-pub(crate) use vec_type;
-pub use vec2::*;
-pub use vec3::*;
-pub use vec4::*;
-
-#[repr(C)]
-#[derive(Debug, Copy, Clone, PartialEq, Pod, Zeroable)]
-pub struct vec3if {
-    pub integral: vec3i,
-    pub fractional: vec3f,
-}
-
-impl From<vec3d> for vec3if {
-    fn from(value: vec3d) -> Self {
-        let int_vec = value.cast().unwrap();
-        let fract_vec = value.fract().cast().unwrap();
-
-        Self {
-            integral: int_vec,
-            fractional: fract_vec,
-        }
-    }
-}
+pub(crate) use vector;

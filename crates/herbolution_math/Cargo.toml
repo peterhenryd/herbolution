@@ -8,3 +8,4 @@ bytemuck = { workspace = true, features = ["derive"] }
 num.workspace = true
 serde = { workspace = true, features = ["derive"] }
 static_assertions.workspace = true
+derive_more = { workspace = true, features = ["full"] }

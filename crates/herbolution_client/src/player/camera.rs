@@ -1,10 +1,10 @@
 use engine::sculptor::Sculptor;
 use engine::Engine;
-use gpu::camera::View;
+use gpu::View;
 use lib::chunk;
 use math::proj::Perspective;
 use math::size::size2u;
-use math::vec::{vec3i, Vec3};
+use math::vector::{vec3i, Vec3};
 
 use crate::world::frustum::Frustum;
 
@@ -35,6 +35,6 @@ impl PlayerCamera {
     pub fn update(&mut self, engine: &mut Engine) {
         engine.video.sculptor.update_camera(&self.video);
         self.frustum = Frustum::new(self.video.view_proj());
-        self.chunk_position = self.video.position.cast().unwrap() / chunk::LENGTH as i32;
+        self.chunk_position = self.video.position.cast() / chunk::LENGTH as i32;
     }
 }
