@@ -22,5 +22,5 @@ cargo run --release
 
 ## License
 
-Herbolution's source code is licensed under [the MIT License](LICENSE). Herbolution's assets are licensed under
+Herbolution's source code is licensed under [the MIT license](LICENSE). Herbolution's assets are licensed under
 [the CC BY-NC-SA 4.0 license](assets/LICENSE) (this may change in the future).

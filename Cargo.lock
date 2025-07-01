@@ -1066,7 +1066,6 @@ dependencies = [
  "herbolution_gpu",
  "herbolution_lib",
  "herbolution_math",
- "include_dir",
  "rayon",
  "tracing-subscriber",
  "wgpu",
@@ -1117,6 +1116,7 @@ dependencies = [
  "image-atlas",
  "pollster",
  "serde",
+ "thiserror 2.0.12",
  "toml",
  "wgpu",
 ]
@@ -1130,6 +1130,7 @@ dependencies = [
  "crossbeam",
  "hashbrown",
  "herbolution_math",
+ "include_dir",
  "lazy_static",
  "serde",
  "thiserror 2.0.12",

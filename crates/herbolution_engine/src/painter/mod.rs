@@ -10,8 +10,8 @@ use gpu::instance::Sets;
 use gpu::mesh::{Mesh, Meshes};
 use gpu::pipeline::PipelineOptions;
 use gpu::sampler::Filter;
-use gpu::texture::Texture;
-use gpu::{load_shader, pipeline, sampler, shader, MeshId};
+use gpu::texture::{SampleCount, Texture};
+use gpu::{pipeline, sampler, shader, MeshId};
 use math::proj::Orthographic;
 
 pub mod atlas;
@@ -28,7 +28,7 @@ pub type Buffer2d = Buffer<Instance2dPayload>;
 pub type Sets2d = Sets<Instance2dPayload>;
 
 use gpu::pipeline::map::PipelineMap;
-use gpu::shader::Stage;
+use gpu::shader::{CompiledShaders, ShaderSources, Stage};
 use math::size::size2u;
 use math::vec::Vec3;
 
@@ -43,6 +43,7 @@ pub struct Painter {
     pub(crate) meshes: Meshes2d,
     pub(crate) instance_sets: Sets2d,
     atlas: Atlas,
+    shaders: CompiledShaders,
     quad_mesh: MeshId,
 }
 
@@ -55,8 +56,12 @@ fn filter(c: char) -> bool {
 }
 
 impl Painter {
-    pub fn create(gpu: &Handle, _: Options) -> Self {
+    pub fn create(gpu: &Handle, sample_count: SampleCount) -> Self {
         let camera_buffer = Buffer::with_capacity(gpu, 1, Usage::UNIFORM | Usage::COPY_DST);
+        let shaders = ShaderSources::default()
+            .with("core", include_str!("shader.wgsl"))
+            .compile(gpu)
+            .expect("Failed to compile shaders");
 
         let mut fonts = Fonts::build();
         fonts.set_filter(filter);
@@ -75,16 +80,30 @@ impl Painter {
                 gpu,
                 &RenderType2dOptions {
                     camera_buffer: &camera_buffer,
-                    shader_module: &load_shader!(gpu, "shader.wgsl"),
+                    shader_module: shaders.get_module("core").unwrap(),
                     texture: &atlas.texture,
                 },
+                sample_count,
             ),
             camera_buffer,
             meshes,
+            shaders,
             instance_sets: Sets::new(gpu),
             atlas,
             quad_mesh,
         }
+    }
+
+    pub fn set_sample_count(&mut self, gpu: &Handle, sample_count: SampleCount) {
+        self.pipeline_map.set_sample_count(
+            gpu,
+            sample_count,
+            &RenderType2dOptions {
+                camera_buffer: &self.camera_buffer,
+                shader_module: &self.shaders.get_module("core").unwrap(),
+                texture: &self.atlas.texture,
+            },
+        );
     }
 
     pub fn update_camera(&mut self, gpu: &Handle, camera: &Camera<Orthographic>) {

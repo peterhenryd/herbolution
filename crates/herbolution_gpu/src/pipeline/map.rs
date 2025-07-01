@@ -1,39 +1,66 @@
 use std::collections::HashMap;
 use std::hash::Hash;
 
-use wgpu::{RenderPass, RenderPipeline};
-
-use crate::bind_group::BindGroup;
 use crate::handle::Handle;
 use crate::pipeline::PipelineOptions;
+use crate::texture::SampleCount;
+use crate::BindGroup;
+use wgpu::{RenderPass, RenderPipeline};
 
 #[derive(Debug)]
 pub struct PipelineMap<K> {
     map: HashMap<K, RenderPipeline>,
     bind_groups: Vec<BindGroup>,
+    sample_count: SampleCount,
 }
 
 impl<R: Key> PipelineMap<R> {
-    pub fn create<'a>(gpu: &Handle, state: &R::Options<'_>) -> Self {
+    pub fn create<'a>(gpu: &Handle, state: &R::Options<'_>, sample_count: SampleCount) -> Self {
         let bind_groups = R::create_bind_groups(gpu, state);
 
         let mut map = HashMap::with_capacity(R::ENTRIES.len());
-        for entry in R::ENTRIES {
+        for key in R::ENTRIES {
             let bind_group_layouts = bind_groups
                 .iter()
                 .map(|x| &x.layout)
                 .enumerate()
-                .filter(|(i, _)| entry.is_bind_group_enabled(*i))
+                .filter(|(i, _)| key.is_bind_group_enabled(*i))
                 .map(|(_, x)| x)
                 .collect::<Vec<_>>();
 
-            let options = entry.pipeline_options(gpu, state);
-            let render_pipeline = gpu.create_pipeline(&bind_group_layouts, options);
+            let options = key.pipeline_options(gpu, state);
+            let render_pipeline = gpu.create_pipeline(&bind_group_layouts, sample_count, options);
 
-            map.insert(*entry, render_pipeline);
+            map.insert(*key, render_pipeline);
         }
 
-        Self { map, bind_groups }
+        Self {
+            map,
+            bind_groups,
+            sample_count,
+        }
+    }
+
+    pub fn set_sample_count(&mut self, gpu: &Handle, sample_count: SampleCount, state: &R::Options<'_>) {
+        if self.sample_count == sample_count {
+            return;
+        }
+
+        for (key, render_pipeline) in self.map.iter_mut() {
+            let bind_group_layouts = self
+                .bind_groups
+                .iter()
+                .map(|x| &x.layout)
+                .enumerate()
+                .filter(|(i, _)| key.is_bind_group_enabled(*i))
+                .map(|(_, x)| x)
+                .collect::<Vec<_>>();
+
+            let options = key.pipeline_options(gpu, state);
+            *render_pipeline = gpu.create_pipeline(&bind_group_layouts, sample_count, options);
+        }
+
+        self.sample_count = sample_count;
     }
 
     pub fn load_by_type(&self, render_type: R, render_pass: &mut RenderPass<'_>) {

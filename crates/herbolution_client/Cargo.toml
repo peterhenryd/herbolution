@@ -8,14 +8,13 @@ edition = "2024"
 herbolution_engine = { path = "../herbolution_engine" }
 herbolution_game = { path = "../herbolution_game" }
 herbolution_gpu = { path = "../herbolution_gpu" }
-herbolution_lib = { path = "../herbolution_util" }
+herbolution_lib = { path = "../herbolution_lib" }
 herbolution_math = { path = "../herbolution_math" }
 
 # External dependencies
 clap.workspace = true
 crossbeam.workspace = true
 fastrand.workspace = true
-include_dir.workspace = true
 rayon.workspace = true
 tracing-subscriber.workspace = true
 wgpu.workspace = true

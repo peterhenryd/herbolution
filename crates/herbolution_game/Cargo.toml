@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-herbolution_lib = { path = "../herbolution_util" }
+herbolution_lib = { path = "../herbolution_lib" }
 herbolution_math = { path = "../herbolution_math" }
 
 crossbeam.workspace = true

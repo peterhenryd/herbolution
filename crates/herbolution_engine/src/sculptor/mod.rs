@@ -4,8 +4,9 @@ use gpu::camera::{Camera, CameraPayload};
 use gpu::handle::Handle;
 use gpu::pipeline::map::PipelineMap;
 use gpu::pipeline::{Face, PipelineOptions};
-use gpu::shader::Stage;
-use gpu::{load_shader, pipeline, shader, BindGroup, Buffer};
+use gpu::shader::{CompiledShaders, ShaderSources, Stage};
+use gpu::texture::SampleCount;
+use gpu::{pipeline, shader, BindGroup, Buffer};
 use math::proj::Perspective;
 pub use vertex::{Instance3d, Instance3dPayload, Vertex3d};
 pub use world::{World, WorldPayload};
@@ -27,6 +28,7 @@ pub struct Sculptor {
     pub(crate) pipeline_map: PipelineMap<RenderType>,
     camera_buffer: Buffer<CameraPayload>,
     world_buffer: Buffer<WorldPayload>,
+    shaders: CompiledShaders,
     pub(crate) meshes: Meshes,
     pub(crate) sets: Sets,
 }
@@ -34,9 +36,13 @@ pub struct Sculptor {
 pub struct Options {}
 
 impl Sculptor {
-    pub fn create(gpu: &Handle, _: Options) -> Self {
+    pub fn create(gpu: &Handle, sample_count: SampleCount) -> Self {
         let camera_buffer = Buffer::with_capacity(gpu, 1, Usage::UNIFORM | Usage::COPY_DST);
         let world_buffer = Buffer::with_capacity(gpu, 1, Usage::UNIFORM | Usage::COPY_DST);
+        let shaders = ShaderSources::default()
+            .with("world", include_str!("shaders/world.wgsl"))
+            .compile(gpu)
+            .expect("Failed to compile shaders");
 
         Self {
             handle: Handle::clone(gpu),
@@ -45,14 +51,28 @@ impl Sculptor {
                 &RenderType3dOptions {
                     camera_buffer: &camera_buffer,
                     world_buffer: &world_buffer,
-                    shader_module: &load_shader!(gpu, "shaders/world.wgsl"),
+                    shader_module: shaders.get_module("world").unwrap(),
                 },
+                sample_count,
             ),
             camera_buffer,
             world_buffer,
+            shaders,
             meshes: Meshes::new(gpu),
             sets: Sets::new(gpu),
         }
+    }
+
+    pub fn set_sample_count(&mut self, gpu: &Handle, sample_count: SampleCount) {
+        self.pipeline_map.set_sample_count(
+            gpu,
+            sample_count,
+            &RenderType3dOptions {
+                camera_buffer: &self.camera_buffer,
+                world_buffer: &self.world_buffer,
+                shader_module: self.shaders.get_module("world").unwrap(),
+            },
+        );
     }
 
     pub fn update_camera(&mut self, camera: &Camera<Perspective>) {

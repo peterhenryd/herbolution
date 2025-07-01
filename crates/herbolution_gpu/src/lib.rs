@@ -1,5 +1,3 @@
-//! This library is a wrapper around `wgpu` that provides a more ergonomic API for the needs of the Herbolution herbolution_engine.
-#![feature(random)]
 extern crate herbolution_math as math;
 
 pub mod bind_group;
@@ -16,6 +14,7 @@ pub mod shader;
 pub mod surface;
 pub mod texture;
 
+use crate::texture::SampleCount;
 pub use bind_group::{BindGroup, BindGroupBuilder};
 pub use buffer::{Buffer, GrowBuffer};
 pub use camera::{Camera, CameraPayload};
@@ -29,14 +28,14 @@ pub use sampler::Sampler;
 pub use surface::Surface;
 pub use texture::{AtlasError, AtlasTextureCoord, Texture};
 
-pub fn create<'w>(target: impl Into<wgpu::SurfaceTarget<'w>>, resolution: impl Into<size2u>) -> (Handle, Surface<'w>) {
+pub fn create<'w>(target: impl Into<wgpu::SurfaceTarget<'w>>, resolution: impl Into<size2u>, sample_count: SampleCount) -> (Handle, Surface<'w>) {
     let instance = wgpu::Instance::default();
     let surface = instance
         .create_surface(target)
         .expect("Failed to create surface");
 
-    let handle = Handle::create(&instance, &surface, true);
-    let surface = Surface::new(&handle, surface, resolution);
+    let handle = Handle::create(&instance, &surface);
+    let surface = Surface::new(&handle, surface, resolution.into(), sample_count);
 
     (handle, surface)
 }

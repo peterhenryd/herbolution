@@ -1,10 +1,11 @@
 use std::mem::transmute;
 
 use math::color::Rgba;
-use math::size::Size2;
 pub use wgpu::RenderPass as Pass;
-use wgpu::{Color, CommandEncoder, LoadOp, Operations, RenderPassColorAttachment, RenderPassDepthStencilAttachment, StoreOp, SurfaceTexture, TextureView};
+use wgpu::{Color, CommandEncoder, LoadOp, Operations, RenderPassColorAttachment, RenderPassDepthStencilAttachment, StoreOp, TextureView};
 
+use crate::surface::SurfaceTexture;
+use crate::texture::SampleCount;
 use crate::{Handle, Surface, Texture};
 
 /// A specialized command encoder for rendering to a surface with automatic queue submission and texture presentation.
@@ -20,19 +21,17 @@ pub struct Options {
 impl<'h> Frame<'h> {
     pub fn new(handle: &'h Handle, surface: &Surface, options: Options) -> Self {
         let surface_texture = surface
-            .inner
-            .get_current_texture()
+            .create_texture()
             .expect("Failed to get current texture");
-        let depth_view = surface.depth_texture.view().clone();
+        let depth_view = surface.depth_texture().view().clone();
 
         let clear_color = options
             .clear_color
             .map(|Rgba { r, g, b, a }| Color { r, g, b, a });
 
-        Self {
-            handle,
-            state: Some(State::create(handle, surface_texture, clear_color, depth_view, handle.is_msaa_enabled())),
-        }
+        let state = State::create(handle, surface_texture, clear_color, depth_view, surface.sample_count());
+
+        Self { handle, state: Some(state) }
     }
 
     pub fn pass(&mut self) -> &mut Pass<'_> {
@@ -64,17 +63,17 @@ impl<'h> Frame<'h> {
 
 impl Drop for Frame<'_> {
     fn drop(&mut self) {
-        if let Some(State { encoder, surface, pass, .. }) = self.state.take() {
+        if let Some(State { encoder, pass, .. }) = self.state.take() {
             drop(pass);
             self.handle.queue().submit(Some(encoder.finish()));
-            surface.present();
         };
     }
 }
 
 struct State {
+    // Don't drop until the encoder is submitted
+    _surface: SurfaceTexture,
     encoder: CommandEncoder,
-    surface: SurfaceTexture,
     view: TextureView,
     resolve_target: Option<TextureView>,
     depth_view: TextureView,
@@ -82,28 +81,26 @@ struct State {
 }
 
 impl State {
-    fn create(gpu: &Handle, surface: SurfaceTexture, clear_color: Option<Color>, depth_view: TextureView, msaa: bool) -> Self {
+    fn create(gpu: &Handle, surface: SurfaceTexture, clear_color: Option<Color>, depth_view: TextureView, sample_count: SampleCount) -> Self {
         let mut encoder = gpu
             .device()
             .create_command_encoder(&Default::default());
-        let surface_view = surface.texture.create_view(&Default::default());
 
-        let (view, resolve_target) = if msaa {
-            let resolution = Size2::new(surface.texture.width(), surface.texture.height());
-            let staging_texture = Texture::empty(gpu, resolution, surface.texture.format(), true)
+        let (view, resolve_target) = if sample_count.is_multi() {
+            let staging_texture = Texture::empty(gpu, surface.resolution(), surface.format(), sample_count)
                 .view()
                 .clone();
 
-            (staging_texture, Some(surface_view))
+            (staging_texture, Some(surface.as_ref().clone()))
         } else {
-            (surface_view, None)
+            (surface.as_ref().clone(), None)
         };
 
         let pass = create_pass(&mut encoder, &view, resolve_target.as_ref(), clear_color, &depth_view, true).forget_lifetime();
 
         Self {
             encoder,
-            surface,
+            _surface: surface,
             view,
             resolve_target,
             depth_view,

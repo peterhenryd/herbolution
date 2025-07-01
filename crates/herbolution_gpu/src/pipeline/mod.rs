@@ -9,6 +9,7 @@ use wgpu::{
 
 use crate::handle::Handle;
 use crate::shader;
+use crate::texture::SampleCount;
 
 pub struct PipelineOptions<'a> {
     pub shader_module: &'a shader::Module,
@@ -18,7 +19,7 @@ pub struct PipelineOptions<'a> {
 }
 
 impl Handle {
-    pub fn create_pipeline(&self, bind_group_layouts: &[&BindGroupLayout], options: PipelineOptions) -> RenderPipeline {
+    pub fn create_pipeline(&self, bind_group_layouts: &[&BindGroupLayout], sample_count: SampleCount, options: PipelineOptions) -> RenderPipeline {
         let pipeline_layout = self
             .device()
             .create_pipeline_layout(&PipelineLayoutDescriptor {
@@ -54,7 +55,7 @@ impl Handle {
                     bias: Default::default(),
                 }),
                 multisample: MultisampleState {
-                    count: self.is_msaa_enabled().then_some(4).unwrap_or(1),
+                    count: sample_count.get(),
                     mask: !0,
                     alpha_to_coverage_enabled: false,
                 },

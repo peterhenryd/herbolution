@@ -7,7 +7,8 @@ pub use image_atlas::AtlasError;
 use image_atlas::{AtlasDescriptor, AtlasEntry, AtlasEntryMipOption, AtlasMipOption};
 use math::size::size2u;
 use math::vec::{vec2f, Vec2};
-use wgpu::{Extent3d, TexelCopyBufferLayout, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView};
+pub use wgpu::TextureView;
+use wgpu::{Extent3d, TexelCopyBufferLayout, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages};
 
 use crate::handle::Handle;
 
@@ -18,7 +19,11 @@ pub struct Texture {
 }
 
 impl Texture {
-    pub fn empty(gpu: &Handle, size: impl Into<size2u>, format: TextureFormat, sampled: bool) -> Self {
+    pub fn new_unchecked(inner: wgpu::Texture, view: TextureView) -> Self {
+        Self { inner, view }
+    }
+
+    pub fn empty(gpu: &Handle, size: impl Into<size2u>, format: TextureFormat, sample_count: SampleCount) -> Self {
         let size = size.into();
         let inner = gpu.device().create_texture(&TextureDescriptor {
             label: None,
@@ -28,9 +33,7 @@ impl Texture {
                 depth_or_array_layers: 1,
             },
             mip_level_count: 1,
-            sample_count: (gpu.is_msaa_enabled() && sampled)
-                .then_some(4)
-                .unwrap_or(1),
+            sample_count: sample_count.get(),
             dimension: TextureDimension::D2,
             format,
             usage: TextureUsages::RENDER_ATTACHMENT | TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST,
@@ -41,13 +44,13 @@ impl Texture {
         Self { inner, view }
     }
 
-    pub fn depth(gpu: &Handle, size: impl Into<size2u>) -> Self {
-        Self::empty(gpu, size, TextureFormat::Depth32Float, true)
+    pub fn depth(gpu: &Handle, size: impl Into<size2u>, sample_count: SampleCount) -> Self {
+        Self::empty(gpu, size, TextureFormat::Depth32Float, sample_count)
     }
 
     pub fn from_data(gpu: &Handle, size: impl Into<size2u>, data: impl AsRef<[u8]>, format: TextureFormat) -> Self {
         let size = size.into();
-        let texture = Self::empty(gpu, size, format, false);
+        let texture = Self::empty(gpu, size, format, SampleCount::Single);
 
         gpu.queue().write_texture(
             texture.inner.as_image_copy(),
@@ -144,4 +147,22 @@ impl AtlasTextureCoord {
         translation: Vec2::ZERO,
         scale: Vec2::ZERO,
     };
+}
+
+#[repr(u8)]
+#[derive(Debug, Default, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+pub enum SampleCount {
+    #[default]
+    Single = 1,
+    Multi = 4,
+}
+
+impl SampleCount {
+    pub fn is_multi(self) -> bool {
+        matches!(self, Self::Multi)
+    }
+
+    pub fn get(&self) -> u32 {
+        *self as u32
+    }
 }

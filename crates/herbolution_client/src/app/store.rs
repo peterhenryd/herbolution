@@ -13,9 +13,8 @@ pub struct Store {
 
 impl Store {
     /// Creates a new instance with the specified file system root path.
-    pub fn new(root_dir: PathBuf) -> Self {
+    pub fn new(root_dir: Option<PathBuf>) -> Self {
         let fs = Fs::new(root_dir);
-        fs.init().expect("Failed to init Herbolution file system");
 
         Self {
             fs,

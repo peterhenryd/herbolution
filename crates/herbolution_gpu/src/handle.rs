@@ -1,6 +1,3 @@
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
-
 use pollster::FutureExt;
 use wgpu::{Adapter, Device, DeviceDescriptor, Features, Instance, Limits, MemoryHints, PowerPreference, Queue, RequestAdapterOptions, Trace};
 
@@ -9,21 +6,15 @@ pub struct Handle {
     adapter: Adapter,
     device: Device,
     queue: Queue,
-    // TODO: add global settings tracker
-    msaa: Arc<AtomicBool>,
 }
 
 impl Handle {
-    pub fn new_unchecked(adapter: Adapter, device: Device, queue: Queue, msaa: bool) -> Self {
-        Self {
-            adapter,
-            device,
-            queue,
-            msaa: Arc::new(AtomicBool::new(msaa)),
-        }
+    #[inline]
+    pub fn new_unchecked(adapter: Adapter, device: Device, queue: Queue) -> Self {
+        Self { adapter, device, queue }
     }
 
-    pub fn create(instance: &Instance, surface: &wgpu::Surface<'_>, msaa: bool) -> Self {
+    pub fn create(instance: &Instance, surface: &wgpu::Surface<'_>) -> Self {
         let adapter = instance
             .request_adapter(&RequestAdapterOptions {
                 power_preference: PowerPreference::HighPerformance,
@@ -43,12 +34,7 @@ impl Handle {
             .block_on()
             .expect("Failed to request device");
 
-        Self {
-            adapter,
-            device,
-            queue,
-            msaa: Arc::new(AtomicBool::new(msaa)),
-        }
+        Self { adapter, device, queue }
     }
 
     #[inline]
@@ -64,9 +50,5 @@ impl Handle {
     #[inline]
     pub fn queue(&self) -> &Queue {
         &self.queue
-    }
-
-    pub fn is_msaa_enabled(&self) -> bool {
-        self.msaa.load(Ordering::Relaxed)
     }
 }

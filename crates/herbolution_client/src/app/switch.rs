@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use engine::{Engine, painter, sculptor, video};
+use engine::{painter, sculptor, video, Engine};
+use gpu::texture::SampleCount;
 use math::color::{Color, Rgba};
 use winit::dpi::PhysicalSize;
 use winit::event_loop::ActiveEventLoop;
@@ -33,6 +34,7 @@ impl Switch<'_> {
                         texture_paths: vec!["assets/texture/dirt.png".into()],
                     },
                     sculptor: sculptor::Options {},
+                    sample_count: SampleCount::Multi,
                 },
             },
         );

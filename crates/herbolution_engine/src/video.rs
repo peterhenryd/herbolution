@@ -1,4 +1,5 @@
 use gpu::surface;
+use gpu::texture::SampleCount;
 use math::color::Rgba;
 use math::size::size2u;
 
@@ -9,7 +10,7 @@ use crate::{painter, sculptor};
 
 pub struct Video<'w> {
     pub handle: gpu::Handle,
-    surface: gpu::Surface<'w>,
+    pub surface: gpu::Surface<'w>,
     pub painter: Painter,
     pub sculptor: Sculptor,
     clear_color: Rgba<f64>,
@@ -20,28 +21,40 @@ pub struct Options {
     pub clear_color: Rgba<f64>,
     pub painter: painter::Options,
     pub sculptor: sculptor::Options,
+    pub sample_count: SampleCount,
 }
 
 impl<'w> Video<'w> {
     pub fn create(target: impl Into<surface::Target<'w>>, options: Options) -> Self {
-        let (handle, surface) = gpu::create(target, options.resolution);
-        let mut painter = Painter::create(&handle, options.painter);
+        let (handle, surface) = gpu::create(target, options.resolution, options.sample_count);
+        let mut painter = Painter::create(&handle, options.sample_count);
         painter.set_resolution(&handle, options.resolution);
-        let sculptor = Sculptor::create(&handle, options.sculptor);
+        let sculptor = Sculptor::create(&handle, options.sample_count);
 
         Self {
             handle,
             surface,
-            painter: painter,
-            sculptor: sculptor,
+            painter,
+            sculptor,
             clear_color: options.clear_color,
         }
     }
 
+    pub fn set_sample_count(&mut self, sample_count: SampleCount) {
+        self.surface
+            .set_sample_count(&self.handle, sample_count);
+        self.painter
+            .set_sample_count(&self.handle, sample_count);
+        self.sculptor
+            .set_sample_count(&self.handle, sample_count);
+    }
+
     pub fn set_resolution(&mut self, resolution: impl Into<size2u>) {
         let resolution = resolution.into();
-        self.surface.set_resolution(&self.handle, resolution);
-        self.painter.set_resolution(&self.handle, resolution);
+        self.surface
+            .set_resolution(&self.handle, resolution);
+        self.painter
+            .set_resolution(&self.handle, resolution);
     }
 
     pub fn resolution(&self) -> size2u {
