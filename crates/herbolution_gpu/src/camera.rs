@@ -38,8 +38,8 @@ impl View {
 
     pub fn get_dir(self) -> vec3f {
         match self {
-            View::Rotate { rotation } => rotation.into_view_center().normalize(),
-            View::Forward => Vec3::Z,
+            View::Rotate { rotation } => -rotation.into_view_center().normalize(),
+            View::Forward => -Vec3::Z,
         }
     }
 }

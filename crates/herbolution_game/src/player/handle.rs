@@ -26,8 +26,8 @@ impl ClientPlayerTransformHandle {
         let _ = self.rotation.try_send(rotation);
     }
 
-    pub fn set_target(&self, target: Option<ActionTarget>) {
-        let _ = self.target.try_send(target);
+    pub fn set_target(&self, target: impl Into<Option<ActionTarget>>) {
+        let _ = self.target.try_send(target.into());
     }
 }
 

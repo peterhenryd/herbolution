@@ -1,7 +1,8 @@
 mod camera;
 
+use crate::app::Update;
 pub use camera::PlayerCamera;
-use engine::sculptor::{Instance3d, Instance3dPayload};
+use engine::sculptor::Instance3d;
 use engine::{sculptor, Engine};
 use game::entity::{ActionState, ActionTarget};
 use game::player::handle::ServerPlayerHandle;
@@ -11,8 +12,6 @@ use math::color::{ColorConsts, Rgba};
 use math::vector::{vec3d, vec3i, vec3i8, Vec3};
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
-
-use crate::app::Update;
 
 /// The render-side representation of the player within the world.
 #[derive(Debug)]
@@ -54,7 +53,7 @@ impl Player {
                 .video
                 .sculptor
                 .sets()
-                .insert_raw(cube(Vec3::ZERO, sky_box_color)),
+                .insert_from(cube(Vec3::ZERO, sky_box_color)),
         }
     }
 
@@ -78,7 +77,7 @@ impl Player {
                 .video
                 .sculptor
                 .sets()
-                .write_raw(self.sky_box_id, cube(x.cast(), self.sky_box_color))
+                .write_from(self.sky_box_id, cube(x.cast(), self.sky_box_color))
                 .expect("Failed to update sky box");
         }
 
@@ -122,8 +121,8 @@ impl Player {
 
     fn set_targeted_cube(&mut self, sets: &mut sculptor::Sets, position: Option<vec3i>) {
         match position {
-            None => sets.write(self.targeted_cube_wireframe_id, []),
-            Some(x) => sets.write_raw(self.targeted_cube_wireframe_id, cube(x.cast(), Rgba::BLACK)),
+            None => sets.write(self.targeted_cube_wireframe_id, &[]),
+            Some(x) => sets.write_from(self.targeted_cube_wireframe_id, cube(x.cast(), Rgba::BLACK)),
         }
         .expect("Failed to clear targeted cube wireframe instances");
     }
@@ -177,18 +176,14 @@ impl Player {
             handle.input.push_mouse_movement(movement);
         }
     }
+
+    pub fn position(&self) -> vec3d {
+        self.camera.video.position
+    }
 }
 
-fn cube(position: vec3d, color: Rgba<f32>) -> impl IntoIterator<Item = Instance3dPayload> {
+fn cube(position: vec3d, color: Rgba<f32>) -> impl IntoIterator<Item = Instance3d> {
     Face::values()
         .map(Face::to_rotation)
-        .map(move |rotation| {
-            Instance3d {
-                position,
-                rotation,
-                color,
-                light: 1,
-            }
-            .payload()
-        })
+        .map(move |rotation| Instance3d::new(position, rotation, Vec3::splat(1.0), color, 1))
 }

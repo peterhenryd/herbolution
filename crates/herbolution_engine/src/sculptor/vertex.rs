@@ -1,6 +1,7 @@
 use bytemuck::{Pod, Zeroable};
-use gpu::{vertex_attr_array, Payload, Vertex, VertexBufferLayout, VertexStepMode};
+use gpu::{vertex_attr_array, Vertex, VertexBufferLayout, VertexStepMode};
 use math::color::Rgba;
+use math::matrix::Mat3;
 use math::rotation::Quat;
 use math::vector::{vec2f, vec3d, vec3f, vec3i, vec4f, Vec3};
 use serde::{Deserialize, Serialize};
@@ -35,37 +36,40 @@ impl Vertex for Vertex3d {
     }
 }
 
-impl Payload for Vertex3d {
-    type Source = Vertex3d;
-
-    fn from_source(source: &Self::Source) -> Self {
-        *source
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
-pub struct Instance3d {
-    pub position: vec3d,
-    pub rotation: Quat,
-    pub color: Rgba<f32>,
-    pub light: u32,
-}
-
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Pod, Zeroable)]
-pub struct Instance3dPayload {
-    pub model_0: vec4f,
-    pub model_1: vec4f,
-    pub model_2: vec4f,
-    pub position_int: vec3i,
-    pub position_fract: vec3f,
-    pub color: Rgba<f32>,
-    pub light: u32,
+pub struct Instance3d {
+    model_0: vec4f,
+    model_1: vec4f,
+    model_2: vec4f,
+    position_int: vec3i,
+    position_fract: vec3f,
+    color: Rgba<f32>,
+    light: u32,
+}
+
+impl Instance3d {
+    pub fn new(position: vec3d, rotation: Quat, scale: vec3f, color: Rgba<f32>, light: u32) -> Self {
+        let rotation_matrix = rotation.to_axes();
+        let model_matrix = rotation_matrix * Mat3::from(scale);
+
+        let (integral, fractional) = position.split_int_fract();
+
+        Instance3d {
+            model_0: model_matrix.x.extend(0.0),
+            model_1: model_matrix.y.extend(0.0),
+            model_2: model_matrix.z.extend(0.0),
+            position_int: integral,
+            position_fract: fractional,
+            color,
+            light,
+        }
+    }
 }
 
 impl Instance3d {
     pub const LAYOUT: VertexBufferLayout<'static> = VertexBufferLayout {
-        array_stride: size_of::<Instance3dPayload>() as u64,
+        array_stride: size_of::<Instance3d>() as u64,
         step_mode: VertexStepMode::Instance,
         attributes: &vertex_attr_array![
             3 => Float32x4,
@@ -77,38 +81,10 @@ impl Instance3d {
             9 => Uint32,
         ],
     };
-
-    pub fn payload(&self) -> Instance3dPayload {
-        let rotation_matrix = self.rotation.to_matrix();
-        let (integral, fractional) = self.position.split_int_fract();
-
-        Instance3dPayload {
-            model_0: rotation_matrix.x.extend(0.0),
-            model_1: rotation_matrix.y.extend(0.0),
-            model_2: rotation_matrix.z.extend(0.0),
-            position_int: integral,
-            position_fract: fractional,
-            color: self.color,
-            light: self.light,
-        }
-    }
 }
 
 impl Default for Instance3d {
     fn default() -> Self {
-        Self {
-            position: Vec3::ZERO,
-            rotation: Quat::IDENTITY,
-            color: Rgba::TRANSPARENT,
-            light: 0,
-        }
-    }
-}
-
-impl Payload for Instance3dPayload {
-    type Source = Instance3d;
-
-    fn from_source(source: &Self::Source) -> Self {
-        source.payload()
+        Instance3d::new(vec3d::ZERO, Quat::IDENTITY, Vec3::ONE, Rgba::TRANSPARENT, 1)
     }
 }

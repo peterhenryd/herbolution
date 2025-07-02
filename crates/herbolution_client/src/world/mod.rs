@@ -98,6 +98,7 @@ impl World {
             chunk.update(&ctx.engine.video.handle);
         }
 
-        self.particles.update(handle, ctx);
+        self.particles
+            .update(handle, ctx, self.player.position());
     }
 }

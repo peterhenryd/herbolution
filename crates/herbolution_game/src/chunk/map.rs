@@ -178,7 +178,7 @@ impl ChunkMap {
             .unwrap_or(false)
     }
 
-    pub fn cast_ray(&mut self, mut origin: vec3d, direction: vec3f, range: f32) -> Option<(vec3i, Face)> {
+    pub fn cast_ray(&mut self, mut origin: vec3d, direction: vec3f, range: f32) -> Option<CubeHit> {
         origin += 0.5;
         let end = origin + direction.cast() * range as f64;
 
@@ -189,7 +189,10 @@ impl ChunkMap {
             let normal = Vec3::from(prev) - position;
 
             if self.has_collider(position) {
-                return Some((position, Face::from_normal(normal).unwrap()));
+                return Some(CubeHit {
+                    position: position.cast(),
+                    face: Face::from_normal(normal).unwrap(),
+                });
             }
         }
 
@@ -261,4 +264,10 @@ impl<'a> MaterialRef<'a> for (&'a str, &'a str) {
     fn to_key(self) -> Option<GroupKey<'a>> {
         Some(self.into())
     }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct CubeHit {
+    pub position: vec3i,
+    pub face: Face,
 }

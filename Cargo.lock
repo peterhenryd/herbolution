@@ -1125,6 +1125,7 @@ version = "0.1.0"
 dependencies = [
  "crossbeam",
  "derive_more",
+ "fastrand",
  "generational-arena",
  "hashbrown",
  "herbolution_lib",
@@ -1157,13 +1158,10 @@ dependencies = [
 name = "herbolution_lib"
 version = "0.1.0"
 dependencies = [
- "bitflags 2.9.1",
- "bytemuck",
  "crossbeam",
  "hashbrown",
  "herbolution_math",
  "include_dir",
- "lazy_static",
  "serde",
  "thiserror 2.0.12",
  "toml",

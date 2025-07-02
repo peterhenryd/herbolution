@@ -9,3 +9,5 @@ pub mod point;
 pub mod ptr;
 pub mod save;
 pub mod util;
+
+// TODO: consolidate commonly used dependencies here to allow for easier changes and swapping

@@ -11,6 +11,7 @@ herbolution_math = { path = "../herbolution_math" }
 # External dependencies
 crossbeam.workspace = true
 derive_more = { workspace = true, features = ["deref", "deref_mut", "from"] }
+fastrand.workspace = true
 generational-arena.workspace = true
 hashbrown.workspace = true
 line_drawing.workspace = true

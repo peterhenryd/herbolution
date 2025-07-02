@@ -1,11 +1,10 @@
+use bytemuck::NoUninit;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::LazyLock;
-
 use wgpu::BufferUsages;
 
 use crate::buffer::Buffer;
 use crate::handle::Handle;
-use crate::payload::Payload;
 
 static ID_COUNTER: LazyLock<AtomicU32> = LazyLock::new(|| AtomicU32::new(0));
 
@@ -16,7 +15,7 @@ pub struct Sets<I> {
     id: u32,
 }
 
-impl<I: Payload> Sets<I> {
+impl<I> Sets<I> {
     pub fn new(gpu: &Handle) -> Self {
         Self {
             handle: Handle::clone(gpu),
@@ -33,36 +32,29 @@ impl<I: Payload> Sets<I> {
         SetId { parent_id: self.id, index }
     }
 
-    pub fn insert<'a>(&mut self, data: impl IntoIterator<Item = &'a I::Source>) -> SetId {
-        let instances = data
-            .into_iter()
-            .map(I::from_source)
-            .collect::<Vec<_>>();
-
-        let buffer = Buffer::create(&self.handle, &instances, BufferUsages::VERTEX | BufferUsages::COPY_DST);
+    pub fn insert<'a>(&mut self, instances: &[I]) -> SetId
+    where
+        I: NoUninit,
+    {
+        let buffer = Buffer::create(&self.handle, instances, BufferUsages::VERTEX | BufferUsages::COPY_DST);
         let index = self.buffers.len();
         self.buffers.push(buffer);
 
         SetId { parent_id: self.id, index }
     }
 
-    pub fn insert_raw<'a>(&mut self, data: impl IntoIterator<Item = I>) -> SetId {
-        let instances = data.into_iter().collect::<Vec<_>>();
-
-        let buffer = Buffer::create(&self.handle, &instances, BufferUsages::VERTEX | BufferUsages::COPY_DST);
-        let index = self.buffers.len();
-        self.buffers.push(buffer);
-
-        SetId { parent_id: self.id, index }
+    pub fn insert_from(&mut self, iter: impl IntoIterator<Item = I>) -> SetId
+    where
+        I: NoUninit,
+    {
+        self.insert(&iter.into_iter().collect::<Vec<_>>())
     }
 
-    pub fn write<'a>(&mut self, id: SetId, data: impl IntoIterator<Item = &'a I::Source>) -> Result<(), ()> {
+    pub fn write<'a>(&mut self, id: SetId, instances: &[I]) -> Result<(), ()>
+    where
+        I: NoUninit,
+    {
         debug_assert!(id.parent_id == self.id, "InstanceSetId does not belong to this InstanceSets instance");
-
-        let instances = data
-            .into_iter()
-            .map(I::from_source)
-            .collect::<Vec<_>>();
 
         self.buffers
             .get_mut(id.index)
@@ -70,14 +62,11 @@ impl<I: Payload> Sets<I> {
             .write(&self.handle, 0, &instances)
     }
 
-    pub fn write_raw<'a>(&mut self, id: SetId, data: impl IntoIterator<Item = I>) -> Result<(), ()> {
-        debug_assert!(id.parent_id == self.id, "InstanceSetId does not belong to this InstanceSets instance");
-
-        let instances = data.into_iter().collect::<Vec<_>>();
-        self.buffers
-            .get_mut(id.index)
-            .unwrap()
-            .write(&self.handle, 0, &instances)
+    pub fn write_from<'a>(&mut self, id: SetId, iter: impl IntoIterator<Item = I>) -> Result<(), ()>
+    where
+        I: NoUninit,
+    {
+        self.write(id, &iter.into_iter().collect::<Vec<_>>())
     }
 
     pub fn get(&self, id: SetId) -> &Buffer<I> {

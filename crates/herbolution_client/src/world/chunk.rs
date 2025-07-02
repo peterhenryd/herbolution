@@ -3,7 +3,7 @@ use std::ops::Mul;
 
 use crate::player::PlayerCamera;
 use crossbeam::channel::{bounded, Receiver, Sender};
-use engine::sculptor::{Chisel, GrowBuffer3d, Instance3d, Instance3dPayload};
+use engine::sculptor::{Chisel, GrowBuffer3d, Instance3d};
 use fastrand::Rng;
 use game::chunk::cube::Cube;
 use game::chunk::handle::{ChunkCube, GameChunkHandle};
@@ -11,8 +11,7 @@ use game::chunk::material::{Palette, PaletteCube};
 use herbolution_math::spatial::face::PerFace;
 use lib::chunk;
 use lib::point::ChunkPt;
-use lib::util::default;
-use math::vector::vec3u5;
+use math::vector::{vec3u5, Vec3};
 use wgpu::BufferUsages;
 
 /// The render-side representation of a chunk within the world.
@@ -39,7 +38,7 @@ pub struct Chunk {
 #[derive(Debug)]
 struct MovableContext {
     position: ChunkPt,
-    cached_quad_instances: Vec<Instance3dPayload>,
+    cached_quad_instances: Vec<Instance3d>,
     data: Box<[PaletteCube; chunk::VOLUME]>,
     mesh: GrowBuffer3d,
     palette: Palette,
@@ -161,15 +160,15 @@ impl Chunk {
                             for face in cube.mesh.faces() {
                                 let color = material.get_color(perms[face]);
 
-                                context.cached_quad_instances.push(
-                                    Instance3d {
-                                        position: chunk_position + position.try_cast().unwrap(),
-                                        rotation: face.to_rotation(),
+                                context
+                                    .cached_quad_instances
+                                    .push(Instance3d::new(
+                                        chunk_position + position.try_cast().unwrap(),
+                                        face.to_rotation(),
+                                        Vec3::ONE,
                                         color,
-                                        ..default()
-                                    }
-                                    .payload(),
-                                );
+                                        0,
+                                    ));
                             }
                         }
                     }

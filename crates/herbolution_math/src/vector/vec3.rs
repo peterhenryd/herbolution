@@ -43,6 +43,39 @@ impl<T> Vec3<T> {
     pub fn xy(self) -> Vec2<T> {
         Vec2 { x: self.x, y: self.y }
     }
+
+    pub fn xxx(self) -> Self
+    where
+        T: Copy,
+    {
+        Self {
+            x: self.x,
+            y: self.x,
+            z: self.x,
+        }
+    }
+
+    pub fn yyy(self) -> Self
+    where
+        T: Copy,
+    {
+        Self {
+            x: self.y,
+            y: self.y,
+            z: self.y,
+        }
+    }
+
+    pub fn zzz(self) -> Self
+    where
+        T: Copy,
+    {
+        Self {
+            x: self.z,
+            y: self.z,
+            z: self.z,
+        }
+    }
 }
 
 impl vec3d {

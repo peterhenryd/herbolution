@@ -4,7 +4,7 @@ use gpu::{
     ShaderModule, ShaderSources, ShaderStage,
 };
 use math::proj::Perspective;
-pub use vertex::{Instance3d, Instance3dPayload, Vertex3d};
+pub use vertex::{Instance3d, Vertex3d};
 pub use world::{World, WorldPayload};
 
 pub mod chisel;
@@ -14,9 +14,9 @@ pub mod world;
 pub type Mesh = gpu::Mesh<Vertex3d, u16>;
 pub type Meshes = gpu::Meshes<Vertex3d, u16>;
 
-pub type GrowBuffer3d = gpu::GrowBuffer<Instance3dPayload>;
-pub type Buffer3d = Buffer<Instance3dPayload>;
-pub type Sets = gpu::Sets<Instance3dPayload>;
+pub type GrowBuffer3d = gpu::GrowBuffer<Instance3d>;
+pub type Buffer3d = Buffer<Instance3d>;
+pub type Sets = gpu::Sets<Instance3d>;
 
 #[derive(Debug)]
 pub struct Sculptor {

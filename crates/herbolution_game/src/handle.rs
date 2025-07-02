@@ -4,11 +4,13 @@ use crossbeam::channel::{bounded, unbounded, Receiver, Sender};
 use lib::motile::Motile;
 use lib::point::ChunkPt;
 use math::color::Rgba;
+use math::rotation::Quat;
 use math::vector::vec3d;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tracing::warn;
+
 // Game-side handles
 
 #[derive(Debug)]
@@ -22,6 +24,7 @@ pub struct GameHandle {
 #[derive(Debug)]
 pub struct Particle {
     pub position: vec3d,
+    pub rotation: Option<Quat>,
     pub motile: Motile,
     pub lifetime: Duration,
     pub color: Rgba<f32>,

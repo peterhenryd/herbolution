@@ -11,7 +11,6 @@ use wgpu::{BufferUsages, IndexFormat};
 
 use crate::buffer::Buffer;
 use crate::handle::Handle;
-use crate::payload::Payload;
 
 #[derive(Debug)]
 pub struct Mesh<V, I> {
@@ -108,22 +107,12 @@ impl<V, I> Meshes<V, I> {
         }
     }
 
-    pub fn create_and_insert(&mut self, vertices: &[V::Source], indices: &[I::Source]) -> MeshId
+    pub fn create_and_insert(&mut self, vertices: &[V], indices: &[I]) -> MeshId
     where
-        V: Payload,
-        I: Payload,
+        V: NoUninit,
+        I: NoUninit,
     {
-        let vertices = vertices
-            .iter()
-            .map(V::from_source)
-            .collect::<Vec<_>>();
-        let indices = indices
-            .iter()
-            .map(I::from_source)
-            .collect::<Vec<_>>();
-        let mesh = Mesh::create(&self.handle, &vertices, &indices);
-
-        self.insert(mesh)
+        self.insert(Mesh::create(&self.handle, &vertices, &indices))
     }
 
     pub fn insert(&mut self, mesh: Mesh<V, I>) -> MeshId {

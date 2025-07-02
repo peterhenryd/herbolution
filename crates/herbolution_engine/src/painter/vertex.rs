@@ -1,5 +1,5 @@
 use bytemuck::{Pod, Zeroable};
-use gpu::{vertex_attr_array, AtlasTextureCoord, Payload, Vertex, VertexBufferLayout, VertexStepMode};
+use gpu::{vertex_attr_array, AtlasTextureCoord, Vertex, VertexBufferLayout, VertexStepMode};
 use math::color::Rgba;
 use math::matrix::Mat3;
 use math::rotation::Quat;
@@ -35,14 +35,6 @@ impl Vertex for Vertex2d {
     }
 }
 
-impl Payload for Vertex2d {
-    type Source = Vertex2d;
-
-    fn from_source(source: &Self::Source) -> Self {
-        *source
-    }
-}
-
 #[derive(Debug, Copy, Clone)]
 pub struct Instance2d {
     pub position: vec2f,
@@ -67,7 +59,7 @@ impl Instance2d {
     };
 
     pub fn payload(&self) -> Instance2dPayload {
-        let Mat3 { x: rx, y: ry, .. } = self.rotation.to_matrix();
+        let Mat3 { x: rx, y: ry, .. } = self.rotation.to_axes();
 
         Instance2dPayload {
             model_0: vec2f::new(rx.x * self.scale.x, ry.x * self.scale.y),
@@ -89,12 +81,4 @@ pub struct Instance2dPayload {
     color: Rgba<f32>,
     uv_t: vec2f,
     uv_s: vec2f,
-}
-
-impl Payload for Instance2dPayload {
-    type Source = Instance2d;
-
-    fn from_source(source: &Self::Source) -> Self {
-        source.payload()
-    }
 }

@@ -30,6 +30,20 @@ macro_rules! vector {
             }
 
             #[inline]
+            pub fn by_index(mut f: impl FnMut(usize) -> T) -> Self {
+                let mut n = 0;
+                let vec = $name {
+                    $($field: {
+                        let value = f(n);
+                        n += 1;
+                        value
+                    }),+
+                };
+                let _ = n;
+                vec
+            }
+
+            #[inline]
             pub fn zero() -> Self
             where
                 $t: num::traits::Zero

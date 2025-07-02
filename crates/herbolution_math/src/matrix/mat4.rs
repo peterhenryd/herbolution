@@ -1,11 +1,11 @@
 use std::ops::{Add, Mul};
 
+use crate::matrix::Mat3;
+use crate::vector::{Vec3, Vec4};
 use bytemuck::{Pod, Zeroable};
 use num::traits::{ConstOne, ConstZero};
 use num::Float;
 use serde::{Deserialize, Serialize};
-
-use crate::vector::{Vec3, Vec4};
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
@@ -25,16 +25,10 @@ impl<T> Mat4<T> {
     where
         T: Float + ConstZero + ConstOne,
     {
-        let f = -dir.normalize();
-        let s = f.cross(up).normalize();
-        let u = s.cross(f);
+        let (dir, fsu) = Mat3::look_to_and_fsu(dir, up);
+        let translation = Vec4::new(-eye.dot(fsu.y), -eye.dot(fsu.z), eye.dot(fsu.x), T::ONE);
 
-        Mat4::new(
-            Vec4::new(s.x, u.x, -f.x, T::ZERO),
-            Vec4::new(s.y, u.y, -f.y, T::ZERO),
-            Vec4::new(s.z, u.z, -f.z, T::ZERO),
-            Vec4::new(-eye.dot(s), -eye.dot(u), eye.dot(f), T::ONE),
-        )
+        dir.extend(Vec3::ZERO, translation)
     }
 }
 

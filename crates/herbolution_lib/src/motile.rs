@@ -2,34 +2,29 @@ use std::time::Duration;
 
 use math::vector::{vec3d, Vec3};
 
+/// Simulates the motion of a body in 3D space over steps of time.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Motile {
-    velocity: vec3d,
-    gravity: Gravity,
-    dir: vec3d,
-    damp: f64,
-    drive: f64,
+    pub velocity: vec3d,
+    pub gravity: Gravity,
+    pub dir: vec3d,
+    pub damp: f64,
+    pub drive: f64,
+    pub jump: f64,
 }
 
 impl Motile {
-    pub fn new(velocity: vec3d, gravity: Gravity, dir: vec3d, damp: f64, drive: f64) -> Self {
-        Self {
-            velocity,
-            gravity,
-            dir,
-            damp,
-            drive,
-        }
-    }
-
     pub fn simulate(&mut self, position: &mut vec3d, dt: Duration) {
-        let gravity: Vec3<_> = self.gravity.into();
+        let damped_velocity = -self.velocity * self.damp;
 
-        let damping_force = -self.velocity * self.damp;
-        let driving_force = self.dir * self.drive;
+        let user_force = self.dir * self.drive;
+        let up_force = Vec3::new(0.0, self.jump, 0.0);
+        let down_force: Vec3<_> = self.gravity.into();
 
-        let acceleration = gravity + damping_force + driving_force;
+        let acceleration = damped_velocity + user_force + up_force + down_force;
 
+        self.jump += -self.jump * self.damp;
+        self.drive += -self.drive * self.damp;
         self.velocity += acceleration * dt.as_secs_f64();
 
         *position += self.velocity * dt.as_secs_f64();
@@ -43,7 +38,8 @@ impl Default for Motile {
             gravity: Gravity(9.81),
             dir: Vec3::ZERO,
             damp: 0.1,
-            drive: 0.0,
+            drive: 0.1,
+            jump: 0.0,
         }
     }
 }

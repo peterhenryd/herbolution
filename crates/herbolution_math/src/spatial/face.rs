@@ -63,12 +63,12 @@ impl Face {
 
     pub fn to_rotation(self) -> Quat {
         match self {
-            Face::East => Quat::from_euler(Euler::new(0.0, FRAC_PI_2, 0.0)),
-            Face::West => Quat::from_euler(Euler::new(0.0, -FRAC_PI_2, 0.0)),
-            Face::Up => Quat::from_euler(Euler::new(-FRAC_PI_2, 0.0, 0.0)),
-            Face::Down => Quat::from_euler(Euler::new(FRAC_PI_2, 0.0, 0.0)),
-            Face::North => Quat::from_euler(Euler::new(0.0, 0.0, 0.0)),
-            Face::South => Quat::from_euler(Euler::new(0.0, PI, 0.0)),
+            Face::East => Euler::new(0.0, FRAC_PI_2, 0.0).into(),
+            Face::West => Euler::new(0.0, -FRAC_PI_2, 0.0).into(),
+            Face::Up => Euler::new(-FRAC_PI_2, 0.0, 0.0).into(),
+            Face::Down => Euler::new(FRAC_PI_2, 0.0, 0.0).into(),
+            Face::North => Euler::new(0.0, 0.0, 0.0).into(),
+            Face::South => Euler::new(0.0, PI, 0.0).into(),
         }
     }
 

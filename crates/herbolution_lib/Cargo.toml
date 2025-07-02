@@ -8,11 +8,8 @@ edition = "2024"
 herbolution_math = { path = "../herbolution_math" }
 
 # External dependencies
-bitflags.workspace = true
-bytemuck = { workspace = true, features = ["derive"] }
 crossbeam.workspace = true
 hashbrown.workspace = true
-lazy_static.workspace = true
 serde = { workspace = true, features = ["derive"] }
 thiserror.workspace = true
 toml.workspace = true

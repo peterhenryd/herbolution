@@ -1,6 +1,6 @@
 use gpu::{Buffer, Frame, MeshId, SetId};
 
-use crate::sculptor::{Instance3dPayload, RenderType, Sculptor};
+use crate::sculptor::{Instance3d, RenderType, Sculptor};
 
 pub struct Chisel<'h, 'f, 'a> {
     pub frame: &'f mut Frame<'h>,
@@ -26,7 +26,7 @@ impl<'h, 'f, 'a> Chisel<'h, 'f, 'a> {
         self.mesh_index_count = Some(mesh.load_into_render_pass(&mut self.frame.pass()));
     }
 
-    pub fn render_each(&mut self, buffer: impl AsRef<Buffer<Instance3dPayload>>) {
+    pub fn render_each(&mut self, buffer: impl AsRef<Buffer<Instance3d>>) {
         let Some(index_count) = self.mesh_index_count else {
             panic!("2D mesh must be loaded before drawing");
         };
