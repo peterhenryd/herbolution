@@ -135,11 +135,54 @@ macro_rules! vector {
                 [$(self.$field),+]
             }
 
+            #[inline]
             pub fn as_array(&self) -> &[$t; vector!(@count $($field)+)]
             where
                 T: bytemuck::Pod,
             {
                 bytemuck::cast_ref(self)
+            }
+
+            #[inline]
+            pub fn as_slice(&self) -> &[$t]
+            where
+                $t: bytemuck::Pod,
+            {
+                self.as_array()
+            }
+
+            #[inline]
+            pub fn smallest(&self) -> $t
+            where
+                $t: PartialOrd + bytemuck::Pod,
+            {
+                let slice = self.as_slice();
+                let mut smallest = slice[0];
+
+                for &item in &slice[1..] {
+                    if item < smallest {
+                        smallest = item;
+                    }
+                }
+
+                smallest
+            }
+
+            #[inline]
+            pub fn largest(&self) -> $t
+            where
+                $t: PartialOrd + bytemuck::Pod,
+            {
+                let slice = self.as_slice();
+                let mut largest = slice[0];
+
+                for &item in &slice[1..] {
+                    if item > largest {
+                        largest = item;
+                    }
+                }
+
+                largest
             }
 
             #[inline]
@@ -363,6 +406,19 @@ macro_rules! vector {
                 Self {
                     $($field),+
                 }
+            }
+        }
+
+
+        impl<$t> Into<($($ft),+)> for $name<$t> {
+            fn into(self) -> ($($ft),+) {
+                ($(self.$field),+)
+            }
+        }
+
+        impl<$t> Into<[$t; vector!(@count $($field)+)]> for $name<$t> {
+            fn into(self) -> [$t; vector!(@count $($field)+)] {
+                [$(self.$field),+]
             }
         }
 

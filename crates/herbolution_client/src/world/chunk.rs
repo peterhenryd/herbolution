@@ -3,7 +3,8 @@ use std::ops::Mul;
 
 use crate::player::PlayerCamera;
 use crossbeam::channel::{bounded, Receiver, Sender};
-use engine::sculptor::{Chisel, GrowBuffer3d, Instance3d};
+use engine::sculptor::chisel::Chisel;
+use engine::sculptor::{GrowBuffer3d, Instance3d};
 use fastrand::Rng;
 use game::chunk::cube::Cube;
 use game::chunk::handle::{ChunkCube, GameChunkHandle};

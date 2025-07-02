@@ -19,6 +19,8 @@ pub struct Material {
     pub has_collider: bool,
     pub cullable_faces: Faces,
     pub texture: Texture,
+    // time to break by hand in seconds
+    pub toughness: f32,
 }
 
 impl Material {
@@ -30,6 +32,7 @@ impl Material {
             texture: Texture::Colors {
                 vec: vec![Rgba::new(0.5, 0.5, 0.5, 1.0), Rgba::new(0.6, 0.6, 0.6, 1.0), Rgba::new(0.7, 0.7, 0.7, 1.0)],
             },
+            toughness: 10.0,
         }
     }
 
@@ -41,6 +44,7 @@ impl Material {
             texture: Texture::Colors {
                 vec: vec![Rgba::new(0.4, 0.3, 0.2, 1.0), Rgba::new(0.5, 0.4, 0.3, 1.0), Rgba::new(0.6, 0.5, 0.4, 1.0)],
             },
+            toughness: 0.95,
         }
     }
 
@@ -52,6 +56,7 @@ impl Material {
             texture: Texture::Colors {
                 vec: vec![Rgba::new(0.1, 0.8, 0.1, 1.0), Rgba::new(0.2, 0.9, 0.2, 1.0), Rgba::new(0.3, 1.0, 0.3, 1.0)],
             },
+            toughness: 1.05,
         }
     }
 
@@ -86,6 +91,8 @@ impl Material {
                 }
             }
         }
+
+        buf.extend(self.toughness.to_le_bytes());
     }
 
     pub fn decode(buf: &[u8]) -> Option<Self> {
@@ -110,10 +117,10 @@ impl Material {
             0 => {
                 let mut vec = Vec::with_capacity(u16::from_le_bytes(bytes.next_chunk::<2>().unwrap()) as usize);
                 vec.fill_with(|| Rgba {
-                    r: f32::from_le_bytes(bytes.next_chunk::<4>().unwrap()),
-                    g: f32::from_le_bytes(bytes.next_chunk::<4>().unwrap()),
-                    b: f32::from_le_bytes(bytes.next_chunk::<4>().unwrap()),
-                    a: f32::from_le_bytes(bytes.next_chunk::<4>().unwrap()),
+                    r: f32::from_le_bytes(bytes.next_chunk().unwrap()),
+                    g: f32::from_le_bytes(bytes.next_chunk().unwrap()),
+                    b: f32::from_le_bytes(bytes.next_chunk().unwrap()),
+                    a: f32::from_le_bytes(bytes.next_chunk().unwrap()),
                 });
 
                 texture = Texture::Colors { vec };
@@ -121,11 +128,14 @@ impl Material {
             _ => return None,
         }
 
+        let toughness = f32::from_le_bytes(bytes.next_chunk().unwrap());
+
         Some(Self {
             group_key,
             has_collider,
             cullable_faces,
             texture,
+            toughness,
         })
     }
 }

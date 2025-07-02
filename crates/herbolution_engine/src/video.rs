@@ -1,10 +1,12 @@
 use gpu::{FrameOptions, SampleCount, SurfaceTarget};
 use math::color::Rgba;
 use math::size::size2u;
+use std::path::PathBuf;
 
 use crate::painter::brush::Brush;
 use crate::painter::Painter;
-use crate::sculptor::{Chisel, Sculptor};
+use crate::sculptor::chisel::Chisel;
+use crate::sculptor::Sculptor;
 use crate::{painter, sculptor};
 
 pub struct Video<'w> {
@@ -21,12 +23,13 @@ pub struct Options {
     pub painter: painter::Options,
     pub sculptor: sculptor::Options,
     pub sample_count: SampleCount,
+    pub asset_path: PathBuf,
 }
 
 impl<'w> Video<'w> {
     pub fn create(target: impl Into<SurfaceTarget<'w>>, options: Options) -> Self {
         let (handle, surface) = gpu::create(target, options.resolution, options.sample_count);
-        let mut painter = Painter::create(&handle, options.sample_count);
+        let mut painter = Painter::create(&handle, options.sample_count, &options.asset_path);
         painter.set_resolution(&handle, options.resolution);
         let sculptor = Sculptor::create(&handle, options.sample_count);
 

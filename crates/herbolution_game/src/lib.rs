@@ -9,7 +9,7 @@ extern crate herbolution_math as math;
 use std::thread;
 
 use hashbrown::HashMap;
-use herbolution_lib::util::time::{DeltaTime, TickTime};
+use herbolution_lib::util::time::DeltaTime;
 use lib::save::Save;
 use math::spatial::aabb::Aabb;
 use math::vector::Vec3;
@@ -32,7 +32,6 @@ pub mod world;
 pub struct Game {
     world_map: HashMap<String, World>,
     delta_time: DeltaTime,
-    tick_time: TickTime,
     handle: ClientHandle,
     save: Save,
 }
@@ -79,7 +78,7 @@ impl Game {
                         eye_offset: Vec3::new(0., 1.0, 0.),
                     },
                     EntityAbilities {
-                        is_affected_by_gravity: true,
+                        is_affected_by_gravity: false,
                         speed: 1.0,
                     },
                 ),
@@ -100,7 +99,6 @@ impl Game {
         Self {
             world_map,
             delta_time: DeltaTime::new(),
-            tick_time: TickTime::new(60),
             handle,
             save,
         }
@@ -108,13 +106,9 @@ impl Game {
 
     fn update(&mut self) {
         let dt = self.delta_time.next();
-        self.tick_time.increment(dt);
 
-        while self.tick_time.is_ready() {
-            self.tick_time.reduce();
-            for world in self.world_map.values_mut() {
-                world.update(&self.handle);
-            }
+        for world in self.world_map.values_mut() {
+            world.update(&self.handle, dt);
         }
     }
 }

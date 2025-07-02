@@ -1,6 +1,5 @@
-pub mod handle;
-
 use crate::chunk::map::CubeHit;
+use crate::chunk::material::Material;
 use crate::entity::behavior::{EntityBehavior, EntityBehaviorType, EntityContext};
 use crate::entity::{ActionState, ActionTarget};
 use crate::handle::Particle;
@@ -9,14 +8,30 @@ use herbolution_math::spatial::aabb::Aabb;
 use lib::motile::Motile;
 use lib::util::default;
 use math::rotation::Euler;
-use math::vector::{vec3i, Vec2, Vec3};
+use math::vector::{Vec2, Vec3};
 use std::any::Any;
+use std::mem::take;
+use std::sync::Arc;
 use std::time::Duration;
+
+pub mod handle;
 
 #[derive(Debug)]
 pub struct Player {
     action_state: ActionState,
     handle: ClientPlayerHandle,
+    prev_target: Option<ActionTarget>,
+    health: f32,
+    max_health: f32,
+    regeneration: f32,
+    dig_speed: f32,
+    dig_state: Option<DigState>,
+}
+
+#[derive(Debug)]
+struct DigState {
+    remaining_time: f32,
+    material: Arc<Material>,
 }
 
 impl Player {
@@ -24,39 +39,89 @@ impl Player {
         Self {
             action_state: ActionState::default(),
             handle,
+            prev_target: None,
+            health: 100.0,
+            max_health: 100.0,
+            regeneration: 1.0,
+            dig_speed: 1.0,
+            dig_state: None,
         }
     }
 
-    fn handle_actions(&mut self, ctx: &mut EntityContext) {
-        let origin = ctx.entity.body().eye_position();
-        let direction = ctx.entity.body().rotation().into_view_center();
+    fn handle_interaction(&mut self, ctx: &mut EntityContext) {
+        let ray_origin = ctx.entity.body().eye_position();
+        let ray_dir = ctx.entity.body().rotation().into_view_center();
+        let cube_hit = ctx.chunk_map.cast_ray(ray_origin, ray_dir, 100.0);
 
-        let Some(cube_hit) = ctx.chunk_map.cast_ray(origin, direction, 5.0) else {
-            self.handle.transform.set_target(None);
-            return;
-        };
-
-        self.handle
-            .transform
-            .set_target(ActionTarget::Cube(cube_hit.position));
-
-        if self.action_state.is_left_hand_active {
-            self.handle_left_hand(cube_hit.position, ctx);
-            self.action_state.is_left_hand_active = false;
+        let current_target = cube_hit
+            .as_ref()
+            .map(|hit| ActionTarget::Cube(hit.position));
+        if current_target != self.prev_target {
+            self.dig_state = None;
+            self.prev_target = current_target;
+            self.handle.transform.set_target(current_target);
         }
 
-        if self.action_state.is_right_hand_active {
-            self.handle_right_hand(cube_hit, ctx);
-            self.action_state.is_right_hand_active = false;
+        if let Some(hit) = cube_hit {
+            if self.action_state.is_left_hand_active {
+                self.process_digging(ctx, hit);
+            } else {
+                self.dig_state = None;
+            }
+
+            if self.action_state.is_right_hand_active {
+                self.handle_right_hand(hit, ctx);
+            }
         }
     }
 
-    fn handle_left_hand(&mut self, position: vec3i, ctx: &mut EntityContext) {
-        let material = ctx.chunk_map.get_material(position).unwrap();
-        ctx.chunk_map.set_cube(position, None);
+    fn process_digging(&mut self, ctx: &mut EntityContext, cube_hit: CubeHit) {
+        if self.dig_state.is_none() {
+            let material = ctx
+                .chunk_map
+                .get_material(cube_hit.position)
+                .unwrap();
+            self.dig_state = Some(DigState {
+                remaining_time: material.toughness / self.dig_speed,
+                material,
+            })
+        }
 
+        if let Some(state) = &self.dig_state {
+            if state.remaining_time <= 0.0 {
+            } else if fastrand::f32() < 0.001 {
+                let _ = ctx.handle.particle_tx.try_send(Particle {
+                    position: cube_hit.contact_point - Vec3::splat(0.5) + Vec3::by_index(|_| fastrand::f64() - 0.5) / 10.0,
+                    rotation: None,
+                    motile: Motile {
+                        dir: Vec3::by_index(|_| fastrand::f64() - 0.5).normalize(),
+                        drive: 4.0,
+                        jump: 0.2,
+                        ..default()
+                    },
+                    lifetime: Duration::SECOND,
+                    color: state.material.get_color(fastrand::f32()),
+                });
+            }
+        }
+
+        let mut finished = false;
+        if let Some(state) = &mut self.dig_state {
+            state.remaining_time -= ctx.dt.as_secs_f32();
+            finished = state.remaining_time <= 0.0;
+        }
+
+        if finished {
+            let material = take(&mut self.dig_state).unwrap().material;
+
+            self.spawn_dig_particles(ctx, cube_hit.position, &material);
+            ctx.chunk_map.set_cube(cube_hit.position, None);
+        }
+    }
+
+    fn spawn_dig_particles(&self, ctx: &mut EntityContext, cube_pos: Vec3<i32>, material: &Material) {
         for _ in 0..32 {
-            let center = position.cast::<f64>();
+            let center = cube_pos.cast::<f64>();
 
             let mut offset = Vec3::by_index(|_| fastrand::f64());
             offset[fastrand::usize(0..=2)] = fastrand::f64().round();
@@ -99,10 +164,13 @@ impl Player {
 
 impl EntityBehavior for Player {
     fn update(&mut self, ctx: &mut EntityContext) {
+        self.health += self.regeneration * ctx.dt.as_secs_f32();
+        self.health = self.health.min(self.max_health);
+
         let body = ctx.entity.body_mut();
 
         if let Some(command) = self.handle.input.next_movement() {
-            body.apply_motion_command(command);
+            body.motion = command.cast();
         }
 
         while let Some(Vec2 { x: dx, y: dy }) = self.handle.input.next_mouse_movement() {
@@ -124,7 +192,7 @@ impl EntityBehavior for Player {
             self.action_state = action_state;
         }
 
-        self.handle_actions(ctx);
+        self.handle_interaction(ctx);
     }
 
     fn select_from(behavior: &mut EntityBehaviorType) -> Option<&mut Self>

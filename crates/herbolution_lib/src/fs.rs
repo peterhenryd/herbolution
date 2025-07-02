@@ -45,6 +45,10 @@ impl Fs {
     pub fn create_or_open_save(&self, name: impl AsRef<str>, attributes: SaveAttributes) -> Result<Save, SaveError> {
         Save::create_or_open(self.saves.join(name.as_ref()), attributes)
     }
+
+    pub fn path(&self) -> &Path {
+        &self.root
+    }
 }
 
 fn root_dir() -> PathBuf {

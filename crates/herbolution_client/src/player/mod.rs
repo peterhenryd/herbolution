@@ -134,18 +134,19 @@ impl Player {
 
         // Process mouse button input
         let mut action_state = ActionState::default();
-        for click_event in &ctx.input.click_events {
-            match click_event.button {
-                MouseButton::Left if ctx.engine.input.is_left_control_active() => action_state.is_right_hand_active = true,
-                MouseButton::Left => action_state.is_left_hand_active = true,
-                MouseButton::Right => action_state.is_right_hand_active = true,
-                _ => {}
-            }
-        }
 
-        if action_state.is_left_hand_active || action_state.is_right_hand_active {
-            handle.input.set_action_state(action_state);
-        }
+        let is_lmb_active = ctx
+            .engine
+            .input
+            .is_mouse_button_active(MouseButton::Left);
+        action_state.is_left_hand_active = is_lmb_active;
+        action_state.is_right_hand_active = ctx
+            .engine
+            .input
+            .is_mouse_button_active(MouseButton::Right)
+            || (is_lmb_active && ctx.engine.input.is_left_control_active());
+
+        handle.input.set_action_state(action_state);
 
         // Process keyboard input
         let mut forces = vec3i8::ZERO;

@@ -1,4 +1,3 @@
-pub use chisel::Chisel;
 use gpu::{
     BindGroup, Buffer, BufferUsage, Camera, CameraPayload, CompiledShaders, CullMode, Handle, PipelineMap, PipelineOptions, PipelineType, SampleCount,
     ShaderModule, ShaderSources, ShaderStage,

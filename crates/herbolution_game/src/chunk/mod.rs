@@ -33,14 +33,14 @@ impl Chunk {
     fn sync_with_client(&self) {
         let Some(mesh) = self.mesh.try_read() else { return };
 
+        if mesh.updated_positions.is_empty() {
+            return;
+        }
+
         self.handle
             .set_rendered(!mesh.exposed_faces.is_empty());
 
         mesh.palette.update(&self.handle);
-
-        if mesh.updated_positions.is_empty() {
-            return;
-        }
 
         drop(mesh);
 

@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use engine::{painter, sculptor, video, Engine};
@@ -16,7 +17,7 @@ pub enum Switch<'w> {
 const RESOLUTION: (u32, u32) = (1920, 1080);
 
 impl Switch<'_> {
-    pub(super) fn resume(&mut self, event_loop: &ActiveEventLoop) {
+    pub(super) fn resume(&mut self, event_loop: &ActiveEventLoop, asset_path: PathBuf) {
         let cached_window;
         match self {
             Switch::Resumed { .. } => return,
@@ -30,11 +31,10 @@ impl Switch<'_> {
                 video: video::Options {
                     resolution: RESOLUTION.into(),
                     clear_color: Rgba::<u8>::from_rgb(117, 255, 250).into(),
-                    painter: painter::Options {
-                        texture_paths: vec!["assets/texture/dirt.png".into()],
-                    },
+                    painter: painter::Options { texture_paths: vec![] },
                     sculptor: sculptor::Options {},
                     sample_count: SampleCount::Multi,
+                    asset_path,
                 },
             },
         );

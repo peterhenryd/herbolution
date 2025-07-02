@@ -270,6 +270,7 @@ impl SubAssign<Face> for Faces {
 
 // FaceIter
 
+#[derive(Debug, Clone)]
 pub struct FaceIter {
     faces: Faces,
     index: u8,
@@ -422,6 +423,7 @@ unsafe impl<T: Pod> Pod for PerFace<T> {}
 
 // PerFaceIter
 
+#[derive(Debug, Clone)]
 pub struct PerFaceIter<'a, T> {
     value: &'a PerFace<T>,
     index: u8,

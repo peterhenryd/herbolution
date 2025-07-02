@@ -90,7 +90,8 @@ impl App<'_> {
 impl ApplicationHandler for App<'_> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         // If the application was suspended, initialize or resume the window and create a new herbolution_engine.
-        self.switch.resume(event_loop);
+        self.switch
+            .resume(event_loop, self.store.fs.path().to_path_buf());
 
         if !self.init {
             self.init();

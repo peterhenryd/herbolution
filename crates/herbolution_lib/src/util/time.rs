@@ -18,6 +18,7 @@ impl DeltaTime {
     }
 }
 
+#[derive(Debug)]
 pub struct TickTime {
     interval: Duration,
     acc: Duration,

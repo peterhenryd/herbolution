@@ -1,5 +1,6 @@
 use crate::app::Update;
-use engine::sculptor::{Chisel, GrowBuffer3d, Instance3d};
+use engine::sculptor::chisel::Chisel;
+use engine::sculptor::{GrowBuffer3d, Instance3d};
 use game::handle::{GameHandle, Particle};
 use gpu::{BufferUsage, GrowBuffer, Handle};
 use math::rotation::Quat;

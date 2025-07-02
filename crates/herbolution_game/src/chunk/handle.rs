@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use crate::chunk::material::{Material, PaletteCube};
 use crossbeam::channel::{unbounded, Receiver, Sender};
-use herbolution_lib::util::display::Join;
 use lib::point::ChunkPt;
+use lib::util::DisplayJoined;
 use math::vector::vec3u5;
 use smallvec::SmallVec;
 use tracing::error;
@@ -68,7 +68,7 @@ impl ClientChunkHandle {
         if let Err(e) = self.cube_update.try_send(CubeUpdate {
             overwrites: SmallVec::<_, 64>::from_iter(items),
         }) {
-            error!("Failed to send update for chunk at {}: {e}", Join::new(&self.position.0, ","));
+            error!("Failed to send update for chunk at {}: {e}", self.position.0.display_joined(", "));
         }
     }
 
@@ -77,7 +77,7 @@ impl ClientChunkHandle {
             .palette_update
             .try_send(PaletteUpdate { material })
         {
-            error!("Failed to send update for chunk at {}: {e}", Join::new(&self.position.0, ","));
+            error!("Failed to send update for chunk at {}: {e}", self.position.0.display_joined(", "));
         }
     }
 }

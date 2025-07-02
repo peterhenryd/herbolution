@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::time::Duration;
 
 use crate::app::state::Command;
@@ -33,13 +34,13 @@ pub struct Session {
 
 impl Session {
     /// Creates a new instance, and spawns an associated behavior-side herbolution_game.
-    pub fn create(save: Save, engine: &mut Engine) -> Self {
+    pub fn create(save: Save, engine: &mut Engine, assets_path: &Path) -> Self {
         let handle = Game::spawn(Options { save });
 
         Self {
             world: World::new(engine),
             handle,
-            mesh_ids: MeshIds::from_insertion_into(engine.video.sculptor.meshes()),
+            mesh_ids: MeshIds::from_insertion_into(engine.video.sculptor.meshes(), assets_path),
             is_paused: false,
             is_focused: false,
             fps: IntervalCounter::new(Duration::SECOND),

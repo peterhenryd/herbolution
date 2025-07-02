@@ -43,7 +43,7 @@ impl State {
                 *self = State::Browsing(config.into());
             }
             Command::StartGame { save } => {
-                let session = Session::create(save, &mut ctx.engine);
+                let session = Session::create(save, &mut ctx.engine, ctx.store.fs.path());
                 *self = Self::Playing(session);
             }
             Command::Exit => {

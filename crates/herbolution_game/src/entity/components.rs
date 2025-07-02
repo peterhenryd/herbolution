@@ -5,6 +5,8 @@ use lib::point::ChunkPt;
 use math::vector::vec3i;
 use std::any::Any;
 
+// ChunkLoader
+
 #[derive(Debug)]
 pub struct ChunkLoader {
     pub(crate) prev_chunk_position: ChunkPt,

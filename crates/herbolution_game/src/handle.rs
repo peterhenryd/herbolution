@@ -9,8 +9,7 @@ use math::vector::vec3d;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
-use tracing::warn;
-
+use tracing::error;
 // Game-side handles
 
 #[derive(Debug)]
@@ -69,7 +68,7 @@ pub struct ClientHandle {
 impl ClientHandle {
     pub fn send_player_handle(&self, handle: ServerPlayerHandle) {
         if let Err(e) = self.player_handle_tx.try_send(handle) {
-            warn!("Failed to send player handle: {}", e);
+            error!("Failed to send player handle: {}", e);
         }
     }
 
@@ -87,13 +86,13 @@ pub struct ClientChunksHandle {
 impl ClientChunksHandle {
     pub fn load(&self, value: ChunkLoad) {
         if let Err(e) = self.load_tx.try_send(value) {
-            warn!("Failed to send chunk load: {}", e);
+            error!("Failed to send chunk load: {}", e);
         }
     }
 
     pub fn unload(&self, value: ChunkPt) {
         if let Err(e) = self.unload_tx.try_send(value) {
-            warn!("Failed to send chunk unload: {}", e);
+            error!("Failed to send chunk unload: {}", e);
         }
     }
 }

@@ -1,20 +1,21 @@
-use derive_more::with_trait::From;
-use hashbrown::HashMap;
-use std::any::{Any, TypeId};
-use std::fmt::Debug;
-use std::mem::take;
-
 use crate::chunk::map::ChunkMap;
 use crate::entity::components::ChunkLoader;
 use crate::entity::EntityData;
 use crate::handle::ClientHandle;
 use crate::player::Player;
+use derive_more::with_trait::From;
+use hashbrown::HashMap;
+use std::any::{Any, TypeId};
+use std::fmt::Debug;
+use std::mem::take;
+use std::time::Duration;
 
 pub struct EntityContext<'a> {
     pub entity: &'a mut EntityData,
     pub chunk_map: &'a mut ChunkMap,
     pub handle: &'a ClientHandle,
     pub behaviors: &'a mut EntityBehaviors,
+    pub dt: Duration,
 }
 
 // Behavior
@@ -64,7 +65,7 @@ impl EntityBehaviors {
         }
     }
 
-    pub fn update(&mut self, data: &mut EntityData, chunk_map: &mut ChunkMap, handle: &ClientHandle) {
+    pub fn update(&mut self, data: &mut EntityData, chunk_map: &mut ChunkMap, handle: &ClientHandle, dt: Duration) {
         for i in 0..self.vec.len() {
             let mut behavior = take(&mut self.vec[i]);
 
@@ -73,19 +74,20 @@ impl EntityBehaviors {
                 chunk_map,
                 handle,
                 behaviors: self,
+                dt,
             });
 
             self.vec[i] = behavior;
         }
     }
 
-    pub fn add<T: EntityBehavior + Into<EntityBehaviorType> + 'static>(&mut self, behavior: T) {
+    pub fn add<T: Into<EntityBehaviorType> + 'static>(&mut self, behavior: T) {
         let index = self.vec.len();
         self.vec.push(behavior.into());
         self.indices.insert(TypeId::of::<T>(), index);
     }
 
-    pub fn with<T: EntityBehavior + Into<EntityBehaviorType> + 'static>(mut self, behavior: T) -> Self {
+    pub fn with<T: Into<EntityBehaviorType> + 'static>(mut self, behavior: T) -> Self {
         self.add(behavior);
         self
     }

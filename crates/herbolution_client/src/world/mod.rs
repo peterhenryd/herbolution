@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use chunk::Chunk;
-use engine::sculptor::Chisel;
+use engine::sculptor::chisel::Chisel;
 use engine::{sculptor, Engine};
 use game::chunk::handle::ChunkLoad;
 use game::handle::GameHandle;

@@ -1,4 +1,5 @@
 use generational_arena::{Arena, Index, Iter, IterMut};
+use std::time::Duration;
 
 use crate::chunk::map::ChunkMap;
 use crate::entity::Entity;
@@ -22,9 +23,9 @@ impl EntitySet {
         EntityId(self.arena.insert(entity))
     }
 
-    pub fn update(&mut self, handle: &ClientHandle, chunk_map: &mut ChunkMap) {
+    pub fn update(&mut self, handle: &ClientHandle, chunk_map: &mut ChunkMap, dt: Duration) {
         for (_, entity) in self.arena.iter_mut() {
-            entity.update(chunk_map, handle);
+            entity.update(chunk_map, handle, dt);
         }
     }
 

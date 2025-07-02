@@ -1,4 +1,5 @@
 use math::vector::vec3i;
+use std::time::Duration;
 
 use crate::chunk::map::ChunkMap;
 use crate::entity::behavior::EntityBehaviors;
@@ -18,10 +19,10 @@ pub struct Entity {
 }
 
 impl Entity {
-    pub fn update(&mut self, chunk_map: &mut ChunkMap, handle: &ClientHandle) {
-        self.data.update(chunk_map);
+    pub fn update(&mut self, chunk_map: &mut ChunkMap, handle: &ClientHandle, dt: Duration) {
+        self.data.update(chunk_map, dt);
         self.behaviors
-            .update(&mut self.data, chunk_map, handle);
+            .update(&mut self.data, chunk_map, handle, dt);
     }
 }
 
@@ -39,8 +40,8 @@ impl EntityData {
         &mut self.body
     }
 
-    pub fn update(&mut self, chunk_map: &mut ChunkMap) {
-        self.body.update(chunk_map);
+    pub fn update(&mut self, chunk_map: &mut ChunkMap, dt: Duration) {
+        self.body.update(chunk_map, dt);
     }
 }
 

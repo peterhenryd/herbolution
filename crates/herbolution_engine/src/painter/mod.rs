@@ -1,5 +1,5 @@
 use std::fs::read;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use fontdue::{Font, FontSettings};
 use gpu::{
@@ -48,7 +48,7 @@ fn filter(c: char) -> bool {
 }
 
 impl Painter {
-    pub fn create(gpu: &Handle, sample_count: SampleCount) -> Self {
+    pub fn create(gpu: &Handle, sample_count: SampleCount, asset_path: &Path) -> Self {
         let camera_buffer = Buffer::with_capacity(gpu, 1, BufferUsage::UNIFORM | BufferUsage::COPY_DST);
         let shaders = ShaderSources::default()
             .with("core", include_str!("shader.wgsl"))
@@ -58,14 +58,14 @@ impl Painter {
         let mut fonts = Fonts::build();
         fonts.set_filter(filter);
         fonts.add_font(
-            Font::from_bytes(read("assets/font/editundo.ttf").unwrap(), FontSettings::default()).unwrap(),
+            Font::from_bytes(read(asset_path.join("font/editundo.ttf")).unwrap(), FontSettings::default()).unwrap(),
             [12.0, 24.0, 36.0],
         );
         let fonts = fonts.finish();
         let atlas = Atlas::create(gpu, &fonts);
 
         let mut meshes = Meshes2d::new(gpu);
-        let quad_mesh = meshes.create_and_insert_from(|handle| Mesh::read(handle, "assets/mesh/quad_unit.toml"));
+        let quad_mesh = meshes.create_and_insert_from(|handle| Mesh::read(handle, asset_path.join("mesh/quad_unit.toml")));
 
         Self {
             pipeline_map: PipelineMap::create(

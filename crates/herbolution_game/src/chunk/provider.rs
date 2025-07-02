@@ -7,7 +7,7 @@ use crate::chunk::mesh::CubeMesh;
 use crate::generator::{ChunkGenerator, GenerationParams};
 use crossbeam::channel::{unbounded, Receiver, Sender, TryIter};
 use lib::point::ChunkPt;
-use lib::util::display;
+use lib::util::DisplayJoined;
 use tracing::error;
 
 #[derive(Debug)]
@@ -39,7 +39,7 @@ impl ChunkProvider {
     pub fn request(&self, position: ChunkPt) {
         let path = self
             .dir_path
-            .join(display::Join::new(&position.0, ".").to_string());
+            .join(&position.0.display_joined(".").to_string());
 
         if path.is_file() {
             self.reader.request(path, position);

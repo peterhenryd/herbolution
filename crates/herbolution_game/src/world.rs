@@ -2,6 +2,7 @@ use crate::chunk::map::ChunkMap;
 use crate::entity::set::EntitySet;
 use crate::handle::ClientHandle;
 use lib::save::SaveWorld;
+use std::time::Duration;
 
 #[derive(Debug)]
 pub struct World {
@@ -19,9 +20,9 @@ impl World {
         }
     }
 
-    pub fn update(&mut self, handle: &ClientHandle) {
+    pub fn update(&mut self, handle: &ClientHandle, dt: Duration) {
         self.chunk_map.update(handle);
         self.entity_set
-            .update(handle, &mut self.chunk_map);
+            .update(handle, &mut self.chunk_map, dt);
     }
 }
