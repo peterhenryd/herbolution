@@ -1,11 +1,10 @@
-use std::num::NonZeroU16;
-use std::ops::Sub;
-
 use crate::vector::macros::vector;
 use crate::vector::{vec3d, vec3f, vec3i, vec3u8, Vec2, Vec4};
 use num::NumCast;
 use serde::{Deserialize, Serialize};
 use static_assertions::assert_eq_size;
+use std::num::NonZeroU16;
+use std::ops::Sub;
 
 // Vec3<T>
 
@@ -19,6 +18,7 @@ vector! {
 }
 
 impl<T> Vec3<T> {
+    #[inline]
     pub fn extend(self, w: T) -> Vec4<T> {
         Vec4 {
             x: self.x,
@@ -28,6 +28,7 @@ impl<T> Vec3<T> {
         }
     }
 
+    #[inline]
     pub fn cross(self, rhs: Self) -> Self
     where
         T: Copy + std::ops::Sub<Output = T>,
@@ -40,10 +41,17 @@ impl<T> Vec3<T> {
         }
     }
 
+    #[inline]
     pub fn xy(self) -> Vec2<T> {
         Vec2 { x: self.x, y: self.y }
     }
 
+    #[inline]
+    pub fn xz(self) -> Vec2<T> {
+        Vec2 { x: self.x, y: self.z }
+    }
+
+    #[inline]
     pub fn xxx(self) -> Self
     where
         T: Copy,
@@ -55,6 +63,7 @@ impl<T> Vec3<T> {
         }
     }
 
+    #[inline]
     pub fn yyy(self) -> Self
     where
         T: Copy,
@@ -66,6 +75,7 @@ impl<T> Vec3<T> {
         }
     }
 
+    #[inline]
     pub fn zzz(self) -> Self
     where
         T: Copy,
@@ -79,6 +89,7 @@ impl<T> Vec3<T> {
 }
 
 impl vec3d {
+    #[inline]
     pub fn split_int_fract(self) -> (vec3i, vec3f) {
         (self.cast::<i32>(), self.cast::<f32>().fract())
     }

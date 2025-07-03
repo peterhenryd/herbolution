@@ -5,7 +5,9 @@ macro_rules! vector {
     };
     (
         struct $name:ident<$t:ident> {
-            $($field:ident($constant:ident = $($literal:literal),+): $ft:ident),+ $(,)?
+        $(
+            $field:ident($constant:ident = $($literal:literal),+): $ft:ident
+        ),+ $(,)?
         }
         linearize($($order:ident),+)
     ) => {
@@ -31,16 +33,16 @@ macro_rules! vector {
 
             #[inline]
             pub fn by_index(mut f: impl FnMut(usize) -> T) -> Self {
-                let mut n = 0;
-                let vec = $name {
-                    $($field: {
-                        let value = f(n);
-                        n += 1;
-                        value
-                    }),+
-                };
+                let n = 0;
+            $(
+                let $field = f(n);
+                let n = n + 1;
+            )+
                 let _ = n;
-                vec
+
+                Self {
+                    $($field),+
+                }
             }
 
             #[inline]
@@ -202,12 +204,13 @@ macro_rules! vector {
                 $t: num::traits::ConstZero,
                 $t: num::traits::ConstOne,
             {
-                let mut n = T::ONE;
-                let mut x = T::ZERO;
-                $(
-                    x += self.$order * n;
-                    n *= length;
-                )+
+                let n = T::ONE;
+                let x = T::ZERO;
+            $(
+                let x = x + self.$order * n;
+                let n = n * length;
+            )+
+                let _ = n;
                 x
             }
 
@@ -317,6 +320,7 @@ macro_rules! vector {
                 }
             }
 
+            #[inline]
             pub fn powf(self, n: $t) -> Self
             where
                 $t: num::traits::Float,
@@ -386,6 +390,7 @@ macro_rules! vector {
         }
 
         impl<$t: Default> Default for $name<$t> {
+            #[inline]
             fn default() -> Self {
                 Self {
                     $($field: Default::default()),+
@@ -394,6 +399,7 @@ macro_rules! vector {
         }
 
         impl<$t> From<($($ft),+)> for $name<$t> {
+            #[inline]
             fn from(($($field),+): ($($ft),+)) -> Self {
                 Self {
                     $($field),+
@@ -402,6 +408,7 @@ macro_rules! vector {
         }
 
         impl<$t> From<[$t; vector!(@count $($field)+)]> for $name<$t> {
+            #[inline]
             fn from([$($field),+]: [$t; vector!(@count $($field)+)]) -> Self {
                 Self {
                     $($field),+
@@ -411,12 +418,14 @@ macro_rules! vector {
 
 
         impl<$t> Into<($($ft),+)> for $name<$t> {
+            #[inline]
             fn into(self) -> ($($ft),+) {
                 ($(self.$field),+)
             }
         }
 
         impl<$t> Into<[$t; vector!(@count $($field)+)]> for $name<$t> {
+            #[inline]
             fn into(self) -> [$t; vector!(@count $($field)+)] {
                 [$(self.$field),+]
             }
@@ -425,6 +434,7 @@ macro_rules! vector {
         impl<$t: std::ops::Add<Output = $t>> std::ops::Add for $name<$t> {
             type Output = Self;
 
+            #[inline]
             fn add(self, other: Self) -> Self {
                 Self {
                     $($field: self.$field + other.$field),+
@@ -435,6 +445,7 @@ macro_rules! vector {
         impl<$t: std::ops::Add<Output = $t> + Copy> std::ops::Add<$t> for $name<$t> {
             type Output = Self;
 
+            #[inline]
             fn add(self, other: $t) -> Self {
                 Self {
                     $($field: self.$field + other),+
@@ -443,12 +454,14 @@ macro_rules! vector {
         }
 
         impl<$t: std::ops::AddAssign> std::ops::AddAssign for $name<$t> {
+            #[inline]
             fn add_assign(&mut self, other: Self) {
                 $(self.$field += other.$field;)+
             }
         }
 
         impl<$t: std::ops::AddAssign + Copy> std::ops::AddAssign<$t> for $name<$t> {
+            #[inline]
             fn add_assign(&mut self, other: $t) {
                 $(self.$field += other;)+
             }
@@ -457,6 +470,7 @@ macro_rules! vector {
         impl<$t: std::ops::Sub<Output = $t>> std::ops::Sub for $name<$t> {
             type Output = Self;
 
+            #[inline]
             fn sub(self, other: Self) -> Self {
                 Self {
                     $($field: self.$field - other.$field),+
@@ -467,6 +481,7 @@ macro_rules! vector {
         impl<$t: std::ops::Sub<Output = $t> + Copy> std::ops::Sub<$t> for $name<$t> {
             type Output = Self;
 
+            #[inline]
             fn sub(self, other: $t) -> Self {
                 Self {
                     $($field: self.$field - other),+
@@ -475,12 +490,14 @@ macro_rules! vector {
         }
 
         impl<$t: std::ops::SubAssign> std::ops::SubAssign for $name<$t> {
+            #[inline]
             fn sub_assign(&mut self, other: Self) {
                 $(self.$field -= other.$field;)+
             }
         }
 
         impl<$t: std::ops::SubAssign + Copy> std::ops::SubAssign<$t> for $name<$t> {
+            #[inline]
             fn sub_assign(&mut self, other: $t) {
                 $(self.$field -= other;)+
             }
@@ -489,6 +506,7 @@ macro_rules! vector {
         impl<$t: std::ops::Mul<Output = $t>> std::ops::Mul for $name<$t> {
             type Output = Self;
 
+            #[inline]
             fn mul(self, other: Self) -> Self {
                 Self {
                     $($field: self.$field * other.$field),+
@@ -499,6 +517,7 @@ macro_rules! vector {
         impl<$t: std::ops::Mul<Output = $t> + Copy> std::ops::Mul<$t> for $name<$t> {
             type Output = Self;
 
+            #[inline]
             fn mul(self, other: $t) -> Self {
                 Self {
                     $($field: self.$field * other),+
@@ -507,12 +526,14 @@ macro_rules! vector {
         }
 
         impl<$t: std::ops::MulAssign> std::ops::MulAssign for $name<$t> {
+            #[inline]
             fn mul_assign(&mut self, other: Self) {
                 $(self.$field *= other.$field;)+
             }
         }
 
         impl<$t: std::ops::MulAssign + Copy> std::ops::MulAssign<$t> for $name<$t> {
+            #[inline]
             fn mul_assign(&mut self, other: $t) {
                 $(self.$field *= other;)+
             }
@@ -521,6 +542,7 @@ macro_rules! vector {
         impl<$t: std::ops::Div<Output = $t>> std::ops::Div for $name<$t> {
             type Output = Self;
 
+            #[inline]
             fn div(self, other: Self) -> Self {
                 Self {
                     $($field: self.$field / other.$field),+
@@ -531,6 +553,7 @@ macro_rules! vector {
         impl<$t: std::ops::Div<Output = $t> + Copy> std::ops::Div<$t> for $name<$t> {
             type Output = Self;
 
+            #[inline]
             fn div(self, other: $t) -> Self {
                 Self {
                     $($field: self.$field / other),+
@@ -539,6 +562,7 @@ macro_rules! vector {
         }
 
         impl<$t: std::ops::DivAssign> std::ops::DivAssign for $name<$t> {
+            #[inline]
             fn div_assign(&mut self, other: Self) {
                 $(self.$field /= other.$field;)+
             }
@@ -553,6 +577,7 @@ macro_rules! vector {
         impl<$t: std::ops::Rem<Output = $t>> std::ops::Rem for $name<$t> {
             type Output = Self;
 
+            #[inline]
             fn rem(self, other: Self) -> Self {
                 Self {
                     $($field: self.$field % other.$field),+
@@ -563,6 +588,7 @@ macro_rules! vector {
         impl<$t: std::ops::Rem<Output = $t> + Copy> std::ops::Rem<$t> for $name<$t> {
             type Output = Self;
 
+            #[inline]
             fn rem(self, other: $t) -> Self {
                 Self {
                     $($field: self.$field % other),+
@@ -571,12 +597,14 @@ macro_rules! vector {
         }
 
         impl<$t: std::ops::RemAssign> std::ops::RemAssign for $name<$t> {
+            #[inline]
             fn rem_assign(&mut self, other: Self) {
                 $(self.$field %= other.$field;)+
             }
         }
 
         impl<$t: std::ops::RemAssign + Copy> std::ops::RemAssign<$t> for $name<$t> {
+            #[inline]
             fn rem_assign(&mut self, other: $t) {
                 $(self.$field %= other;)+
             }
@@ -585,6 +613,7 @@ macro_rules! vector {
         impl<$t: std::ops::BitAnd<Output = $t>> std::ops::BitAnd for $name<$t> {
             type Output = Self;
 
+            #[inline]
             fn bitand(self, other: Self) -> Self {
                 Self {
                     $($field: self.$field & other.$field),+
@@ -595,6 +624,7 @@ macro_rules! vector {
         impl<$t: std::ops::BitAnd<Output = $t> + Copy> std::ops::BitAnd<$t> for $name<$t> {
             type Output = Self;
 
+            #[inline]
             fn bitand(self, other: $t) -> Self {
                 Self {
                     $($field: self.$field & other),+
@@ -603,12 +633,14 @@ macro_rules! vector {
         }
 
         impl<$t: std::ops::BitAndAssign> std::ops::BitAndAssign for $name<$t> {
+            #[inline]
             fn bitand_assign(&mut self, other: Self) {
                 $(self.$field &= other.$field;)+
             }
         }
 
         impl<$t: std::ops::BitAndAssign + Copy> std::ops::BitAndAssign<$t> for $name<$t> {
+            #[inline]
             fn bitand_assign(&mut self, other: $t) {
                 $(self.$field &= other;)+
             }
@@ -617,6 +649,7 @@ macro_rules! vector {
         impl<$t: std::ops::BitOr<Output = $t>> std::ops::BitOr for $name<$t> {
             type Output = Self;
 
+            #[inline]
             fn bitor(self, other: Self) -> Self {
                 Self {
                     $($field: self.$field | other.$field),+
@@ -627,6 +660,7 @@ macro_rules! vector {
         impl<$t: std::ops::BitOr<Output = $t> + Copy> std::ops::BitOr<$t> for $name<$t> {
             type Output = Self;
 
+            #[inline]
             fn bitor(self, other: $t) -> Self {
                 Self {
                     $($field: self.$field | other),+
@@ -635,12 +669,14 @@ macro_rules! vector {
         }
 
         impl<$t: std::ops::BitOrAssign> std::ops::BitOrAssign for $name<$t> {
+            #[inline]
             fn bitor_assign(&mut self, other: Self) {
                 $(self.$field |= other.$field;)+
             }
         }
 
         impl<$t: std::ops::BitOrAssign + Copy> std::ops::BitOrAssign<$t> for $name<$t> {
+            #[inline]
             fn bitor_assign(&mut self, other: $t) {
                 $(self.$field |= other;)+
             }
@@ -649,6 +685,7 @@ macro_rules! vector {
         impl<$t: std::ops::BitXor<Output = $t>> std::ops::BitXor for $name<$t> {
             type Output = Self;
 
+            #[inline]
             fn bitxor(self, other: Self) -> Self {
                 Self {
                     $($field: self.$field ^ other.$field),+
@@ -659,6 +696,7 @@ macro_rules! vector {
         impl<$t: std::ops::BitXor<Output = $t> + Copy> std::ops::BitXor<$t> for $name<$t> {
             type Output = Self;
 
+            #[inline]
             fn bitxor(self, other: $t) -> Self {
                 Self {
                     $($field: self.$field ^ other),+
@@ -667,12 +705,14 @@ macro_rules! vector {
         }
 
         impl<$t: std::ops::BitXorAssign> std::ops::BitXorAssign for $name<$t> {
+            #[inline]
             fn bitxor_assign(&mut self, other: Self) {
                 $(self.$field ^= other.$field;)+
             }
         }
 
         impl<$t: std::ops::BitXorAssign + Copy> std::ops::BitXorAssign<$t> for $name<$t> {
+            #[inline]
             fn bitxor_assign(&mut self, other: $t) {
                 $(self.$field ^= other;)+
             }
@@ -681,6 +721,7 @@ macro_rules! vector {
         impl<$t: std::ops::Shl<Output = $t>> std::ops::Shl for $name<$t> {
             type Output = Self;
 
+            #[inline]
             fn shl(self, other: Self) -> Self {
                 Self {
                     $($field: self.$field << other.$field),+
@@ -691,6 +732,7 @@ macro_rules! vector {
         impl<$t: std::ops::Shl<Output = $t> + Copy> std::ops::Shl<$t> for $name<$t> {
             type Output = Self;
 
+            #[inline]
             fn shl(self, other: $t) -> Self {
                 Self {
                     $($field: self.$field << other),+
@@ -699,12 +741,14 @@ macro_rules! vector {
         }
 
         impl<$t: std::ops::ShlAssign> std::ops::ShlAssign for $name<$t> {
+            #[inline]
             fn shl_assign(&mut self, other: Self) {
                 $(self.$field <<= other.$field;)+
             }
         }
 
         impl<$t: std::ops::ShlAssign + Copy> std::ops::ShlAssign<$t> for $name<$t> {
+            #[inline]
             fn shl_assign(&mut self, other: $t) {
                 $(self.$field <<= other;)+
             }
@@ -713,6 +757,7 @@ macro_rules! vector {
         impl<$t: std::ops::Shr<Output = $t>> std::ops::Shr for $name<$t> {
             type Output = Self;
 
+            #[inline]
             fn shr(self, other: Self) -> Self {
                 Self {
                     $($field: self.$field >> other.$field),+
@@ -723,6 +768,7 @@ macro_rules! vector {
         impl<$t: std::ops::Shr<Output = $t> + Copy> std::ops::Shr<$t> for $name<$t> {
             type Output = Self;
 
+            #[inline]
             fn shr(self, other: $t) -> Self {
                 Self {
                     $($field: self.$field >> other),+
@@ -731,12 +777,14 @@ macro_rules! vector {
         }
 
         impl<$t: std::ops::ShrAssign> std::ops::ShrAssign for $name<$t> {
+            #[inline]
             fn shr_assign(&mut self, other: Self) {
                 $(self.$field >>= other.$field;)+
             }
         }
 
         impl<$t: std::ops::ShrAssign + Copy> std::ops::ShrAssign<$t> for $name<$t> {
+            #[inline]
             fn shr_assign(&mut self, other: $t) {
                 $(self.$field >>= other;)+
             }
@@ -745,6 +793,7 @@ macro_rules! vector {
         impl<$t: std::ops::Neg<Output = $t>> std::ops::Neg for $name<$t> {
             type Output = Self;
 
+            #[inline]
             fn neg(self) -> Self {
                 Self {
                     $($field: -self.$field),+
@@ -755,6 +804,7 @@ macro_rules! vector {
         impl<$t: std::ops::Not<Output = $t>> std::ops::Not for $name<$t> {
             type Output = Self;
 
+            #[inline]
             fn not(self) -> Self {
                 Self {
                     $($field: !self.$field),+
@@ -765,7 +815,7 @@ macro_rules! vector {
         impl<$t> std::ops::Index<usize> for $name<$t> {
             type Output = $t;
 
-            #[inline(always)]
+            #[inline]
             fn index(&self, index: usize) -> &Self::Output {
                 let n = 0;
                 $(
@@ -780,7 +830,7 @@ macro_rules! vector {
         }
 
         impl<$t> std::ops::IndexMut<usize> for $name<$t> {
-            #[inline(always)]
+            #[inline]
             fn index_mut(&mut self, index: usize) -> &mut Self::Output {
                 let n = 0;
                 $(
@@ -812,6 +862,7 @@ macro_rules! vector {
             type Item = $t;
             type IntoIter = std::array::IntoIter<$t, { vector!(@count $($field)+) }>;
 
+            #[inline]
             fn into_iter(self) -> Self::IntoIter {
                 self.to_array().into_iter()
             }
@@ -821,6 +872,7 @@ macro_rules! vector {
             type Item = &'a T;
             type IntoIter = std::slice::Iter<'a, T>;
 
+            #[inline]
             fn into_iter(self) -> Self::IntoIter {
                 self.as_array().into_iter()
             }

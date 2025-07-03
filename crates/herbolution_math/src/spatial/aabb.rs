@@ -1,6 +1,7 @@
 use crate::vector::Vec3;
+use bytemuck::Pod;
 use num::traits::real::Real;
-use num::traits::ConstZero;
+use num::traits::{ConstOne, ConstZero};
 use num::{Float, Num, NumCast, ToPrimitive};
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Neg};
@@ -16,11 +17,14 @@ impl<T> Aabb<T> {
         Self { min, max }
     }
 
-    pub fn from_half(half: Vec3<T>) -> Self
+    pub fn cube(position: Vec3<T>) -> Self
     where
-        T: Copy + Num + Neg<Output = T>,
+        T: Copy + ConstOne + Add<Output = T>,
     {
-        Self { min: -half, max: half }
+        Self {
+            min: position,
+            max: position + Vec3::ONE,
+        }
     }
 
     pub fn union(slice: &[Self]) -> Self
@@ -280,6 +284,22 @@ impl<T> Aabb<T> {
         T: ToPrimitive,
     {
         self.try_cast().unwrap()
+    }
+
+    pub fn intersect_ray(&self, origin: Vec3<T>, dir: Vec3<T>) -> Vec3<T>
+    where
+        T: Pod + Float + NumCast,
+    {
+        let dir = dir.cast();
+        let recip_dir = dir.cast().recip();
+
+        let t0 = (self.min - origin) * recip_dir;
+        let t1 = (self.max - origin) * recip_dir;
+
+        let t_min_vec = t0.min(t1);
+        let t_enter = t_min_vec.largest();
+
+        origin + dir * t_enter
     }
 }
 

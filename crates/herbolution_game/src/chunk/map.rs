@@ -41,14 +41,12 @@ impl ChunkMap {
         for x in min.x..max.x {
             for y in min.y..max.y {
                 for z in min.z..max.z {
-                    if !self.has_collider(CubePt(Vec3::new(x, y, z))) {
+                    let position = Vec3::new(x, y, z);
+                    if !self.has_collider(CubePt(position)) {
                         continue;
                     }
 
-                    colliders.push(Aabb::new(
-                        Vec3::new(x as f64, y as f64, z as f64),
-                        Vec3::new(x as f64 + 1.0, y as f64 + 1.0, z as f64 + 1.0),
-                    ));
+                    colliders.push(Aabb::cube(position.cast()));
                 }
             }
         }
@@ -178,20 +176,21 @@ impl ChunkMap {
             .unwrap_or(false)
     }
 
-    pub fn cast_ray(&mut self, mut origin: vec3d, direction: vec3f, range: f32) -> Option<CubeHit> {
-        origin += 0.5;
-        let end = origin + direction.cast() * range as f64;
+    pub fn cast_ray(&mut self, origin: vec3d, dir: vec3f, range: f32) -> Option<CubeHit> {
+        let start = origin + 0.5;
+        let end = origin + dir.cast() * range as f64;
 
-        let origin = origin.to_tuple();
-        let dest = end.to_tuple();
-        for (prev, curr) in WalkVoxels::new(origin, dest, &VoxelOrigin::Corner).steps() {
+        let voxel_walker = WalkVoxels::new(start.into(), end.into(), &VoxelOrigin::Corner);
+        for (prev, curr) in voxel_walker.steps() {
             let position = Vec3::from(curr);
             let normal = Vec3::from(prev) - position;
 
             if self.has_collider(position) {
+                let position = position.cast();
                 return Some(CubeHit {
                     position: position.cast(),
                     face: Face::from_normal(normal).unwrap(),
+                    contact_point: Aabb::cube(position).intersect_ray(start, dir.cast()),
                 });
             }
         }
@@ -270,4 +269,5 @@ impl<'a> MaterialRef<'a> for (&'a str, &'a str) {
 pub struct CubeHit {
     pub position: vec3i,
     pub face: Face,
+    pub contact_point: vec3d,
 }

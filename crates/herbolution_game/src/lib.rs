@@ -6,16 +6,15 @@
 extern crate herbolution_lib as lib;
 extern crate herbolution_math as math;
 
-use std::thread;
-
 use hashbrown::HashMap;
 use herbolution_lib::util::time::DeltaTime;
 use lib::save::Save;
 use math::spatial::aabb::Aabb;
 use math::vector::Vec3;
+use std::thread;
 
 use crate::entity::behavior::EntityBehaviors;
-use crate::entity::body::{Boundary, EntityAbilities, EntityBody};
+use crate::entity::body::{Boundary, EntityAttrs, EntityBody};
 use crate::entity::components::ChunkLoader;
 use crate::entity::{Entity, EntityData};
 use crate::handle::{ClientHandle, GameHandle};
@@ -77,9 +76,10 @@ impl Game {
                         aabb: Aabb::new(Vec3::ZERO, Vec3::new(0.9, 1.9, 0.9)),
                         eye_offset: Vec3::new(0., 1.0, 0.),
                     },
-                    EntityAbilities {
-                        is_affected_by_gravity: false,
-                        speed: 1.0,
+                    EntityAttrs {
+                        has_gravity: true,
+                        acceleration_rate: 20.0,
+                        terminal_velocity: Vec3::ONE.normalize(),
                     },
                 ),
             },
