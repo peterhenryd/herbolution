@@ -1,0 +1,20 @@
+[package]
+name = "herbolution_server"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+herbolution_lib = { path = "../lib" }
+
+crossbeam-channel.workspace = true
+fastrand.workspace = true
+generational-arena.workspace = true
+hashbrown.workspace = true
+parking_lot.workspace = true
+rayon.workspace = true
+serde = { workspace = true, features = ["derive"] }
+smallvec.workspace = true
+tracing.workspace = true
+
+line_drawing = "1.0.1"
+noise = "0.9.0"

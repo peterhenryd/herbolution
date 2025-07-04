@@ -1,0 +1,15 @@
+[package]
+name = "herbolution_lib"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bytemuck = { workspace = true, features = ["derive"] }
+serde = { workspace = true, features = ["derive"] }
+thiserror.workspace = true
+toml.workspace = true
+crossbeam-channel.workspace = true
+hashbrown = "0.15.4"
+include_dir = "0.7.4"
+num = "0.4.3"
+static_assertions = "1.1.0"
