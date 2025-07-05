@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 herbolution_lib = { path = "../lib" }
+simdnoise = { path = "../crates/rust-simd-noise" }
 
 crossbeam-channel.workspace = true
 fastrand.workspace = true
@@ -17,4 +18,3 @@ smallvec.workspace = true
 tracing.workspace = true
 
 line_drawing = "1.0.1"
-noise = "0.9.0"

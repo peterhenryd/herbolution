@@ -1,10 +1,11 @@
 use std::fs::read;
 use std::path::{Path, PathBuf};
+use std::slice;
 
 use fontdue::{Font, FontSettings};
-use lib::proj::{Orthographic, Proj};
+use lib::proj::Orthographic;
 use lib::size::size2u;
-use lib::vector::{Vec3, vec3d};
+use lib::vector::Vec3;
 use wgpu::{BufferUsages, ShaderModule, ShaderStages};
 
 use crate::video::camera::{VideoCamera, View};
@@ -94,10 +95,9 @@ impl Painter {
         );
     }
 
-    pub fn update_camera(&mut self, gpu: &Handle, position: vec3d, view: View, proj: impl Proj) {
-        let camera = VideoCamera::new(position, view, proj);
+    pub fn update_camera(&mut self, gpu: &Handle, camera: &VideoCamera) {
         self.camera_buffer
-            .write(gpu, 0, &[camera])
+            .write(gpu, 0, slice::from_ref(camera))
             .expect("Failed to update 2D camera buffer");
     }
 
@@ -110,7 +110,7 @@ impl Painter {
     }
 
     pub fn set_resolution(&mut self, gpu: &Handle, resolution: size2u) {
-        self.update_camera(gpu, Vec3::ZERO, View::Forward, Orthographic::from(resolution));
+        self.update_camera(gpu, &VideoCamera::new(Vec3::ZERO, View::Forward, Orthographic::from(resolution)));
     }
 }
 

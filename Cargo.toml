@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["client", "lib", "server"]
+members = ["client", "lib", "server", "crates/*"]
 
 [workspace.dependencies]
 bytemuck = "1.23.1"

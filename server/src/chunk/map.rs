@@ -7,7 +7,7 @@ use lib::chunk;
 use lib::collections::mailbox::Mailbox;
 use lib::point::{ChunkCubePt, ChunkPt, CubePt};
 use lib::spatial::{Aabb, Face, Faces};
-use lib::util::GroupKey;
+use lib::util::{GroupKey, GroupKeyBuf};
 use lib::vector::{Vec3, vec3d, vec3f, vec3i, vec3u5};
 use line_drawing::{VoxelOrigin, WalkVoxels};
 
@@ -76,9 +76,9 @@ impl ChunkMap {
         self.map.values()
     }
 
-    pub fn set_cube<'a>(&mut self, position: impl Into<CubePt>, material_ref: impl MaterialRef<'a>) {
+    pub fn set_cube<'a>(&mut self, position: impl Into<CubePt>, material_ref: impl MaterialRef) {
         let ChunkCubePt { chunk, local } = position.into().into();
-        let material_key = material_ref.to_key();
+        let material_key = material_ref.as_key_ref();
 
         let edges = [
             (Vec3::new(-1, 0, 0), Faces::EAST, local.x() == 0),
@@ -143,7 +143,7 @@ impl ChunkMap {
         let mut mesh = chunk.mesh.write();
 
         let material = material_key
-            .map(|x| mesh.palette.get_id_by_key(&x))
+            .map(|x| mesh.palette.get_id_by_key(x))
             .flatten();
         mesh.set(local, material);
     }
@@ -154,7 +154,7 @@ impl ChunkMap {
         let mesh = self.get_chunk(chunk)?.mesh.read();
         let id = mesh.get(local)?;
 
-        mesh.palette.get(id).cloned()
+        mesh.palette.get_by_id(id).cloned()
     }
 
     pub fn get_material_id(&self, position: impl Into<CubePt>) -> Option<PaletteMaterialId> {
@@ -170,7 +170,7 @@ impl ChunkMap {
 
         let mesh = chunk.mesh.read();
         mesh.get(local)
-            .map(|id| mesh.palette.get(id))
+            .map(|id| mesh.palette.get_by_id(id))
             .flatten()
             .map(|material| material.has_collider)
             .unwrap_or(false)
@@ -243,25 +243,31 @@ impl ChunkMap {
     }
 }
 
-pub trait MaterialRef<'a> {
-    fn to_key(self) -> Option<GroupKey<'a>>;
+pub trait MaterialRef {
+    fn as_key_ref(&self) -> Option<&str>;
 }
 
-impl<'a> MaterialRef<'a> for GroupKey<'a> {
-    fn to_key(self) -> Option<GroupKey<'a>> {
+impl MaterialRef for GroupKey {
+    fn as_key_ref(&self) -> Option<&str> {
+        Some(self.as_str())
+    }
+}
+
+impl MaterialRef for GroupKeyBuf {
+    fn as_key_ref(&self) -> Option<&str> {
+        Some(self.as_str())
+    }
+}
+
+impl MaterialRef for &str {
+    fn as_key_ref(&self) -> Option<&str> {
         Some(self)
     }
 }
 
-impl<'a> MaterialRef<'a> for Option<GroupKey<'a>> {
-    fn to_key(self) -> Option<GroupKey<'a>> {
-        self
-    }
-}
-
-impl<'a> MaterialRef<'a> for (&'a str, &'a str) {
-    fn to_key(self) -> Option<GroupKey<'a>> {
-        Some(self.into())
+impl MaterialRef for Option<&str> {
+    fn as_key_ref(&self) -> Option<&str> {
+        *self
     }
 }
 

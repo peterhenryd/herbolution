@@ -31,7 +31,7 @@ impl EntityBehavior for ChunkLoader {
 
         self.prev_chunk_position = chunk_position;
 
-        let new_positions = fill_rhombus(chunk_position, 18);
+        let new_positions = fill_rhombus(chunk_position, 16);
 
         self.radial_chunk_positions
             .iter()
@@ -61,7 +61,7 @@ impl EntityBehavior for ChunkLoader {
 fn fill_rhombus(center: ChunkPt, radius: i32) -> HashSet<ChunkPt> {
     let mut set = HashSet::new();
     for x in -radius..=radius {
-        for y in -radius / 2..=radius / 2 {
+        for y in -radius / 3..=radius / 3 {
             for z in -radius..=radius {
                 if x.abs() + y.abs() + z.abs() <= radius {
                     set.insert(ChunkPt(center.0 + vec3i::new(x, y, z)));

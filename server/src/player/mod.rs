@@ -159,7 +159,7 @@ impl Player {
             .intersects(&ctx.entity.body().bounds())
         {
             ctx.chunk_map
-                .set_cube(position, ("herbolution", "stone"));
+                .set_cube(position, "herbolution:stone");
         }
     }
 }

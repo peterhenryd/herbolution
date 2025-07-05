@@ -6,6 +6,7 @@ use lib::chunk::VOLUME;
 use lib::point::ChunkPt;
 use lib::spatial::{Face, Faces};
 use lib::vector::{Vec3, vec3u5};
+use rayon::prelude::{IntoParallelRefMutIterator, ParallelIterator};
 
 use crate::chunk::cube::Cube;
 use crate::chunk::material::{Palette, PaletteCube, PaletteMaterialId, PaletteMaterialOptionExt};
@@ -65,8 +66,8 @@ impl CubeMesh {
 
                     let cullable_faces = cube.material.cullable_faces(&self.palette);
                     let adj_cullable_faces = adj_cube.material.cullable_faces(&other.palette);
-                    if cullable_faces.contains(face.into()) && adj_cullable_faces.contains(inverse_face.into()) {
-                        cube.flags.remove_faces(face.into());
+                    if cullable_faces.contains(face) && adj_cullable_faces.contains(inverse_face) {
+                        cube.flags.remove_faces(face);
                         self.updated_positions.push(position);
                     }
                 }
@@ -80,20 +81,8 @@ impl CubeMesh {
         };
         let other_shared_face = shared_face.inverse();
 
-        fn sized_boundary_slice(face: Face) -> Vec3<Range<u8>> {
-            let l = chunk::LENGTH as u8;
-            match face {
-                Face::East => Vec3::new(l - 1..l, 0..l, 0..l),
-                Face::West => Vec3::new(0..1, 0..l, 0..l),
-                Face::Up => Vec3::new(0..l, l - 1..l, 0..l),
-                Face::Down => Vec3::new(0..l, 0..1, 0..l),
-                Face::North => Vec3::new(0..l, 0..l, l - 1..l),
-                Face::South => Vec3::new(0..l, 0..l, 0..1),
-            }
-        }
-
-        let matric = sized_boundary_slice(shared_face);
-        let other_matric = sized_boundary_slice(other_shared_face);
+        let matric = boundary(shared_face);
+        let other_matric = boundary(other_shared_face);
 
         let mut is_exposed = false;
         for (x1, x2) in matric.x.zip(other_matric.x) {
@@ -197,6 +186,27 @@ impl CubeMesh {
         self.updated_positions.push(position);
     }
 
+    pub fn fill(&mut self, material: Option<PaletteMaterialId>) {
+        self.data.par_iter_mut().for_each(|cube| {
+            *cube = Cube::new(material);
+        });
+
+        for face in Face::values() {
+            let boundary = boundary(face);
+            for x in boundary.x {
+                for y in boundary.y.clone() {
+                    for z in boundary.z.clone() {
+                        let position = vec3u5::new(x, y, z);
+                        self.data[position.linearize()]
+                            .flags
+                            .insert_faces(face);
+                        self.updated_positions.push(position);
+                    }
+                }
+            }
+        }
+    }
+
     fn remove_neighboring_faces(&mut self, faces: Faces, position: vec3u5) {
         faces
             .iter()
@@ -216,12 +226,10 @@ impl CubeMesh {
                 {
                     self.data[position.linearize()]
                         .flags
-                        .remove_faces(Faces::from(f));
+                        .remove_faces(f);
                 }
 
-                self.data[index]
-                    .flags
-                    .remove_faces(Faces::from(f.inverse()));
+                self.data[index].flags.remove_faces(f.inverse());
             });
     }
 
@@ -240,7 +248,19 @@ impl CubeMesh {
             self.updated_positions.push(position);
             self.data[position.linearize()]
                 .flags
-                .insert_faces(Faces::from(f.inverse()));
+                .insert_faces(f.inverse());
         }
+    }
+}
+
+fn boundary(face: Face) -> Vec3<Range<u8>> {
+    let l = chunk::LENGTH as u8;
+    match face {
+        Face::East => Vec3::new(l - 1..l, 0..l, 0..l),
+        Face::West => Vec3::new(0..1, 0..l, 0..l),
+        Face::Up => Vec3::new(0..l, l - 1..l, 0..l),
+        Face::Down => Vec3::new(0..l, 0..1, 0..l),
+        Face::North => Vec3::new(0..l, 0..l, l - 1..l),
+        Face::South => Vec3::new(0..l, 0..l, 0..1),
     }
 }

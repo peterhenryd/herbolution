@@ -1,92 +1,189 @@
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::alloc::{alloc, handle_alloc_error, Layout};
+use std::borrow::Borrow;
 use std::fmt::{Display, Formatter};
-use std::hash::{DefaultHasher, Hash, Hasher};
+use std::hash::{Hash, Hasher};
+use std::ops::Deref;
+use std::{ptr, slice};
 
-use hashbrown::Equivalent;
-use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
-pub struct GroupKeyBuf {
-    pub group: String,
-    pub key: String,
-    hash: u64,
+#[derive(Debug, Eq)]
+pub struct GroupKey {
+    sep: usize,
+    str: str,
 }
+
+impl GroupKey {
+    #[inline]
+    pub fn group(&self) -> &str {
+        &self.str[..self.sep]
+    }
+
+    #[inline]
+    pub fn key(&self) -> &str {
+        &self.str[self.sep + 1..]
+    }
+
+    #[inline]
+    pub fn as_str(&self) -> &str {
+        &self.str
+    }
+}
+
+impl PartialEq for GroupKey {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.str == other.str
+    }
+}
+
+impl Hash for GroupKey {
+    #[inline]
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.as_str().hash(state);
+    }
+}
+
+impl Display for GroupKey {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct GroupKeyBuf(Box<GroupKey>);
 
 impl GroupKeyBuf {
-    pub fn new(group: String, key: String) -> Self {
-        let hash = hash_key(&group, &key);
-        Self { group, key, hash }
+    /*
+    pub fn from_string(string: String) -> Option<Self> {
+        let sep = string.find(':')?;
+        let hash = hash_meta(&string[..sep], &string[sep + 1..]);
+
+        Some(unsafe { Self::from_string_unchecked(hash, sep, string) })
     }
 
-    pub fn as_ref(&self) -> GroupKey<'_> {
-        GroupKey {
-            group: &self.group,
-            key: &self.key,
-            hash: self.hash,
+    pub fn from_string_unchecked(hash: u64, sep: usize, mut string: String) -> Self {
+        let len = string.len();
+        let (layout, meta_offset, str_offset) = layout(len);
+
+        let ptr = realloc(string.as_mut_ptr(), old_layout, layout.size());
+        if ptr.is_null() {
+            handle_alloc_error(layout);
         }
+
+        ptr::copy(ptr, ptr.add(str_offset), len);
+
+        unsafe {
+            ptr.cast::<u64>().write(hash);
+            ptr.add(meta_offset).cast::<usize>().write(sep);
+        }
+
+        forget(string);
+
+        Self(unsafe { Box::from_raw(ptr::from_raw_parts_mut(ptr, len)) })
+    }
+     */
+
+    pub fn new(group: &str, key: &str) -> Self {
+        let sep = group.len();
+        let len = sep + key.len() + 1;
+
+        let (layout, offset) = layout(len);
+
+        let ptr = unsafe { alloc(layout) };
+        if ptr.is_null() {
+            handle_alloc_error(layout);
+        }
+
+        unsafe {
+            ptr.cast::<usize>().write(sep);
+        }
+
+        let slice = unsafe { slice::from_raw_parts_mut(ptr.add(offset), len) };
+        slice[0..sep].copy_from_slice(group.as_bytes());
+        slice[sep] = b':';
+        slice[sep + 1..].copy_from_slice(key.as_bytes());
+
+        Self(unsafe { Box::from_raw(ptr::from_raw_parts_mut(ptr, len)) })
     }
 
-    pub fn len(&self) -> usize {
-        self.group.len() + self.key.len() + 1
-    }
-}
-
-impl Display for GroupKeyBuf {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}:{}", self.group, self.key)
-    }
+    // TODO(a): add constructor that moves String instead of allocating
 }
 
 impl Hash for GroupKeyBuf {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        state.write(&self.hash.to_ne_bytes());
+        self.0.hash(state);
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub struct GroupKey<'a> {
-    pub group: &'a str,
-    pub key: &'a str,
-    hash: u64,
+fn layout(str_len: usize) -> (Layout, usize) {
+    let sep_layout = Layout::new::<u64>();
+    let str_layout = Layout::from_size_align(str_len, 1).unwrap();
+
+    let (layout, offset) = sep_layout.extend(str_layout).unwrap();
+    let layout = layout.pad_to_align();
+
+    (layout, offset)
 }
 
-impl<'a> From<(&'a str, &'a str)> for GroupKey<'a> {
-    fn from(value: (&'a str, &'a str)) -> Self {
-        let (group, key) = value;
-        let hash = hash_key(group, key);
-        Self { group, key, hash }
+impl Clone for GroupKeyBuf {
+    #[inline]
+    fn clone(&self) -> Self {
+        Self::new(self.group(), self.key())
     }
 }
 
-impl<'a> From<&'a GroupKeyBuf> for GroupKey<'a> {
-    fn from(value: &'a GroupKeyBuf) -> Self {
-        Self {
-            group: &value.group,
-            key: &value.key,
-            hash: value.hash,
-        }
+impl Deref for GroupKeyBuf {
+    type Target = GroupKey;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
-impl Hash for GroupKey<'_> {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        state.write(&self.hash.to_ne_bytes());
+impl<'de> Deserialize<'de> for GroupKeyBuf {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let De { sep, string } = De::deserialize(deserializer)?;
+
+        // TODO: remove unnecessary allocation, see TODO(a)
+        Ok(Self::new(&string[..sep], &string[sep + 1..]))
     }
 }
 
-impl Equivalent<GroupKeyBuf> for GroupKey<'_> {
-    fn equivalent(&self, other: &GroupKeyBuf) -> bool {
-        self.group == &other.group && self.key == &other.key
+impl Serialize for GroupKeyBuf {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        Ser { sep: self.sep, str: &self.str }.serialize(serializer)
     }
 }
 
-fn hash_key(group: &str, key: &str) -> u64 {
-    let mut hasher = DefaultHasher::new();
-    group.hash(&mut hasher);
-    key.hash(&mut hasher);
-
-    hasher.finish()
+impl Borrow<GroupKey> for GroupKeyBuf {
+    #[inline]
+    fn borrow(&self) -> &GroupKey {
+        self.deref()
+    }
 }
 
-pub fn group_key(group: impl Into<String>, key: impl Into<String>) -> GroupKeyBuf {
-    GroupKeyBuf::new(group.into(), key.into())
+impl Borrow<str> for GroupKeyBuf {
+    #[inline]
+    fn borrow(&self) -> &str {
+        &self.str
+    }
+}
+
+#[derive(Deserialize)]
+struct De {
+    sep: usize,
+    string: String,
+}
+
+#[derive(Serialize)]
+struct Ser<'a> {
+    sep: usize,
+    str: &'a str,
 }

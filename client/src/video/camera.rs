@@ -7,7 +7,7 @@ use lib::vector::{Vec3, vec3d, vec3f, vec4f, vec4i};
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Pod, Zeroable)]
 pub struct VideoCamera {
-    view_proj: mat4f,
+    pub(crate) view_proj: mat4f,
     position: vec4f,
     position_int: vec4i,
     position_fract: vec4f,

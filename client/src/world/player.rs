@@ -175,8 +175,8 @@ fn cube(position: vec3d, color: Rgba<f32>) -> impl IntoIterator<Item = Instance3
 }
 
 use lib::chunk;
-use lib::matrix::{Mat4, mat4f};
-use lib::proj::{Perspective, Proj};
+use lib::matrix::Mat4;
+use lib::proj::Perspective;
 use lib::rotation::Euler;
 use lib::size::size2u;
 use lib::spatial::Face;
@@ -184,7 +184,7 @@ use lib::vector::{Vec3, vec3d, vec3i, vec3i8};
 
 use crate::app::Update;
 use crate::video::Video;
-use crate::video::camera::View;
+use crate::video::camera::{VideoCamera, View};
 use crate::video::resource::{SetId, Sets};
 use crate::video::world::{Instance3d, Sculptor};
 use crate::world::frustum::Frustum;
@@ -205,7 +205,7 @@ impl PlayerCamera {
         let aspect = resolution.cast::<f32>().unwrap().aspect();
         let perspective = Perspective::new(70f32.to_radians(), aspect, 0.001, 500.0);
 
-        sculptor.update_camera(Vec3::ZERO, View::rotatable(), perspective);
+        sculptor.update_camera(&VideoCamera::new(Vec3::ZERO, View::rotatable(), perspective));
 
         Self {
             position: Vec3::ZERO,
@@ -216,16 +216,18 @@ impl PlayerCamera {
         }
     }
 
-    fn view_proj(&self) -> mat4f {
-        self.perspective.to_matrix() * Mat4::look_to(Vec3::ZERO, self.rotation.into_view_center(), Vec3::Y)
+    #[inline]
+    fn to_video_camera(&self) -> VideoCamera {
+        VideoCamera::new(self.position, View::Rotate { rotation: self.rotation }, self.perspective)
     }
 
     /// Submits the camera to the video state and calculates a new frustum and chunk position.
     pub fn update(&mut self, video: &mut Video) {
-        video
-            .sculptor
-            .update_camera(self.position, View::Rotate { rotation: self.rotation }, self.perspective);
-        self.frustum = Frustum::new(self.view_proj());
+        let video_camera = self.to_video_camera();
+
+        video.sculptor.update_camera(&video_camera);
+        self.frustum = Frustum::new(video_camera.view_proj);
+
         self.chunk_position = self.position.cast() / chunk::LENGTH as i32;
     }
 }

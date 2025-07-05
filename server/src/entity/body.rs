@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use lib::rotation::Euler;
 use lib::spatial::Aabb;
-use lib::vector::{Vec3, vec3d, vec3f};
+use lib::vector::{vec3d, vec3f, Vec3};
 
 use crate::chunk::map::ChunkMap;
 
@@ -29,7 +29,7 @@ pub struct EntityBody {
 pub struct EntityAttrs {
     pub has_gravity: bool,
     pub acceleration_rate: f64,
-    pub terminal_velocity: vec3d,
+    pub terminal_velocity: f64,
 }
 
 impl EntityBody {
@@ -83,6 +83,15 @@ impl EntityBody {
 
         self.velocity.x += direction.x * speed * dt_secs;
         self.velocity.z += direction.z * speed * dt_secs;
+
+        self.velocity.x = self
+            .velocity
+            .x
+            .clamp(-self.attrs.terminal_velocity, self.attrs.terminal_velocity);
+        self.velocity.z = self
+            .velocity
+            .z
+            .clamp(-self.attrs.terminal_velocity, self.attrs.terminal_velocity);
 
         if self.is_on_ground || !self.attrs.has_gravity {
             self.velocity.y = JUMP_FORCE * self.motion.y as f64;

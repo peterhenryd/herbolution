@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::hash::Hash;
 use std::num::NonZeroU16;
 use std::slice::Iter;
@@ -7,7 +8,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use hashbrown::{Equivalent, HashMap};
 use lib::color::Rgba;
 use lib::spatial::Faces;
-use lib::util::{GroupKeyBuf, group_key};
+use lib::util::GroupKeyBuf;
 use serde::{Deserialize, Serialize};
 
 use crate::chunk::cube::Cube;
@@ -26,7 +27,7 @@ pub struct Material {
 impl Material {
     pub fn stone() -> Self {
         Self {
-            group_key: group_key("herbolution", "stone"),
+            group_key: GroupKeyBuf::new("herbolution", "stone"),
             has_collider: true,
             cullable_faces: Faces::all(),
             texture: Texture::Colors {
@@ -38,7 +39,7 @@ impl Material {
 
     pub fn dirt() -> Self {
         Self {
-            group_key: group_key("herbolution", "dirt"),
+            group_key: GroupKeyBuf::new("herbolution", "dirt"),
             has_collider: true,
             cullable_faces: Faces::all(),
             texture: Texture::Colors {
@@ -50,7 +51,7 @@ impl Material {
 
     pub fn grass() -> Self {
         Self {
-            group_key: group_key("herbolution", "grass"),
+            group_key: GroupKeyBuf::new("herbolution", "grass"),
             has_collider: true,
             cullable_faces: Faces::all(),
             texture: Texture::Colors {
@@ -71,10 +72,10 @@ impl Material {
     }
 
     pub fn encode(&self, buf: &mut Vec<u8>) {
-        buf.push(self.group_key.group.len() as u8);
-        buf.extend(self.group_key.group.bytes());
-        buf.push(self.group_key.key.len() as u8);
-        buf.extend(self.group_key.key.bytes());
+        buf.push(self.group_key.group().len() as u8);
+        buf.push(self.group_key.key().len() as u8);
+        buf.extend(self.group_key.group().bytes());
+        buf.extend(self.group_key.key().bytes());
 
         let encoded_0 = self.cullable_faces.bits() << 6 | self.has_collider as u8;
         buf.push(encoded_0);
@@ -96,17 +97,13 @@ impl Material {
     }
 
     pub fn decode(buf: &[u8]) -> Option<Self> {
-        let mut bytes = buf.iter().copied();
+        let group_len = *buf.get(0)? as usize;
+        let key_len = *buf.get(1)? as usize;
+        let group_str = str::from_utf8(&buf[0..group_len]).ok()?;
+        let key_str = str::from_utf8(&buf[group_len + 1..group_len + 1 + key_len]).ok()?;
+        let group_key = GroupKeyBuf::new(&group_str, &key_str);
 
-        let group_len = bytes.next()? as usize;
-        let group_bytes = bytes.by_ref().take(group_len).collect::<Vec<_>>();
-        let group_string = String::from_utf8(group_bytes).ok()?;
-
-        let key_len = bytes.next()? as usize;
-        let key_bytes = bytes.by_ref().take(key_len).collect::<Vec<_>>();
-        let key_string = String::from_utf8(key_bytes).ok()?;
-
-        let group_key = GroupKeyBuf::new(group_string, key_string);
+        let mut bytes = buf.iter().skip(group_len + 1 + key_len).copied();
 
         let encoded_0 = bytes.next()?;
         let has_collider = (encoded_0 >> 6) != 0;
@@ -169,21 +166,37 @@ impl Palette {
             return *id;
         }
 
-        let id = PaletteMaterialId::new(self.vec.len() as u16 + 1).expect("PaletteMaterialId must be non-zero");
+        let id = PaletteMaterialId::new(self.vec.len() as u16).expect("PaletteMaterialId must be non-zero");
         self.named_indices.insert(group_key, id);
         self.vec.push(material);
+
         id
     }
 
-    pub fn get(&self, id: PaletteMaterialId) -> Option<&Arc<Material>> {
-        self.vec.get(id.to_u16() as usize - 1)
+    pub fn get<Q>(&self, key: &Q) -> Arc<Material>
+    where
+        Q: Hash + Equivalent<GroupKeyBuf> + ?Sized,
+    {
+        self.get_by_key(key).unwrap().clone()
+    }
+
+    pub fn get_by_key<Q>(&self, key: &Q) -> Option<&Arc<Material>>
+    where
+        Q: Hash + Equivalent<GroupKeyBuf> + ?Sized,
+    {
+        self.get_id_by_key(key)
+            .and_then(|id| self.get_by_id(id))
+    }
+
+    pub fn get_by_id(&self, id: PaletteMaterialId) -> Option<&Arc<Material>> {
+        self.vec.get(id.to_u16() as usize)
     }
 
     pub fn get_id_by_key<Q>(&self, key: &Q) -> Option<PaletteMaterialId>
     where
-        Q: Equivalent<GroupKeyBuf> + Hash,
+        Q: Hash + Equivalent<GroupKeyBuf> + ?Sized,
     {
-        self.named_indices.get(key).cloned()
+        self.named_indices.get(key).copied()
     }
 
     pub fn update(&self, handle: &ClientChunkHandle) {
@@ -206,15 +219,15 @@ pub struct PaletteMaterialId(NonZeroU16);
 
 impl PaletteMaterialId {
     pub(crate) fn new(value: u16) -> Option<Self> {
-        NonZeroU16::new(value).map(Self)
+        NonZeroU16::new(value + 1).map(Self)
     }
 
     pub fn to_u16(self) -> u16 {
-        self.0.get()
+        self.0.get() - 1
     }
 
     pub fn using<T>(self, palette: &Palette, f: impl FnOnce(&Arc<Material>) -> T) -> Option<T> {
-        palette.get(self).map(f)
+        palette.get_by_id(self).map(f)
     }
 }
 

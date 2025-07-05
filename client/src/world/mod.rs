@@ -40,7 +40,7 @@ impl World {
             ambient_light: Vec3::splat(0.5),
             light_dir: Vec3::new(0.2, 1.0, -0.7).normalize(),
             fog_color: Rgb::<u8>::from_rgb(177, 242, 255).into(),
-            fog_distance: 400.0,
+            fog_distance: 300.0,
             fog_density: 20.0,
         };
 

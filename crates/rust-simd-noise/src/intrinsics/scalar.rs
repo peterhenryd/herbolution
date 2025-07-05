@@ -1,0 +1,344 @@
+cellular!(
+    "2d",
+    cellular_2d,
+    f32,
+    SimdTransmuteF32::try_transmute_from_scalar,
+    i64,
+    cell_32,
+    try_transmute_scalar
+);
+cellular!(
+    "3d",
+    cellular_3d,
+    f32,
+    SimdTransmuteF32::try_transmute_from_scalar,
+    i64,
+    cell_32,
+    try_transmute_scalar
+);
+/*
+cellular!(
+    "2d",
+    cellular_2d_f64,
+    f64,
+    SimdTransmuteF64::try_transmute_from_scalar,
+    i64,
+    cell_64,
+    try_transmute_scalar
+);
+cellular!(
+    "3d",
+    cellular_3d_f64,
+    f64,
+    SimdTransmuteF64::try_transmute_from_scalar,
+    i64,
+    cell_64,
+    try_transmute_scalar
+);
+ */
+simplex!(
+    "1d",
+    simplex_1d,
+    f32,
+    SimdTransmuteF32::try_transmute_from_scalar,
+    i64,
+    simplex_32,
+    try_transmute_scalar
+);
+simplex!(
+    "2d",
+    simplex_2d,
+    f32,
+    SimdTransmuteF32::try_transmute_from_scalar,
+    i64,
+    simplex_32,
+    try_transmute_scalar
+);
+simplex!(
+    "3d",
+    simplex_3d,
+    f32,
+    SimdTransmuteF32::try_transmute_from_scalar,
+    i64,
+    simplex_32,
+    try_transmute_scalar
+);
+simplex!(
+    "4d",
+    simplex_4d,
+    f32,
+    SimdTransmuteF32::try_transmute_from_scalar,
+    i64,
+    simplex_32,
+    try_transmute_scalar
+);
+simplex!(
+    "1d",
+    simplex_1d_f64,
+    f64,
+    SimdTransmuteF64::try_transmute_from_scalar,
+    i64,
+    simplex_64,
+    try_transmute_scalar
+);
+simplex!(
+    "2d",
+    simplex_2d_f64,
+    f64,
+    SimdTransmuteF64::try_transmute_from_scalar,
+    i64,
+    simplex_64,
+    try_transmute_scalar
+);
+simplex!(
+    "3d",
+    simplex_3d_f64,
+    f64,
+    SimdTransmuteF64::try_transmute_from_scalar,
+    i64,
+    simplex_64,
+    try_transmute_scalar
+);
+simplex!(
+    "4d",
+    simplex_4d_f64,
+    f64,
+    SimdTransmuteF64::try_transmute_from_scalar,
+    i64,
+    simplex_64,
+    try_transmute_scalar
+);
+fbm!(
+    "1d",
+    fbm_1d,
+    f32,
+    SimdTransmuteF32::try_transmute_from_scalar,
+    i64,
+    fbm_32,
+    try_transmute_scalar
+);
+fbm!(
+    "2d",
+    fbm_2d,
+    f32,
+    SimdTransmuteF32::try_transmute_from_scalar,
+    i64,
+    fbm_32,
+    try_transmute_scalar
+);
+fbm!(
+    "3d",
+    fbm_3d,
+    f32,
+    SimdTransmuteF32::try_transmute_from_scalar,
+    i64,
+    fbm_32,
+    try_transmute_scalar
+);
+fbm!(
+    "4d",
+    fbm_4d,
+    f32,
+    SimdTransmuteF32::try_transmute_from_scalar,
+    i64,
+    fbm_32,
+    try_transmute_scalar
+);
+fbm!(
+    "1d",
+    fbm_1d_f64,
+    f64,
+    SimdTransmuteF64::try_transmute_from_scalar,
+    i64,
+    fbm_64,
+    try_transmute_scalar
+);
+fbm!(
+    "2d",
+    fbm_2d_f64,
+    f64,
+    SimdTransmuteF64::try_transmute_from_scalar,
+    i64,
+    fbm_64,
+    try_transmute_scalar
+);
+fbm!(
+    "3d",
+    fbm_3d_f64,
+    f64,
+    SimdTransmuteF64::try_transmute_from_scalar,
+    i64,
+    fbm_64,
+    try_transmute_scalar
+);
+fbm!(
+    "4d",
+    fbm_4d_f64,
+    f64,
+    SimdTransmuteF64::try_transmute_from_scalar,
+    i64,
+    fbm_64,
+    try_transmute_scalar
+);
+
+ridge!(
+    "1d",
+    ridge_1d,
+    f32,
+    SimdTransmuteF32::try_transmute_from_scalar,
+    i64,
+    ridge_32,
+    try_transmute_scalar
+);
+ridge!(
+    "2d",
+    ridge_2d,
+    f32,
+    SimdTransmuteF32::try_transmute_from_scalar,
+    i64,
+    ridge_32,
+    try_transmute_scalar
+);
+ridge!(
+    "3d",
+    ridge_3d,
+    f32,
+    SimdTransmuteF32::try_transmute_from_scalar,
+    i64,
+    ridge_32,
+    try_transmute_scalar
+);
+ridge!(
+    "4d",
+    ridge_4d,
+    f32,
+    SimdTransmuteF32::try_transmute_from_scalar,
+    i64,
+    ridge_32,
+    try_transmute_scalar
+);
+/*
+ridge!(
+    "1d",
+    ridge_1d_f64,
+    f64,
+    SimdTransmuteF64::try_transmute_from_scalar,
+    i64,
+    simplex_ridge_64,
+    try_transmute_scalar
+);
+ridge!(
+    "2d",
+    ridge_2d_f64,
+    f64,
+    SimdTransmuteF64::try_transmute_from_scalar,
+    i64,
+    simplex_ridge_64,
+    try_transmute_scalar
+);
+ridge!(
+    "3d",
+    ridge_3d_f64,
+    f64,
+    SimdTransmuteF64::try_transmute_from_scalar,
+    i64,
+    simplex_ridge_64,
+    try_transmute_scalar
+);
+ridge!(
+    "4d",
+    ridge_4d_f64,
+    f64,
+    SimdTransmuteF64::try_transmute_from_scalar,
+    i64,
+    simplex_ridge_64,
+    try_transmute_scalar
+);
+ */
+turbulence!(
+    "1d",
+    turbulenece_1d,
+    f32,
+    SimdTransmuteF32::try_transmute_from_scalar,
+    i64,
+    turbulence_32,
+    try_transmute_scalar
+);
+turbulence!(
+    "2d",
+    turbulenece_2d,
+    f32,
+    SimdTransmuteF32::try_transmute_from_scalar,
+    i64,
+    turbulence_32,
+    try_transmute_scalar
+);
+turbulence!(
+    "3d",
+    turbulenece_3d,
+    f32,
+    SimdTransmuteF32::try_transmute_from_scalar,
+    i64,
+    turbulence_32,
+    try_transmute_scalar
+);
+turbulence!(
+    "4d",
+    turbulenece_4d,
+    f32,
+    SimdTransmuteF32::try_transmute_from_scalar,
+    i64,
+    turbulence_32,
+    try_transmute_scalar
+);
+turbulence!(
+    "1d",
+    turbulenece_1d_f64,
+    f64,
+    SimdTransmuteF64::try_transmute_from_scalar,
+    i64,
+    turbulence_64,
+    try_transmute_scalar
+);
+turbulence!(
+    "2d",
+    turbulenece_2d_f64,
+    f64,
+    SimdTransmuteF64::try_transmute_from_scalar,
+    i64,
+    turbulence_64,
+    try_transmute_scalar
+);
+turbulence!(
+    "3d",
+    turbulenece_3d_f64,
+    f64,
+    SimdTransmuteF64::try_transmute_from_scalar,
+    i64,
+    turbulence_64,
+    try_transmute_scalar
+);
+turbulence!(
+    "4d",
+    turbulenece_4d_f64,
+    f64,
+    SimdTransmuteF64::try_transmute_from_scalar,
+    i64,
+    turbulence_64,
+    try_transmute_scalar
+);
+
+get_noise!(get_1d_noise, get_1d_noise, f32, crate::noise::f32);
+get_noise!(get_2d_noise, get_2d_noise, f32, crate::noise::f32);
+get_noise!(get_3d_noise, get_3d_noise, f32, crate::noise::f32);
+get_noise!(get_4d_noise, get_4d_noise, f32, crate::noise::f32);
+/*
+get_noise!(get_1d_noise, get_1d_noise_64, f64, crate::noise::f64);
+get_noise!(get_2d_noise, get_2d_noise_64, f64, crate::noise::f64);
+get_noise!(get_3d_noise, get_3d_noise_64, f64, crate::noise::f64);
+get_noise!(get_4d_noise, get_4d_noise_64, f64, crate::noise::f64);
+ */
+get_noise_scaled!(get_1d_noise, get_1d_scaled_noise, f32);
+get_noise_scaled!(get_2d_noise, get_2d_scaled_noise, f32);
+get_noise_scaled!(get_3d_noise, get_3d_scaled_noise, f32);
+get_noise_scaled!(get_4d_noise, get_4d_scaled_noise, f32);

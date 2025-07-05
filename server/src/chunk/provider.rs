@@ -8,6 +8,7 @@ use lib::util::DisplayJoined;
 use tracing::error;
 
 use crate::chunk::codec::CubeGrid;
+use crate::chunk::material::{Material, Palette};
 use crate::chunk::mesh::CubeMesh;
 use crate::generator::{ChunkGenerator, GenerationParams};
 
@@ -30,9 +31,15 @@ impl ChunkProvider {
             std::fs::create_dir_all(&dir_path).unwrap();
         }
 
+        let mut global_palette = Palette::new();
+        global_palette.insert(Arc::new(Material::stone()));
+        global_palette.insert(Arc::new(Material::dirt()));
+        global_palette.insert(Arc::new(Material::grass()));
+        let global_palette = Arc::new(global_palette);
+
         Self {
             dir_path,
-            generator: ChunkGenerator::new(Arc::new(GenerationParams::new(seed))),
+            generator: ChunkGenerator::new(Arc::new(GenerationParams::new(seed, global_palette.clone()))),
             reader: ChunkReader::new(),
         }
     }

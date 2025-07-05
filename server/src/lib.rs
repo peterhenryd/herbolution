@@ -1,8 +1,11 @@
+#![allow(incomplete_features)]
+#![feature(generic_const_exprs)]
 #![feature(array_chunks)]
 #![feature(iter_array_chunks)]
 #![feature(iter_next_chunk)]
 #![feature(random)]
 #![feature(duration_constants)]
+#![feature(integer_atomics)]
 extern crate herbolution_lib as lib;
 
 use std::thread;
@@ -79,7 +82,7 @@ impl Game {
                     EntityAttrs {
                         has_gravity: true,
                         acceleration_rate: 20.0,
-                        terminal_velocity: Vec3::ONE,
+                        terminal_velocity: 50.0,
                     },
                 ),
             },

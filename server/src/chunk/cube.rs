@@ -52,12 +52,12 @@ impl CubeFlags {
         }
     }
 
-    pub fn insert_faces(&mut self, faces: Faces) {
-        self.set_opaque(self.faces() + faces)
+    pub fn insert_faces(&mut self, faces: impl Into<Faces>) {
+        self.set_opaque(self.faces() + faces.into())
     }
 
-    pub fn remove_faces(&mut self, faces: Faces) {
-        self.set_opaque(self.faces() - faces)
+    pub fn remove_faces(&mut self, faces: impl Into<Faces>) {
+        self.set_opaque(self.faces() - faces.into())
     }
 
     pub fn light_levels(&self) -> PerFaceU5 {

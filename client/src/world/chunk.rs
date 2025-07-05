@@ -86,9 +86,9 @@ impl Chunk {
         }
 
         // If the chunk is culled by the behavior-side server, don't video it.
-        //if !self.handle.is_rendered() {
-        //    return;
-        //}
+        if !self.handle.is_rendered() {
+            return;
+        }
 
         chisel.render_each(&self.mesh);
     }
@@ -150,7 +150,7 @@ impl Chunk {
                         if let Some(material) = cube.material {
                             if Some(material) != prev_material_id {
                                 prev_material_id = Some(material);
-                                cached_material = context.palette.get(material);
+                                cached_material = context.palette.get_by_id(material);
                             }
 
                             let Some(material) = &cached_material else {

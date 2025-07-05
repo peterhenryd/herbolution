@@ -1,0 +1,322 @@
+#[cfg(target_arch = "x86")]
+use std::arch::x86::*;
+
+use crate::functions::{cell_32, fbm_32, fbm_64, ridge_32, ridge_64, simplex_32, simplex_64, turbulence_32, turbulence_64};
+use crate::simd::{SimdTransmuteF32, SimdTransmuteF64};
+#[cfg(target_arch = "x86_64")]
+use std::arch::x86_64::*;
+
+cellular!(
+    "2d",
+    cellular_2d,
+    __m256,
+    SimdTransmuteF32::try_transmute_from_avx2,
+    i64,
+    cell_32,
+    try_transmute_avx2
+);
+cellular!(
+    "3d",
+    cellular_3d,
+    __m256,
+    SimdTransmuteF32::try_transmute_from_avx2,
+    i64,
+    cell_32,
+    try_transmute_avx2
+);
+/*
+cellular!(
+    "2d",
+    cellular_2d_f64,
+    __m256d,
+    SimdTransmuteF64::try_transmute_from_avx2,
+    i64,
+    cell_64,
+    try_transmute_avx2
+);
+cellular!(
+    "3d",
+    cellular_3d_f64,
+    __m256d,
+    SimdTransmuteF64::try_transmute_from_avx2,
+    i64,
+    cell_64,
+    try_transmute_avx2
+);
+ */
+simplex!(
+    "1d",
+    simplex_1d,
+    __m256,
+    SimdTransmuteF32::try_transmute_from_avx2,
+    i64,
+    simplex_32,
+    try_transmute_avx2
+);
+simplex!(
+    "2d",
+    simplex_2d,
+    __m256,
+    SimdTransmuteF32::try_transmute_from_avx2,
+    i64,
+    simplex_32,
+    try_transmute_avx2
+);
+simplex!(
+    "3d",
+    simplex_3d,
+    __m256,
+    SimdTransmuteF32::try_transmute_from_avx2,
+    i64,
+    simplex_32,
+    try_transmute_avx2
+);
+simplex!(
+    "4d",
+    simplex_4d,
+    __m256,
+    SimdTransmuteF32::try_transmute_from_avx2,
+    i64,
+    simplex_32,
+    try_transmute_avx2
+);
+simplex!(
+    "1d",
+    simplex_1d_f64,
+    __m256d,
+    SimdTransmuteF64::try_transmute_from_avx2,
+    i64,
+    simplex_64,
+    try_transmute_avx2
+);
+simplex!(
+    "2d",
+    simplex_2d_f64,
+    __m256d,
+    SimdTransmuteF64::try_transmute_from_avx2,
+    i64,
+    simplex_64,
+    try_transmute_avx2
+);
+simplex!(
+    "3d",
+    simplex_3d_f64,
+    __m256d,
+    SimdTransmuteF64::try_transmute_from_avx2,
+    i64,
+    simplex_64,
+    try_transmute_avx2
+);
+simplex!(
+    "4d",
+    simplex_4d_f64,
+    __m256d,
+    SimdTransmuteF64::try_transmute_from_avx2,
+    i64,
+    simplex_64,
+    try_transmute_avx2
+);
+
+fbm!("1d", fbm_1d, __m256, SimdTransmuteF32::try_transmute_from_avx2, i64, fbm_32, try_transmute_avx2);
+fbm!("2d", fbm_2d, __m256, SimdTransmuteF32::try_transmute_from_avx2, i64, fbm_32, try_transmute_avx2);
+fbm!("3d", fbm_3d, __m256, SimdTransmuteF32::try_transmute_from_avx2, i64, fbm_32, try_transmute_avx2);
+fbm!("4d", fbm_4d, __m256, SimdTransmuteF32::try_transmute_from_avx2, i64, fbm_32, try_transmute_avx2);
+fbm!(
+    "1d",
+    fbm_1d_f64,
+    __m256d,
+    SimdTransmuteF64::try_transmute_from_avx2,
+    i64,
+    fbm_64,
+    try_transmute_avx2
+);
+fbm!(
+    "2d",
+    fbm_2d_f64,
+    __m256d,
+    SimdTransmuteF64::try_transmute_from_avx2,
+    i64,
+    fbm_64,
+    try_transmute_avx2
+);
+fbm!(
+    "3d",
+    fbm_3d_f64,
+    __m256d,
+    SimdTransmuteF64::try_transmute_from_avx2,
+    i64,
+    fbm_64,
+    try_transmute_avx2
+);
+fbm!(
+    "4d",
+    fbm_4d_f64,
+    __m256d,
+    SimdTransmuteF64::try_transmute_from_avx2,
+    i64,
+    fbm_64,
+    try_transmute_avx2
+);
+
+ridge!(
+    "1d",
+    ridge_1d,
+    __m256,
+    SimdTransmuteF32::try_transmute_from_avx2,
+    i64,
+    ridge_32,
+    try_transmute_avx2
+);
+ridge!(
+    "2d",
+    ridge_2d,
+    __m256,
+    SimdTransmuteF32::try_transmute_from_avx2,
+    i64,
+    ridge_32,
+    try_transmute_avx2
+);
+ridge!(
+    "3d",
+    ridge_3d,
+    __m256,
+    SimdTransmuteF32::try_transmute_from_avx2,
+    i64,
+    ridge_32,
+    try_transmute_avx2
+);
+ridge!(
+    "4d",
+    ridge_4d,
+    __m256,
+    SimdTransmuteF32::try_transmute_from_avx2,
+    i64,
+    ridge_32,
+    try_transmute_avx2
+);
+ridge!(
+    "1d",
+    ridge_1d_f64,
+    __m256d,
+    SimdTransmuteF64::try_transmute_from_avx2,
+    i64,
+    ridge_64,
+    try_transmute_avx2
+);
+ridge!(
+    "2d",
+    ridge_2d_f64,
+    __m256d,
+    SimdTransmuteF64::try_transmute_from_avx2,
+    i64,
+    ridge_64,
+    try_transmute_avx2
+);
+ridge!(
+    "3d",
+    ridge_3d_f64,
+    __m256d,
+    SimdTransmuteF64::try_transmute_from_avx2,
+    i64,
+    ridge_64,
+    try_transmute_avx2
+);
+ridge!(
+    "4d",
+    ridge_4d_f64,
+    __m256d,
+    SimdTransmuteF64::try_transmute_from_avx2,
+    i64,
+    ridge_64,
+    try_transmute_avx2
+);
+
+turbulence!(
+    "1d",
+    turbulence_1d,
+    __m256,
+    SimdTransmuteF32::try_transmute_from_avx2,
+    i64,
+    turbulence_32,
+    try_transmute_avx2
+);
+turbulence!(
+    "2d",
+    turbulence_2d,
+    __m256,
+    SimdTransmuteF32::try_transmute_from_avx2,
+    i64,
+    turbulence_32,
+    try_transmute_avx2
+);
+turbulence!(
+    "3d",
+    turbulence_3d,
+    __m256,
+    SimdTransmuteF32::try_transmute_from_avx2,
+    i64,
+    turbulence_32,
+    try_transmute_avx2
+);
+turbulence!(
+    "4d",
+    turbulence_4d,
+    __m256,
+    SimdTransmuteF32::try_transmute_from_avx2,
+    i64,
+    turbulence_32,
+    try_transmute_avx2
+);
+turbulence!(
+    "1d",
+    turbulence_1d_f64,
+    __m256d,
+    SimdTransmuteF64::try_transmute_from_avx2,
+    i64,
+    turbulence_64,
+    try_transmute_avx2
+);
+turbulence!(
+    "2d",
+    turbulence_2d_f64,
+    __m256d,
+    SimdTransmuteF64::try_transmute_from_avx2,
+    i64,
+    turbulence_64,
+    try_transmute_avx2
+);
+turbulence!(
+    "3d",
+    turbulence_3d_f64,
+    __m256d,
+    SimdTransmuteF64::try_transmute_from_avx2,
+    i64,
+    turbulence_64,
+    try_transmute_avx2
+);
+turbulence!(
+    "4d",
+    turbulence_4d_f64,
+    __m256d,
+    SimdTransmuteF64::try_transmute_from_avx2,
+    i64,
+    turbulence_64,
+    try_transmute_avx2
+);
+
+get_noise!(get_1d_noise, get_1d_noise, f32, crate::noise::f32);
+get_noise!(get_2d_noise, get_2d_noise, f32, crate::noise::f32);
+get_noise!(get_3d_noise, get_3d_noise, f32, crate::noise::f32);
+/*
+get_noise!(get_4d_noise, get_4d_noise, f32, crate::noise_helpers_32);
+get_noise!(get_1d_noise, get_1d_noise_64, f64, crate::noise_helpers_64);
+get_noise!(get_2d_noise, get_2d_noise_64, f64, crate::noise_helpers_64);
+get_noise!(get_3d_noise, get_3d_noise_64, f64, crate::noise_helpers_64);
+get_noise!(get_4d_noise, get_4d_noise_64, f64, crate::noise_helpers_64);
+get_noise_scaled!(get_1d_noise, get_1d_scaled_noise, f32);
+get_noise_scaled!(get_2d_noise, get_2d_scaled_noise, f32);
+get_noise_scaled!(get_3d_noise, get_3d_scaled_noise, f32);
+get_noise_scaled!(get_4d_noise, get_4d_scaled_noise, f32);
+
+
+ */

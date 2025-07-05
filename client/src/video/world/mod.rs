@@ -1,10 +1,10 @@
-use lib::proj::Proj;
-use lib::vector::vec3d;
+use std::slice;
+
 pub use vertex::{Instance3d, Vertex3d};
 use wgpu::{BufferUsages, Face, ShaderModule, ShaderStages};
 pub use world::{World, WorldPayload};
 
-use crate::video::camera::{VideoCamera, View};
+use crate::video::camera::VideoCamera;
 use crate::video::gpu;
 use crate::video::resource::{BindGroup, Buffer, CompiledShaders, Meshes, PipelineMap, PipelineOptions, PipelineType, SampleCount, Sets, ShaderSources};
 
@@ -65,10 +65,9 @@ impl Sculptor {
         );
     }
 
-    pub fn update_camera(&mut self, position: vec3d, view: View, proj: impl Proj) {
-        let camera = VideoCamera::new(position, view, proj);
+    pub fn update_camera(&mut self, camera: &VideoCamera) {
         self.camera_buffer
-            .write(&self.gpu, 0, &[camera])
+            .write(&self.gpu, 0, slice::from_ref(&camera))
             .expect("Failed to update 3D camera buffer");
     }
 
