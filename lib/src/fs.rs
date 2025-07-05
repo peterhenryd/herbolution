@@ -2,7 +2,7 @@ use std::env::home_dir;
 use std::fs::{create_dir, write};
 use std::path::{Path, PathBuf};
 
-use include_dir::{Dir, include_dir};
+use include_dir::{include_dir, Dir};
 
 use crate::save::{Save, SaveAttributes, SaveError, Saves};
 
@@ -23,7 +23,7 @@ impl Fs {
     }
 
     pub fn init(&self) -> std::io::Result<()> {
-        if !self.root.is_dir() {
+        if !self.root.exists() {
             create_dir(&self.root)?;
         }
 
@@ -31,7 +31,7 @@ impl Fs {
             create_dir(&self.saves)?;
         }
 
-        copy_assets(&self.root)?;
+        copy_assets(&self.root.join("assets"))?;
 
         Ok(())
     }
@@ -61,6 +61,10 @@ fn root_dir() -> PathBuf {
 
 fn copy_assets(base_path: &Path) -> std::io::Result<()> {
     const DIR: Dir<'_> = include_dir!("assets");
+
+    if !base_path.exists() {
+        create_dir(base_path)?;
+    }
 
     let mut entries = DIR.entries().to_vec();
     while let Some(entry) = entries.pop() {

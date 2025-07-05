@@ -7,7 +7,7 @@ use std::time::Duration;
 use lib::color::{Color, ColorConsts, Rgba};
 use lib::fs::Fs;
 use lib::save::Save;
-use lib::size::{Size2, size2u};
+use lib::size::{size2u, Size2};
 use lib::util::DeltaTime;
 use lib::vector::Vec2;
 use winit::application::ApplicationHandler;
@@ -19,13 +19,13 @@ use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::{Window, WindowAttributes, WindowId};
 
 use crate::input::{Input, InputFrame};
-use crate::menu::Menu;
 use crate::menu::config::MenuConfig;
+use crate::menu::Menu;
 use crate::session::Session;
 use crate::video;
 use crate::video::resource::SampleCount;
 use crate::video::ui::text::Text;
-use crate::video::{Video, ui, world};
+use crate::video::{ui, world, Video};
 
 /// An Herbolution application.
 pub struct App<'w> {
@@ -93,14 +93,14 @@ impl App<'_> {
 
 impl ApplicationHandler for App<'_> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        // If the application was suspended, initialize or resume the window and create a new herbolution_engine.
-        self.switch
-            .resume(event_loop, self.store.fs.path().to_path_buf());
-
         if !self.init {
             self.init();
             self.init = true;
         }
+
+        // If the application was suspended, initialize or resume the window and create a new herbolution_engine.
+        self.switch
+            .resume(event_loop, self.store.fs.path().join("assets"));
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _: WindowId, event: WindowEvent) {
@@ -328,7 +328,7 @@ impl State {
                 *self = State::Browsing(config.into());
             }
             Command::StartGame { save } => {
-                let session = Session::create(save, &mut ctx.video, ctx.store.fs.path());
+                let session = Session::create(save, &mut ctx.video, &ctx.store.fs.path().join("assets"));
                 *self = Self::Playing(session);
             }
             Command::Exit => {

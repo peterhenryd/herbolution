@@ -5,7 +5,7 @@ use lib::color::{ColorConsts, Rgba};
 use lib::save::Save;
 use lib::size::size2u;
 use lib::util::IntervalCounter;
-use lib::vector::{Vec2, vec3d};
+use lib::vector::{vec3d, Vec2};
 use server::handle::GameHandle;
 use server::{Game, Options};
 use winit::event::MouseButton;
@@ -16,7 +16,7 @@ use crate::app::{Command, Render, Update};
 use crate::video::resource::{Mesh, MeshId, Meshes};
 use crate::video::ui::text::{Text, TextBrush};
 use crate::video::world::Vertex3d;
-use crate::video::{Video, world};
+use crate::video::{world, Video};
 use crate::world::World;
 
 /// The render-side representation of a herbolution_game session.
@@ -94,6 +94,9 @@ impl Session {
             let mut chisel = ctx.frame.draw_3d(world::RenderType::Terrain);
 
             self.world.render(&self.mesh_ids, &mut chisel);
+
+            chisel.load_mesh(self.mesh_ids.shell_quad);
+            chisel.render_each_by_id(self.world.player.targeted_cube_shell_id);
 
             chisel.load_mesh(self.mesh_ids.wire_quad);
             chisel.render_each_by_id(self.world.player.targeted_cube_wireframe_id);
@@ -197,6 +200,7 @@ impl Debugger {
 pub struct MeshIds {
     pub(crate) solid_quad: MeshId,
     pub(crate) wire_quad: MeshId,
+    pub(crate) shell_quad: MeshId,
 }
 
 impl MeshIds {
@@ -204,6 +208,7 @@ impl MeshIds {
         Self {
             solid_quad: meshes.create_and_insert_from(|handle| Mesh::read(handle, asset_path.join("mesh/quad.toml"))),
             wire_quad: meshes.create_and_insert_from(|handle| Mesh::read(handle, asset_path.join("mesh/quad_wire.toml"))),
+            shell_quad: meshes.create_and_insert_from(|handle| Mesh::read(handle, asset_path.join("mesh/quad_shell.toml"))),
         }
     }
 }

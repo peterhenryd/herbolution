@@ -1,0 +1,9 @@
+[package]
+name = "simd-noise"
+version = "3.1.7"
+authors = ["Jack Mott <jack.mott@gmail.com>"]
+license = "Apache-2.0/MIT"
+edition = "2018"
+
+[dependencies]
+paste = "1.0.15"

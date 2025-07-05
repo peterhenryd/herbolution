@@ -905,7 +905,7 @@ dependencies = [
  "parking_lot",
  "rayon",
  "serde",
- "simdnoise",
+ "simd-noise",
  "smallvec 2.0.0-alpha.11",
  "tracing",
 ]
@@ -2159,19 +2159,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d66dc143e6b11c1eddc06d5c423cfc97062865baf299914ab64caa38182078fe"
 
 [[package]]
+name = "simd-noise"
+version = "3.1.7"
+dependencies = [
+ "paste",
+]
+
+[[package]]
 name = "simd_helpers"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "95890f873bec569a0362c235787f3aca6e1e887302ba4840839bcc6459c42da6"
 dependencies = [
  "quote",
-]
-
-[[package]]
-name = "simdnoise"
-version = "3.1.7"
-dependencies = [
- "paste",
 ]
 
 [[package]]

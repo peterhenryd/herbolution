@@ -333,10 +333,10 @@ get_noise!(get_2d_noise, get_2d_noise, f32, crate::noise::f32);
 get_noise!(get_3d_noise, get_3d_noise, f32, crate::noise::f32);
 get_noise!(get_4d_noise, get_4d_noise, f32, crate::noise::f32);
 /*
-get_noise!(get_1d_noise, get_1d_noise_64, f64, crate::noise::f64);
-get_noise!(get_2d_noise, get_2d_noise_64, f64, crate::noise::f64);
-get_noise!(get_3d_noise, get_3d_noise_64, f64, crate::noise::f64);
-get_noise!(get_4d_noise, get_4d_noise_64, f64, crate::noise::f64);
+get_noise!(get_1d_noise, get_1d_noise_64, f64, crate::simd-noise::f64);
+get_noise!(get_2d_noise, get_2d_noise_64, f64, crate::simd-noise::f64);
+get_noise!(get_3d_noise, get_3d_noise_64, f64, crate::simd-noise::f64);
+get_noise!(get_4d_noise, get_4d_noise_64, f64, crate::simd-noise::f64);
  */
 get_noise_scaled!(get_1d_noise, get_1d_scaled_noise, f32);
 get_noise_scaled!(get_2d_noise, get_2d_scaled_noise, f32);

@@ -52,8 +52,24 @@ pub struct ActionState {
     pub is_right_hand_active: bool,
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum ActionTarget {
-    Cube(vec3i),
+    Cube(CubeTarget),
     Entity(EntityId),
+}
+
+impl ActionTarget {
+    pub fn stateless_eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (ActionTarget::Cube(a), ActionTarget::Cube(b)) => a.position == b.position,
+            (ActionTarget::Entity(a), ActionTarget::Entity(b)) => a == b,
+            _ => false,
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct CubeTarget {
+    pub position: vec3i,
+    pub shell_opacity: f32,
 }

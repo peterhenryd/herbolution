@@ -1,6 +1,7 @@
 use super::cellular_32::{hash_2d, hash_3d, BIT_10_MASK_32, X_PRIME_32, Y_PRIME_32, Z_PRIME_32};
-use crate::{Cell2ReturnType, CellDistanceFunction};
-use crate::simd::{Simd, SimdBaseIo, SimdFloat32, SimdInt32, SimdFloat, SimdBaseOps};
+use crate::functions::cell2_return_type::Cell2ReturnType;
+use crate::functions::cell_distance_function::CellDistanceFunction;
+use crate::simd::{Simd, SimdBaseIo, SimdBaseOps, SimdFloat, SimdFloat32, SimdInt32};
 
 #[inline(always)]
 pub fn cellular2_2d<S: Simd>(

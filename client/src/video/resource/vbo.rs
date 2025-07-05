@@ -233,10 +233,7 @@ impl<I> Sets<I> {
     {
         debug_assert!(id.parent_id == self.id, "InstanceSetId does not belong to this InstanceSets instance");
 
-        self.buffers
-            .get_mut(id.index)
-            .unwrap()
-            .write(&self.handle, 0, &instances)
+        self.buffers[id.index].write(&self.handle, 0, &instances)
     }
 
     pub fn write_from<'a>(&mut self, id: SetId, iter: impl IntoIterator<Item = I>) -> Result<(), ()>
@@ -248,12 +245,12 @@ impl<I> Sets<I> {
 
     pub fn get(&self, id: SetId) -> &Buffer<I> {
         debug_assert!(id.parent_id == self.id, "InstanceSetId does not belong to this InstanceSets instance");
-        self.buffers.get(id.index).unwrap()
+        &self.buffers[id.index]
     }
 
     pub fn get_mut(&mut self, id: SetId) -> &mut Buffer<I> {
         debug_assert!(id.parent_id == self.id, "InstanceSetId does not belong to this InstanceSets instance");
-        self.buffers.get_mut(id.index).unwrap()
+        &mut self.buffers[id.index]
     }
 }
 

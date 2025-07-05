@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 herbolution_lib = { path = "../lib" }
-simdnoise = { path = "../crates/rust-simd-noise" }
+simd-noise = { path = "../crates/simd-noise" }
 
 crossbeam-channel.workspace = true
 fastrand.workspace = true

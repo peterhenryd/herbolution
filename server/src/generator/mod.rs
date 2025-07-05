@@ -1,13 +1,12 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use crossbeam_channel::{Receiver, Sender, TryIter, unbounded};
+use crossbeam_channel::{unbounded, Receiver, Sender, TryIter};
 use lib::chunk;
 use lib::point::ChunkPt;
 use lib::util::ProgressiveMeasurement;
 use lib::vector::{vec2f, vec3u5};
-use simdnoise::NoiseTransform;
-use simdnoise::noise::{FbmNoise, Noise, NoiseDim, OctaveNoise};
+use simd_noise::noise::{FbmNoise, Noise, NoiseDim, NoiseTransform, OctaveNoise};
 
 use crate::chunk::material::Palette;
 use crate::chunk::mesh::CubeMesh;

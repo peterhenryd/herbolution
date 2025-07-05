@@ -1,4 +1,4 @@
-use crossbeam_channel::{Receiver, Sender, bounded};
+use crossbeam_channel::{bounded, Receiver, Sender};
 use lib::rotation::Euler;
 use lib::vector::{vec2d, vec3d, vec3i8};
 
@@ -111,13 +111,13 @@ impl ServerPlayerInputHandle {
 }
 
 pub fn create() -> (ClientPlayerHandle, ServerPlayerHandle) {
-    let (transform_position_tx, transform_position_rx) = bounded(4);
-    let (transform_rotation_tx, transform_rotation_rx) = bounded(4);
-    let (transform_target_tx, transform_target_rx) = bounded(4);
-    let (input_movement_tx, input_movement_rx) = bounded(4);
+    let (transform_position_tx, transform_position_rx) = bounded(1);
+    let (transform_rotation_tx, transform_rotation_rx) = bounded(1);
+    let (transform_target_tx, transform_target_rx) = bounded(1);
+    let (input_movement_tx, input_movement_rx) = bounded(1);
     let (input_mouse_movement_tx, input_mouse_movement_rx) = bounded(8);
-    let (input_speed_delta_tx, input_speed_delta_rx) = bounded(4);
-    let (input_action_state_tx, input_action_state_rx) = bounded(4);
+    let (input_speed_delta_tx, input_speed_delta_rx) = bounded(1);
+    let (input_action_state_tx, input_action_state_rx) = bounded(1);
 
     (
         ClientPlayerHandle {

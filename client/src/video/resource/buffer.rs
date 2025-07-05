@@ -1,6 +1,6 @@
 use crate::video::gpu::Handle;
 use bytemuck::{bytes_of, cast_slice, NoUninit};
-use std::cmp::max;
+use std::cmp::min;
 use std::marker::PhantomData;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::{BufferDescriptor, BufferUsages};
@@ -54,7 +54,7 @@ impl<T> Buffer<T> {
 
         gpu.queue()
             .write_buffer(&self.inner, offset * size_of::<T>() as u64, cast_slice(data));
-        self.len = max(self.len, new_len);
+        self.len = min(new_len, self.capacity());
 
         Ok(())
     }
@@ -94,7 +94,7 @@ impl<T> Buffer<T> {
         &self.inner
     }
 
-    pub fn shorten_to(&mut self, new_len: u64) {
+    pub fn set_len(&mut self, new_len: u64) {
         if new_len < self.len {
             self.len = new_len;
         }

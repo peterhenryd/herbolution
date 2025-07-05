@@ -12,7 +12,7 @@ use lib::vector::{Vec2, Vec3};
 use crate::chunk::map::CubeHit;
 use crate::chunk::material::Material;
 use crate::entity::behavior::{EntityBehavior, EntityBehaviorType, EntityContext};
-use crate::entity::{ActionState, ActionTarget};
+use crate::entity::{ActionState, ActionTarget, CubeTarget};
 use crate::handle::Particle;
 use crate::player::handle::ClientPlayerHandle;
 
@@ -55,20 +55,31 @@ impl Player {
         let ray_dir = ctx.entity.body().rotation().into_view_center();
         let cube_hit = ctx.chunk_map.cast_ray(ray_origin, ray_dir, 100.0);
 
-        let current_target = cube_hit
-            .as_ref()
-            .map(|hit| ActionTarget::Cube(hit.position));
+        let current_target = cube_hit.as_ref().map(|hit| {
+            ActionTarget::Cube(CubeTarget {
+                position: hit.position,
+                shell_opacity: self
+                    .dig_state
+                    .as_ref()
+                    .map(|x| 0.5 - (x.remaining_time * self.dig_speed) / x.material.toughness * 0.5)
+                    .unwrap_or(0.0),
+            })
+        });
+
         if current_target != self.prev_target {
-            self.dig_state = None;
-            self.prev_target = current_target;
             self.handle.transform.set_target(current_target);
         }
+
+        if let (Some(a), Some(b)) = (&current_target, &self.prev_target)
+            && !a.stateless_eq(b)
+        {
+            self.dig_state = None;
+        }
+        self.prev_target = current_target;
 
         if let Some(hit) = cube_hit {
             if self.action_state.is_left_hand_active {
                 self.process_digging(ctx, hit);
-            } else {
-                self.dig_state = None;
             }
 
             if self.action_state.is_right_hand_active {
@@ -89,35 +100,34 @@ impl Player {
             })
         }
 
-        if let Some(state) = &self.dig_state {
-            if state.remaining_time <= 0.0 {
-            } else if fastrand::f32() < 0.001 {
-                let _ = ctx.handle.particle_tx.try_send(Particle {
-                    position: cube_hit.contact_point - Vec3::splat(0.5) + Vec3::by_index(|_| fastrand::f64() - 0.5) / 10.0,
-                    rotation: None,
-                    motile: Motile {
-                        dir: Vec3::by_index(|_| fastrand::f64() - 0.5).normalize(),
-                        drive: 4.0,
-                        jump: 0.2,
-                        ..default()
-                    },
-                    lifetime: Duration::SECOND,
-                    color: state.material.get_color(fastrand::f32()),
-                });
-            }
+        let Some(state) = &mut self.dig_state else {
+            return;
+        };
+
+        if fastrand::f32() < 0.001 {
+            let _ = ctx.handle.particle_tx.try_send(Particle {
+                position: cube_hit.contact_point - Vec3::splat(0.5) + Vec3::by_index(|_| fastrand::f64() - 0.5) / 10.0,
+                rotation: None,
+                motile: Motile {
+                    dir: Vec3::by_index(|_| fastrand::f64() - 0.5).normalize(),
+                    drive: 4.0,
+                    jump: 0.2,
+                    ..default()
+                },
+                lifetime: Duration::SECOND,
+                color: state.material.get_color(fastrand::f32()),
+            });
         }
 
-        let mut finished = false;
-        if let Some(state) = &mut self.dig_state {
-            state.remaining_time -= ctx.dt.as_secs_f32();
-            finished = state.remaining_time <= 0.0;
-        }
+        state.remaining_time -= ctx.dt.as_secs_f32();
+        let finished = state.remaining_time <= 0.0;
 
         if finished {
             let material = take(&mut self.dig_state).unwrap().material;
 
             self.spawn_dig_particles(ctx, cube_hit.position, &material);
             ctx.chunk_map.set_cube(cube_hit.position, None);
+            self.handle.transform.set_target(None);
         }
     }
 
@@ -197,6 +207,10 @@ impl EntityBehavior for Player {
             .set_rotation(*body.rotation());
 
         if let Some(action_state) = self.handle.input.next_action_state() {
+            if !action_state.is_left_hand_active {
+                self.dig_state = None;
+            }
+
             self.action_state = action_state;
         }
 

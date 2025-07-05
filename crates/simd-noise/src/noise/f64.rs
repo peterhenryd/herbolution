@@ -140,12 +140,12 @@ unsafe fn get_2d_noise_helper_f64<const D: NoiseDim, S: Simd, Settings: Sample<S
 
 /*
 #[inline(always)]
-unsafe fn get_3d_noise_helper_f64<const X: usize, const Y: usize, const Z: usize, S: Simd, Settings: Sample64<S, X, Y, Z, 1>>(noise: Settings) -> (Vec<f64>,
+unsafe fn get_3d_noise_helper_f64<const X: usize, const Y: usize, const Z: usize, S: Simd, Settings: Sample64<S, X, Y, Z, 1>>(simd-noise: Settings) -> (Vec<f64>,
                                                                                                                                                   f64, f64) {
-    let dim = noise.dim();
-    let freq_x = S::Vf64::set1(noise.get_freq_x() as f64);
-    let freq_y = S::Vf64::set1(noise.get_freq_y() as f64);
-    let freq_z = S::Vf64::set1(noise.get_freq_z() as f64);
+    let dim = simd-noise.dim();
+    let freq_x = S::Vf64::set1(simd-noise.get_freq_x() as f64);
+    let freq_y = S::Vf64::set1(simd-noise.get_freq_y() as f64);
+    let freq_z = S::Vf64::set1(simd-noise.get_freq_z() as f64);
     let start_x = dim.x as f64;
     let width = dim.width;
     let start_y = dim.y as f64;
@@ -176,7 +176,7 @@ unsafe fn get_3d_noise_helper_f64<const X: usize, const Y: usize, const Z: usize
         for _ in 0..height {
             let mut x = S::Vf64::load_from_ptr_unaligned(&x_arr[0]);
             for _ in 0..width / vector_width {
-                let f = noise.sample_3d(x * freq_x, y * freq_y, z * freq_z);
+                let f = simd-noise.sample_3d(x * freq_x, y * freq_y, z * freq_z);
                 max_s = max_s.max(f);
                 min_s = min_s.min(f);
                 f.copy_to_ptr_unaligned(result_ptr.add(i));
@@ -184,7 +184,7 @@ unsafe fn get_3d_noise_helper_f64<const X: usize, const Y: usize, const Z: usize
                 x = x + S::Vf64::set1(vector_width as f64);
             }
             if remainder != 0 {
-                let f = noise.sample_3d(x * freq_x, y * freq_y, z * freq_z);
+                let f = simd-noise.sample_3d(x * freq_x, y * freq_y, z * freq_z);
                 for j in 0..remainder {
                     let n = f[j];
                     result_ptr.add(i).write(n);
@@ -214,12 +214,12 @@ unsafe fn get_3d_noise_helper_f64<const X: usize, const Y: usize, const Z: usize
 }
 
 #[inline(always)]
-unsafe fn get_4d_noise_helper_f64<const D: NoiseDim, S: Simd, Settings: Sample64<S, D>>(noise: Settings) -> (Vec<f64>, f64, f64) {
-    let dim = noise.dim();
-    let freq_x = S::Vf64::set1(noise.get_freq_x() as f64);
-    let freq_y = S::Vf64::set1(noise.get_freq_y() as f64);
-    let freq_z = S::Vf64::set1(noise.get_freq_z() as f64);
-    let freq_w = S::Vf64::set1(noise.get_freq_w() as f64);
+unsafe fn get_4d_noise_helper_f64<const D: NoiseDim, S: Simd, Settings: Sample64<S, D>>(simd-noise: Settings) -> (Vec<f64>, f64, f64) {
+    let dim = simd-noise.dim();
+    let freq_x = S::Vf64::set1(simd-noise.get_freq_x() as f64);
+    let freq_y = S::Vf64::set1(simd-noise.get_freq_y() as f64);
+    let freq_z = S::Vf64::set1(simd-noise.get_freq_z() as f64);
+    let freq_w = S::Vf64::set1(simd-noise.get_freq_w() as f64);
     let start_x = dim.x as f64;
     let width = dim.width;
     let start_y = dim.y as f64;
@@ -253,7 +253,7 @@ unsafe fn get_4d_noise_helper_f64<const D: NoiseDim, S: Simd, Settings: Sample64
             for _ in 0..height {
                 let mut x = S::Vf64::load_from_ptr_unaligned(&x_arr[0]);
                 for _ in 0..width / vector_width {
-                    let f = noise.sample_4d(x * freq_x, y * freq_y, z * freq_z, w * freq_w);
+                    let f = simd-noise.sample_4d(x * freq_x, y * freq_y, z * freq_z, w * freq_w);
                     max_s = max_s.max(f);
                     min_s = min_s.min(f);
                     f.copy_to_ptr_unaligned(result_ptr.add(i));
@@ -261,7 +261,7 @@ unsafe fn get_4d_noise_helper_f64<const D: NoiseDim, S: Simd, Settings: Sample64
                     x = x + S::Vf64::set1(vector_width as f64);
                 }
                 if remainder != 0 {
-                    let f = noise.sample_4d(x * freq_x, y * freq_y, z * freq_z, w * freq_w);
+                    let f = simd-noise.sample_4d(x * freq_x, y * freq_y, z * freq_z, w * freq_w);
                     for j in 0..remainder {
                         let n = f[j];
                         result_ptr.add(i).write(n);

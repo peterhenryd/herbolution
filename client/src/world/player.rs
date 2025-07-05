@@ -1,5 +1,5 @@
 use lib::color::{ColorConsts, Rgba};
-use server::entity::{ActionState, ActionTarget};
+use server::entity::{ActionState, ActionTarget, CubeTarget};
 use server::player::handle::ServerPlayerHandle;
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
@@ -10,7 +10,7 @@ pub struct Player {
     /// The channel used to receive updates from the behavior-side player.
     pub(crate) handle: Option<ServerPlayerHandle>,
     /// The previous entity or cube the player was looking at.
-    prev_target: Option<vec3i>,
+    prev_target: Option<CubeTarget>,
     /// The camera, positioned at the player's eye.
     pub(crate) camera: PlayerCamera,
     //prev_position: vec3f,
@@ -18,6 +18,7 @@ pub struct Player {
     //view_bob: f32,
     /// The identifier for the GPU buffer containing the quads to be rendered as a wireframe when the player is targeting a cube.
     pub(crate) targeted_cube_wireframe_id: SetId,
+    pub(crate) targeted_cube_shell_id: SetId,
     /// The color of the sky box.
     sky_box_color: Rgba<f32>,
     /// The identifier for the GPU buffer containing the quads of the sky box, which is rendered as a cube around the player.
@@ -35,6 +36,7 @@ impl Player {
             //view_bob: 0.0,
             camera: PlayerCamera::new(video.resolution(), &mut video.sculptor),
             targeted_cube_wireframe_id: video.sculptor.sets().insert_with_capacity(6),
+            targeted_cube_shell_id: video.sculptor.sets().insert_with_capacity(6),
             sky_box_color,
             sky_box_id: video
                 .sculptor
@@ -86,30 +88,35 @@ impl Player {
         }
 
         let sets = ctx.video.sculptor.sets();
-        // Overwrite the targeted cube wireframe with the latest target from the behavior-side player.
+        // Overwrite the targeted cube wireframe with the latest target from the server-side player.
         match handle.transform.next_target() {
-            Some(Some(ActionTarget::Cube(position))) => {
-                if self.prev_target != Some(position) {
-                    self.set_targeted_cube(sets, Some(position));
-                    self.prev_target = Some(position);
-                }
+            Some(Some(ActionTarget::Cube(target))) => {
+                self.set_targeted_cube(sets, target)
+                    .expect("Failed to set targeted cube");
+                self.prev_target = Some(target);
             }
             Some(Some(ActionTarget::Entity(_))) => {}
             Some(None) => {
                 sets.get_mut(self.targeted_cube_wireframe_id)
-                    .shorten_to(0);
+                    .set_len(0);
+                sets.get_mut(self.targeted_cube_shell_id)
+                    .set_len(0);
                 self.prev_target = None;
             }
             _ => {}
         }
     }
 
-    fn set_targeted_cube(&mut self, sets: &mut Sets<Instance3d>, position: Option<vec3i>) {
-        match position {
-            None => sets.write(self.targeted_cube_wireframe_id, &[]),
-            Some(x) => sets.write_from(self.targeted_cube_wireframe_id, cube(x.cast(), Rgba::BLACK)),
+    fn set_targeted_cube(&mut self, sets: &mut Sets<Instance3d>, target: CubeTarget) -> Result<(), ()> {
+        let position = target.position.cast();
+        if target.shell_opacity == 0.0 {
+            sets.write(self.targeted_cube_shell_id, &[])?;
+            sets.write_from(self.targeted_cube_wireframe_id, cube(position, Rgba::BLACK))?;
+        } else {
+            sets.write_from(self.targeted_cube_shell_id, cube(position, Rgba::new(1.0, 1.0, 1.0, target.shell_opacity)))?;
+            sets.write(self.targeted_cube_wireframe_id, &[])?;
         }
-        .expect("Failed to clear targeted cube wireframe instances");
+        Ok(())
     }
 
     pub fn update_input(&mut self, ctx: &Update) {
@@ -180,13 +187,13 @@ use lib::proj::Perspective;
 use lib::rotation::Euler;
 use lib::size::size2u;
 use lib::spatial::Face;
-use lib::vector::{Vec3, vec3d, vec3i, vec3i8};
+use lib::vector::{vec3d, vec3i, vec3i8, Vec3};
 
 use crate::app::Update;
-use crate::video::Video;
 use crate::video::camera::{VideoCamera, View};
 use crate::video::resource::{SetId, Sets};
 use crate::video::world::{Instance3d, Sculptor};
+use crate::video::Video;
 use crate::world::frustum::Frustum;
 
 /// The camera with additional information used for culling and camera-relative rendering.
