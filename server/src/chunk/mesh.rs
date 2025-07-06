@@ -1,11 +1,11 @@
 use std::iter::zip;
 use std::ops::{Not, Range};
 
-use lib::chunk;
-use lib::chunk::VOLUME;
 use lib::point::ChunkPt;
 use lib::spatial::{Face, Faces};
-use lib::vector::{Vec3, vec3u5};
+use lib::vector::{vec3u5, Vec3};
+use lib::world;
+use lib::world::CHUNK_VOLUME;
 use rayon::prelude::{IntoParallelRefMutIterator, ParallelIterator};
 
 use crate::chunk::cube::Cube;
@@ -14,7 +14,7 @@ use crate::chunk::material::{Palette, PaletteCube, PaletteMaterialId, PaletteMat
 #[derive(Debug, Clone)]
 pub struct CubeMesh {
     pub position: ChunkPt,
-    pub(crate) data: Box<[PaletteCube; VOLUME]>,
+    pub(crate) data: Box<[PaletteCube; CHUNK_VOLUME]>,
     pub(crate) updated_positions: Vec<vec3u5>,
     pub(crate) exposed_faces: Faces,
     pub(crate) palette: Palette,
@@ -24,7 +24,7 @@ impl CubeMesh {
     pub fn new(position: ChunkPt) -> Self {
         Self {
             position,
-            data: Box::new([Cube::new(None); VOLUME]),
+            data: Box::new([Cube::new(None); CHUNK_VOLUME]),
             updated_positions: vec![],
             exposed_faces: Faces::all(),
             palette: Palette::new(),
@@ -42,7 +42,7 @@ impl CubeMesh {
         let inverse_face = face.inverse();
 
         fn sized_boundary_slice(face: Face) -> Vec3<Range<u8>> {
-            let l = chunk::LENGTH as u8;
+            let l = world::CHUNK_LENGTH as u8;
             match face {
                 Face::East => Vec3::new(l - 1..l, 0..l, 0..l),
                 Face::West => Vec3::new(0..1, 0..l, 0..l),
@@ -254,7 +254,7 @@ impl CubeMesh {
 }
 
 fn boundary(face: Face) -> Vec3<Range<u8>> {
-    let l = chunk::LENGTH as u8;
+    let l = world::CHUNK_LENGTH as u8;
     match face {
         Face::East => Vec3::new(l - 1..l, 0..l, 0..l),
         Face::West => Vec3::new(0..1, 0..l, 0..l),

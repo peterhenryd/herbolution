@@ -7,7 +7,6 @@ pub mod app;
 pub mod input;
 pub mod menu;
 pub mod session;
-pub mod ui;
 pub mod video;
 pub mod world;
 

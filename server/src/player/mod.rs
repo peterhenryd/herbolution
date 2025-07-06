@@ -3,18 +3,18 @@ use std::mem::take;
 use std::sync::Arc;
 use std::time::Duration;
 
-use lib::motile::Motile;
-use lib::rotation::Euler;
-use lib::spatial::Aabb;
-use lib::util::default;
-use lib::vector::{Vec2, Vec3};
-
 use crate::chunk::map::CubeHit;
 use crate::chunk::material::Material;
 use crate::entity::behavior::{EntityBehavior, EntityBehaviorType, EntityContext};
 use crate::entity::{ActionState, ActionTarget, CubeTarget};
 use crate::handle::Particle;
 use crate::player::handle::ClientPlayerHandle;
+use lib::motile::Motile;
+use lib::rotation::Euler;
+use lib::spatial::Aabb;
+use lib::util::default;
+use lib::vector::{Vec2, Vec3};
+use lib::world::Health;
 
 pub mod handle;
 
@@ -23,8 +23,7 @@ pub struct Player {
     action_state: ActionState,
     handle: ClientPlayerHandle,
     prev_target: Option<ActionTarget>,
-    health: f32,
-    max_health: f32,
+    health: Health,
     regeneration: f32,
     dig_speed: f32,
     dig_state: Option<DigState>,
@@ -42,8 +41,7 @@ impl Player {
             action_state: ActionState::default(),
             handle,
             prev_target: None,
-            health: 100.0,
-            max_health: 100.0,
+            health: Health::new(100.0),
             regeneration: 1.0,
             dig_speed: 1.0,
             dig_state: None,
@@ -177,7 +175,6 @@ impl Player {
 impl EntityBehavior for Player {
     fn update(&mut self, ctx: &mut EntityContext) {
         self.health += self.regeneration * ctx.dt.as_secs_f32();
-        self.health = self.health.min(self.max_health);
 
         let body = ctx.entity.body_mut();
 
@@ -205,6 +202,15 @@ impl EntityBehavior for Player {
         self.handle
             .transform
             .set_rotation(*body.rotation());
+
+        if let Some(fall_distance) = ctx.entity.body.last_fell.take() {
+            dbg!(fall_distance);
+            if fall_distance > 3.0 {
+                self.health -= (fall_distance as f32 - 3.0) * 2.0;
+            }
+        }
+
+        self.handle.set_health(self.health);
 
         if let Some(action_state) = self.handle.input.next_action_state() {
             if !action_state.is_left_hand_active {

@@ -92,32 +92,23 @@ impl<const D: NoiseDim> OctaveNoise for TurbulenceNoise<D> {
 
 impl<const D: NoiseDim, S: Simd> Sample32<D, S> for TurbulenceNoise<D> {
     #[inline(always)]
-    fn sample_1d(&self, x: S::Vf32) -> S::Vf32 {
-        turbulence_1d::<S>(x, S::Vf32::set1(self.lacunarity), S::Vf32::set1(self.gain), self.octaves, self.dim.seed)
+    fn sample_1d(&self, x: S::F32) -> S::F32 {
+        turbulence_1d::<S>(x, S::F32::set1(self.lacunarity), S::F32::set1(self.gain), self.octaves, self.dim.seed)
     }
 
     #[inline(always)]
-    fn sample_2d(&self, x: S::Vf32, y: S::Vf32) -> S::Vf32 {
-        turbulence_2d::<S>(x, y, S::Vf32::set1(self.lacunarity), S::Vf32::set1(self.gain), self.octaves, self.dim.seed)
+    fn sample_2d(&self, x: S::F32, y: S::F32) -> S::F32 {
+        turbulence_2d::<S>(x, y, S::F32::set1(self.lacunarity), S::F32::set1(self.gain), self.octaves, self.dim.seed)
     }
 
     #[inline(always)]
-    fn sample_3d(&self, x: S::Vf32, y: S::Vf32, z: S::Vf32) -> S::Vf32 {
-        turbulence_3d::<S>(x, y, z, S::Vf32::set1(self.lacunarity), S::Vf32::set1(self.gain), self.octaves, self.dim.seed)
+    fn sample_3d(&self, x: S::F32, y: S::F32, z: S::F32) -> S::F32 {
+        turbulence_3d::<S>(x, y, z, S::F32::set1(self.lacunarity), S::F32::set1(self.gain), self.octaves, self.dim.seed)
     }
 
     #[inline(always)]
-    fn sample_4d(&self, x: S::Vf32, y: S::Vf32, z: S::Vf32, w: S::Vf32) -> S::Vf32 {
-        turbulence_4d::<S>(
-            x,
-            y,
-            z,
-            w,
-            S::Vf32::set1(self.lacunarity),
-            S::Vf32::set1(self.gain),
-            self.octaves,
-            self.dim.seed,
-        )
+    fn sample_4d(&self, x: S::F32, y: S::F32, z: S::F32, w: S::F32) -> S::F32 {
+        turbulence_4d::<S>(x, y, z, w, S::F32::set1(self.lacunarity), S::F32::set1(self.gain), self.octaves, self.dim.seed)
     }
 }
 

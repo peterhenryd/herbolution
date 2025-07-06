@@ -1,4 +1,3 @@
-
 cellular!(
     "2d",
     cellular_2d,

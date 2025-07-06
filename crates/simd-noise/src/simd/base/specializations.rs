@@ -23,19 +23,19 @@ pub trait SimdInt: SimdBaseOps + Shl<i32, Output = Self> + ShlAssign<i32> + Shr<
     fn from_i64(value: i64) -> Self;
 }
 
-pub trait SimdInt8: SimdInt<Scalar = i8, HorizontalAddScalar = i64> + SimdTransmuteI8 {
-    fn extend_to_i16(self) -> (<Self::Backend as Simd>::Vi16, <Self::Backend as Simd>::Vi16);
+pub trait SimdI8: SimdInt<Scalar = i8, HorizontalAddScalar = i64> + SimdTransmuteI8 {
+    fn extend_to_i16(self) -> (<Self::Backend as Simd>::I16, <Self::Backend as Simd>::I16);
 
-    fn unsigned_extend_to_i16(self) -> (<Self::Backend as Simd>::Vi16, <Self::Backend as Simd>::Vi16);
+    fn unsigned_extend_to_i16(self) -> (<Self::Backend as Simd>::I16, <Self::Backend as Simd>::I16);
 
     #[inline(always)]
-    fn partial_horizontal_add(self) -> <Self::Backend as Simd>::Vi16 {
+    fn partial_horizontal_add(self) -> <Self::Backend as Simd>::I16 {
         let (a, b) = self.extend_to_i16();
         a + b
     }
 
     #[inline(always)]
-    fn partial_horizontal_unsigned_add(self) -> <Self::Backend as Simd>::Vi16 {
+    fn partial_horizontal_unsigned_add(self) -> <Self::Backend as Simd>::I16 {
         let (a, b) = self.unsigned_extend_to_i16();
         a + b
     }
@@ -97,50 +97,50 @@ pub trait SimdInt8: SimdInt<Scalar = i8, HorizontalAddScalar = i64> + SimdTransm
     }
 }
 
-pub trait SimdInt16: SimdInt<Scalar = i16, HorizontalAddScalar = i64> + SimdTransmuteI16 {
-    fn extend_to_i32(self) -> (<Self::Backend as Simd>::Vi32, <Self::Backend as Simd>::Vi32);
+pub trait SimdI16: SimdInt<Scalar = i16, HorizontalAddScalar = i64> + SimdTransmuteI16 {
+    fn extend_to_i32(self) -> (<Self::Backend as Simd>::I32, <Self::Backend as Simd>::I32);
 
-    fn unsigned_extend_to_i32(self) -> (<Self::Backend as Simd>::Vi32, <Self::Backend as Simd>::Vi32);
+    fn unsigned_extend_to_i32(self) -> (<Self::Backend as Simd>::I32, <Self::Backend as Simd>::I32);
 
     #[inline(always)]
-    fn partial_horizontal_add(self) -> <Self::Backend as Simd>::Vi32 {
+    fn partial_horizontal_add(self) -> <Self::Backend as Simd>::I32 {
         let (a, b) = self.extend_to_i32();
         a + b
     }
 
     #[inline(always)]
-    fn partial_horizontal_unsigned_add(self) -> <Self::Backend as Simd>::Vi32 {
+    fn partial_horizontal_unsigned_add(self) -> <Self::Backend as Simd>::I32 {
         let (a, b) = self.unsigned_extend_to_i32();
         a + b
     }
 }
 
-pub trait SimdInt32: SimdInt<Scalar = i32, HorizontalAddScalar = i64> + SimdTransmuteI32 {
-    fn bitcast_f32(self) -> <Self::Backend as Simd>::Vf32;
+pub trait SimdI32: SimdInt<Scalar = i32, HorizontalAddScalar = i64> + SimdTransmuteI32 {
+    fn bitcast_f32(self) -> <Self::Backend as Simd>::F32;
 
-    fn cast_f32(self) -> <Self::Backend as Simd>::Vf32;
+    fn cast_f32(self) -> <Self::Backend as Simd>::F32;
 
-    fn extend_to_i64(self) -> (<Self::Backend as Simd>::Vi64, <Self::Backend as Simd>::Vi64);
+    fn extend_to_i64(self) -> (<Self::Backend as Simd>::I64, <Self::Backend as Simd>::I64);
 
-    fn unsigned_extend_to_i64(self) -> (<Self::Backend as Simd>::Vi64, <Self::Backend as Simd>::Vi64);
+    fn unsigned_extend_to_i64(self) -> (<Self::Backend as Simd>::I64, <Self::Backend as Simd>::I64);
 
     #[inline(always)]
-    fn partial_horizontal_add(self) -> <Self::Backend as Simd>::Vi64 {
+    fn partial_horizontal_add(self) -> <Self::Backend as Simd>::I64 {
         let (a, b) = self.extend_to_i64();
         a + b
     }
 
     #[inline(always)]
-    fn partial_horizontal_unsigned_add(self) -> <Self::Backend as Simd>::Vi64 {
+    fn partial_horizontal_unsigned_add(self) -> <Self::Backend as Simd>::I64 {
         let (a, b) = self.unsigned_extend_to_i64();
         a + b
     }
 }
 
-pub trait SimdInt64: SimdInt<Scalar = i64, HorizontalAddScalar = i64> + SimdTransmuteI64 {
-    fn bitcast_f64(self) -> <Self::Backend as Simd>::Vf64;
+pub trait SimdI64: SimdInt<Scalar = i64, HorizontalAddScalar = i64> + SimdTransmuteI64 {
+    fn bitcast_f64(self) -> <Self::Backend as Simd>::F64;
 
-    fn cast_f64(self) -> <Self::Backend as Simd>::Vf64;
+    fn cast_f64(self) -> <Self::Backend as Simd>::F64;
 
     fn partial_horizontal_add(self) -> i64;
 }
@@ -178,16 +178,16 @@ where
     fn from_f64(value: f64) -> Self;
 }
 
-pub trait SimdFloat32: SimdFloat<Scalar = f32, HorizontalAddScalar = f32> + SimdTransmuteF32 {
-    fn bitcast_i32(self) -> <Self::Backend as Simd>::Vi32;
+pub trait SimdF32: SimdFloat<Scalar = f32, HorizontalAddScalar = f32> + SimdTransmuteF32 {
+    fn bitcast_i32(self) -> <Self::Backend as Simd>::I32;
 
-    fn cast_i32(self) -> <Self::Backend as Simd>::Vi32;
+    fn cast_i32(self) -> <Self::Backend as Simd>::I32;
 
     fn fast_inverse(self) -> Self;
 }
 
-pub trait SimdFloat64: SimdFloat<Scalar = f64, HorizontalAddScalar = f64> + SimdTransmuteF64 {
-    fn bitcast_i64(self) -> <Self::Backend as Simd>::Vi64;
+pub trait SimdF64: SimdFloat<Scalar = f64, HorizontalAddScalar = f64> + SimdTransmuteF64 {
+    fn bitcast_i64(self) -> <Self::Backend as Simd>::I64;
 
-    fn cast_i64(self) -> <Self::Backend as Simd>::Vi64;
+    fn cast_i64(self) -> <Self::Backend as Simd>::I64;
 }

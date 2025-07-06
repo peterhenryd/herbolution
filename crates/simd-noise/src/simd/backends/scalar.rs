@@ -1,5 +1,5 @@
 use crate::simd::{
-    Simd, SimdBaseIo, SimdInt16, SimdInt32, SimdInt64, SimdInt8, SimdTransmuteF32, SimdTransmuteF64, SimdTransmuteI16, SimdTransmuteI32, SimdTransmuteI64,
+    Simd, SimdBaseIo, SimdI16, SimdI32, SimdI64, SimdI8, SimdTransmuteF32, SimdTransmuteF64, SimdTransmuteI16, SimdTransmuteI32, SimdTransmuteI64,
     SimdTransmuteI8,
 };
 use crate::{
@@ -9,12 +9,12 @@ use crate::{
 
 pub struct Scalar;
 impl Simd for Scalar {
-    type Vi8 = I8x1;
-    type Vi16 = I16x1;
-    type Vi32 = I32x1;
-    type Vi64 = I64x1;
-    type Vf32 = F32x1;
-    type Vf64 = F64x1;
+    type I8 = I8x1;
+    type I16 = I16x1;
+    type I32 = I32x1;
+    type I64 = I64x1;
+    type F32 = F32x1;
+    type F64 = F64x1;
 }
 
 define_simd_type!(Scalar, i8, 1, i8);

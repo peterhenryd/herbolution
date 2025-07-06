@@ -1,5 +1,5 @@
 use std::fs::read;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::slice;
 
 use fontdue::{Font, FontSettings};
@@ -36,10 +36,6 @@ pub struct Painter {
     quad_mesh: MeshId,
 }
 
-pub struct Options {
-    pub texture_paths: Vec<PathBuf>,
-}
-
 fn filter(c: char) -> bool {
     matches!(c, 'a'..='z' | 'A'..='Z' | '0'..='9' | ' ' | '.' | ',' | '?' | '!' | '-' | '_' | ':' | ';' | '\'' | '"' | '(' | ')' | '[' | ']' | '{' | '}' | '/' | '\\')
 }
@@ -48,7 +44,7 @@ impl Painter {
     pub fn create(gpu: &gpu::Handle, sample_count: SampleCount, asset_path: &Path) -> Self {
         let camera_buffer = Buffer::create(gpu, 1, BufferUsages::UNIFORM | BufferUsages::COPY_DST);
         let shaders = ShaderSources::default()
-            .with("core", include_str!("shader.wgsl"))
+            .with("core", include_str!("../shaders/ui.wgsl"))
             .compile(gpu)
             .expect("Failed to compile shaders");
 

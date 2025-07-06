@@ -17,12 +17,14 @@ pub struct FbmNoise<const D: NoiseDim> {
 }
 
 impl<const D: NoiseDim> DimNoise<D> for FbmNoise<D> {
+    #[inline]
     fn dim(&self) -> NoiseTransform<D> {
         self.dim
     }
 }
 
 impl<const D: NoiseDim> From<NoiseTransform<D>> for FbmNoise<D> {
+    #[inline]
     fn from(dim: NoiseTransform<D>) -> Self {
         FbmNoise {
             dim,
@@ -35,22 +37,27 @@ impl<const D: NoiseDim> From<NoiseTransform<D>> for FbmNoise<D> {
 }
 
 impl<const D: NoiseDim> Noise<D> for FbmNoise<D> {
+    #[inline]
     fn set_seed(&mut self, seed: i64) {
         self.dim.seed = seed;
     }
 
+    #[inline]
     fn seed(&self) -> i64 {
         self.dim.seed
     }
 
+    #[inline]
     fn set_freq(&mut self, freq: [f32; D.dim()]) {
         self.freq[0..D.dim()].copy_from_slice(&freq);
     }
 
+    #[inline]
     fn freq(&self) -> &[f32] {
         &self.freq[0..D.dim()]
     }
 
+    #[inline]
     fn generate(self) -> ([f32; D.size()], f32, f32) {
         match D.dim() {
             1 => get_1d_noise(&NoiseType::Fbm(self)),
@@ -60,8 +67,10 @@ impl<const D: NoiseDim> Noise<D> for FbmNoise<D> {
         }
     }
 
+    #[inline]
     fn validate(&self) {}
 
+    #[inline]
     fn generate_scaled(self, min: f32, max: f32) -> [f32; D.size()] {
         let mut new_self = self;
         new_self.dim.min = min;
@@ -77,14 +86,17 @@ impl<const D: NoiseDim> Noise<D> for FbmNoise<D> {
 }
 
 impl<const D: NoiseDim> OctaveNoise for FbmNoise<D> {
+    #[inline]
     fn set_lacunarity(&mut self, lacunarity: f32) {
         self.lacunarity = lacunarity;
     }
 
+    #[inline]
     fn set_gain(&mut self, gain: f32) {
         self.gain = gain;
     }
 
+    #[inline]
     fn set_octaves(&mut self, octaves: u8) {
         self.octaves = octaves;
     }
@@ -92,32 +104,23 @@ impl<const D: NoiseDim> OctaveNoise for FbmNoise<D> {
 
 impl<const D: NoiseDim, S: Simd> Sample32<D, S> for FbmNoise<D> {
     #[inline(always)]
-    fn sample_1d(&self, x: S::Vf32) -> S::Vf32 {
-        fbm_1d::<S>(x, S::Vf32::set1(self.lacunarity), S::Vf32::set1(self.gain), self.octaves, self.dim.seed)
+    fn sample_1d(&self, x: S::F32) -> S::F32 {
+        fbm_1d::<S>(x, S::F32::set1(self.lacunarity), S::F32::set1(self.gain), self.octaves, self.dim.seed)
     }
 
     #[inline(always)]
-    fn sample_2d(&self, x: S::Vf32, y: S::Vf32) -> S::Vf32 {
-        fbm_2d::<S>(x, y, S::Vf32::set1(self.lacunarity), S::Vf32::set1(self.gain), self.octaves, self.dim.seed)
+    fn sample_2d(&self, x: S::F32, y: S::F32) -> S::F32 {
+        fbm_2d::<S>(x, y, S::F32::set1(self.lacunarity), S::F32::set1(self.gain), self.octaves, self.dim.seed)
     }
 
     #[inline(always)]
-    fn sample_3d(&self, x: S::Vf32, y: S::Vf32, z: S::Vf32) -> S::Vf32 {
-        fbm_3d::<S>(x, y, z, S::Vf32::set1(self.lacunarity), S::Vf32::set1(self.gain), self.octaves, self.dim.seed)
+    fn sample_3d(&self, x: S::F32, y: S::F32, z: S::F32) -> S::F32 {
+        fbm_3d::<S>(x, y, z, S::F32::set1(self.lacunarity), S::F32::set1(self.gain), self.octaves, self.dim.seed)
     }
 
     #[inline(always)]
-    fn sample_4d(&self, x: S::Vf32, y: S::Vf32, z: S::Vf32, w: S::Vf32) -> S::Vf32 {
-        fbm_4d::<S>(
-            x,
-            y,
-            z,
-            w,
-            S::Vf32::set1(self.lacunarity),
-            S::Vf32::set1(self.gain),
-            self.octaves,
-            self.dim.seed,
-        )
+    fn sample_4d(&self, x: S::F32, y: S::F32, z: S::F32, w: S::F32) -> S::F32 {
+        fbm_4d::<S>(x, y, z, w, S::F32::set1(self.lacunarity), S::F32::set1(self.gain), self.octaves, self.dim.seed)
     }
 }
 

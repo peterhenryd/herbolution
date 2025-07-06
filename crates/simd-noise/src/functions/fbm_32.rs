@@ -2,8 +2,8 @@ use crate::functions::simplex_32::{simplex_1d, simplex_2d, simplex_3d, simplex_4
 use crate::simd::{Simd, SimdBaseIo};
 
 #[inline(always)]
-pub fn fbm_1d<S: Simd>(mut x: S::Vf32, lacunarity: S::Vf32, gain: S::Vf32, octaves: u8, seed: i64) -> S::Vf32 {
-    let mut amp = S::Vf32::set1(1.0);
+pub fn fbm_1d<S: Simd>(mut x: S::F32, lacunarity: S::F32, gain: S::F32, octaves: u8, seed: i64) -> S::F32 {
+    let mut amp = S::F32::set1(1.0);
     let mut result = simplex_1d::<S>(x, seed);
 
     for _ in 1..octaves {
@@ -16,9 +16,9 @@ pub fn fbm_1d<S: Simd>(mut x: S::Vf32, lacunarity: S::Vf32, gain: S::Vf32, octav
 }
 
 #[inline(always)]
-pub fn fbm_2d<S: Simd>(mut x: S::Vf32, mut y: S::Vf32, lac: S::Vf32, gain: S::Vf32, octaves: u8, seed: i64) -> S::Vf32 {
+pub fn fbm_2d<S: Simd>(mut x: S::F32, mut y: S::F32, lac: S::F32, gain: S::F32, octaves: u8, seed: i64) -> S::F32 {
     let mut result = simplex_2d::<S>(x, y, seed);
-    let mut amp = S::Vf32::set1(1.0);
+    let mut amp = S::F32::set1(1.0);
 
     for _ in 1..octaves {
         x = x * lac;
@@ -31,9 +31,9 @@ pub fn fbm_2d<S: Simd>(mut x: S::Vf32, mut y: S::Vf32, lac: S::Vf32, gain: S::Vf
 }
 
 #[inline(always)]
-pub fn fbm_3d<S: Simd>(mut x: S::Vf32, mut y: S::Vf32, mut z: S::Vf32, lac: S::Vf32, gain: S::Vf32, octaves: u8, seed: i64) -> S::Vf32 {
+pub fn fbm_3d<S: Simd>(mut x: S::F32, mut y: S::F32, mut z: S::F32, lac: S::F32, gain: S::F32, octaves: u8, seed: i64) -> S::F32 {
     let mut result = simplex_3d::<S>(x, y, z, seed);
-    let mut amp = S::Vf32::set1(1.0);
+    let mut amp = S::F32::set1(1.0);
 
     for _ in 1..octaves {
         x = x * lac;
@@ -47,9 +47,9 @@ pub fn fbm_3d<S: Simd>(mut x: S::Vf32, mut y: S::Vf32, mut z: S::Vf32, lac: S::V
 }
 
 #[inline(always)]
-pub fn fbm_4d<S: Simd>(mut x: S::Vf32, mut y: S::Vf32, mut z: S::Vf32, mut w: S::Vf32, lac: S::Vf32, gain: S::Vf32, octaves: u8, seed: i64) -> S::Vf32 {
+pub fn fbm_4d<S: Simd>(mut x: S::F32, mut y: S::F32, mut z: S::F32, mut w: S::F32, lac: S::F32, gain: S::F32, octaves: u8, seed: i64) -> S::F32 {
     let mut result = simplex_4d::<S>(x, y, z, w, seed);
-    let mut amp = S::Vf32::set1(1.0);
+    let mut amp = S::F32::set1(1.0);
 
     for _ in 1..octaves {
         x = x * lac;

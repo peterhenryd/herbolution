@@ -7,9 +7,10 @@ pub mod intrinsics;
 pub mod noise;
 pub mod simd;
 
+use paste::item as simd_paste_item;
+
 use crate::noise::NoiseDim;
 use crate::simd::{__SimdRunner, __run_simd_generic, __run_simd_invoke_scalar, __run_simd_runtime_decide};
-use paste::item as simd_paste_item;
 
 simd_runtime_generate!(
     pub fn get_1d_noise<const D: NoiseDim>(noise_type: &noise::NoiseType<D>) -> ([f32; D.size()], f32, f32) {

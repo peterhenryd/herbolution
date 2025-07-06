@@ -87,18 +87,18 @@ impl<const D: NoiseDim> Noise<D> for Cellular2Noise<D> {
 impl<const D: NoiseDim, S: Simd> Sample32<D, S> for Cellular2Noise<D> {
     #[inline(always)]
     #[allow(unused_variables)]
-    fn sample_1d(&self, x: S::Vf32) -> S::Vf32 {
+    fn sample_1d(&self, x: S::F32) -> S::F32 {
         unimplemented!()
     }
 
     #[inline(always)]
-    fn sample_2d(&self, x: S::Vf32, y: S::Vf32) -> S::Vf32 {
+    fn sample_2d(&self, x: S::F32, y: S::F32) -> S::F32 {
         cellular2_2d::<S>(
             x,
             y,
             self.distance_function,
             self.return_type,
-            S::Vf32::set1(self.jitter),
+            S::F32::set1(self.jitter),
             self.index0,
             self.index1,
             self.dim.seed,
@@ -106,14 +106,14 @@ impl<const D: NoiseDim, S: Simd> Sample32<D, S> for Cellular2Noise<D> {
     }
 
     #[inline(always)]
-    fn sample_3d(&self, x: S::Vf32, y: S::Vf32, z: S::Vf32) -> S::Vf32 {
+    fn sample_3d(&self, x: S::F32, y: S::F32, z: S::F32) -> S::F32 {
         cellular2_3d::<S>(
             x,
             y,
             z,
             self.distance_function,
             self.return_type,
-            S::Vf32::set1(self.jitter),
+            S::F32::set1(self.jitter),
             self.index0,
             self.index1,
             self.dim.seed,
@@ -122,7 +122,7 @@ impl<const D: NoiseDim, S: Simd> Sample32<D, S> for Cellular2Noise<D> {
 
     #[inline(always)]
     #[allow(unused_variables)]
-    fn sample_4d(&self, x: S::Vf32, y: S::Vf32, z: S::Vf32, w: S::Vf32) -> S::Vf32 {
+    fn sample_4d(&self, x: S::F32, y: S::F32, z: S::F32, w: S::F32) -> S::F32 {
         unimplemented!()
     }
 }

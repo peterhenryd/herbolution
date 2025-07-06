@@ -25,7 +25,7 @@ use crate::session::Session;
 use crate::video;
 use crate::video::resource::SampleCount;
 use crate::video::ui::text::Text;
-use crate::video::{ui, world, Video};
+use crate::video::Video;
 
 /// An Herbolution application.
 pub struct App<'w> {
@@ -256,8 +256,6 @@ impl Switch<'_> {
             video::Options {
                 resolution: RESOLUTION.into(),
                 clear_color: Rgba::<u8>::from_rgb(117, 255, 250).into(),
-                painter: ui::Options { texture_paths: vec![] },
-                sculptor: world::Options {},
                 sample_count: SampleCount::Multi,
                 asset_path,
             },

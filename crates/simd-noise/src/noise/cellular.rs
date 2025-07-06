@@ -96,8 +96,7 @@ impl<const D: NoiseDim> Noise<D> for CellularNoise<D> {
         }
     }
 
-    fn validate(&self) {
-    }
+    fn validate(&self) {}
 
     fn generate_scaled(self, min: f32, max: f32) -> [f32; D.size()] {
         let mut new_self = self;
@@ -114,23 +113,23 @@ impl<const D: NoiseDim> Noise<D> for CellularNoise<D> {
 impl<const D: NoiseDim, S: Simd> Sample32<D, S> for CellularNoise<D> {
     #[inline(always)]
     #[allow(unused_variables)]
-    fn sample_1d(&self, x: S::Vf32) -> S::Vf32 {
+    fn sample_1d(&self, x: S::F32) -> S::F32 {
         unimplemented!()
     }
 
     #[inline(always)]
-    fn sample_2d(&self, x: S::Vf32, y: S::Vf32) -> S::Vf32 {
-        cellular_2d::<S>(x, y, self.distance_function, self.return_type, S::Vf32::set1(self.jitter), self.dim.seed)
+    fn sample_2d(&self, x: S::F32, y: S::F32) -> S::F32 {
+        cellular_2d::<S>(x, y, self.distance_function, self.return_type, S::F32::set1(self.jitter), self.dim.seed)
     }
 
     #[inline(always)]
-    fn sample_3d(&self, x: S::Vf32, y: S::Vf32, z: S::Vf32) -> S::Vf32 {
-        cellular_3d::<S>(x, y, z, self.distance_function, self.return_type, S::Vf32::set1(self.jitter), self.dim.seed)
+    fn sample_3d(&self, x: S::F32, y: S::F32, z: S::F32) -> S::F32 {
+        cellular_3d::<S>(x, y, z, self.distance_function, self.return_type, S::F32::set1(self.jitter), self.dim.seed)
     }
 
     #[inline(always)]
     #[allow(unused_variables)]
-    fn sample_4d(&self, x: S::Vf32, y: S::Vf32, z: S::Vf32, w: S::Vf32) -> S::Vf32 {
+    fn sample_4d(&self, x: S::F32, y: S::F32, z: S::F32, w: S::F32) -> S::F32 {
         unimplemented!()
     }
 }

@@ -1,12 +1,12 @@
 use crate::simd::Simd;
 
 pub struct Hash3d<S: Simd> {
-    pub l8: S::Vf64,
-    pub l4: S::Vf64,
-    pub h12_or_14: S::Vf64,
+    pub l8: S::F64,
+    pub l4: S::F64,
+    pub h12_or_14: S::F64,
 
-    pub h1: S::Vf64,
-    pub h2: S::Vf64,
+    pub h1: S::F64,
+    pub h2: S::F64,
 }
 
 impl<S> Hash3d<S>
@@ -14,14 +14,14 @@ where
     S: Simd,
 {
     #[allow(dead_code)]
-    pub fn new(l8: S::Vf64, l4: S::Vf64, h12_or_14: S::Vf64, h1: S::Vf64, h2: S::Vf64) -> Self {
+    pub fn new(l8: S::F64, l4: S::F64, h12_or_14: S::F64, h1: S::F64, h2: S::F64) -> Self {
         Self { l8, l4, h12_or_14, h1, h2 }
     }
 }
 
 #[inline(always)]
 #[allow(unused_variables)]
-pub fn hash3d<S: Simd>(seed: i64, i: S::Vi64, j: S::Vi64, k: S::Vi64) -> Hash3d<S> {
+pub fn hash3d<S: Simd>(seed: i64, i: S::I64, j: S::I64, k: S::I64) -> Hash3d<S> {
     unimplemented!();
     /*
     let mut hash = i ^ S::Vi64::set1(seed);

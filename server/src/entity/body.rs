@@ -23,6 +23,8 @@ pub struct EntityBody {
     is_on_ground: bool,
     near_colliders: Vec<Aabb<f64>>,
     pub attrs: EntityAttrs,
+    fall: f32,
+    pub(crate) last_fell: Option<f32>,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -43,6 +45,8 @@ impl EntityBody {
             is_on_ground: false,
             attrs,
             near_colliders: vec![],
+            fall: 0.0,
+            last_fell: None,
         }
     }
 
@@ -64,6 +68,7 @@ impl EntityBody {
         let step = self.velocity * dt_secs;
         let clipped_step = self.collide_and_clip(chunk_map, step);
 
+        self.fall -= clipped_step.y as f32;
         self.update_state_from_step(step, clipped_step);
 
         self.position += clipped_step;
@@ -137,6 +142,12 @@ impl EntityBody {
 
     fn update_state_from_step(&mut self, step: vec3d, clipped_step: vec3d) {
         self.is_on_ground = (step.y < 0.0) && (clipped_step.y != step.y);
+
+        if self.is_on_ground && self.fall > 0.0 {
+            dbg!(self.fall);
+            self.last_fell = Some(self.fall);
+            self.fall = 0.0;
+        }
 
         if clipped_step.x != step.x {
             self.velocity.x = 0.0;

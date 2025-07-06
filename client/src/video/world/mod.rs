@@ -23,14 +23,12 @@ pub struct Sculptor {
     pub(crate) sets: Sets<Instance3d>,
 }
 
-pub struct Options {}
-
 impl Sculptor {
     pub fn create(gpu: &gpu::Handle, sample_count: SampleCount) -> Self {
         let camera_buffer = Buffer::create(gpu, 1, BufferUsages::UNIFORM | BufferUsages::COPY_DST);
         let world_buffer = Buffer::create(gpu, 1, BufferUsages::UNIFORM | BufferUsages::COPY_DST);
         let shaders = ShaderSources::default()
-            .with("world", include_str!("shaders/world.wgsl"))
+            .with("world", include_str!("../shaders/world.wgsl"))
             .compile(gpu)
             .expect("Failed to compile shaders");
 

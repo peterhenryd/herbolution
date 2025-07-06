@@ -1,13 +1,20 @@
+use crate::entity::{ActionState, ActionTarget};
 use crossbeam_channel::{bounded, Receiver, Sender};
 use lib::rotation::Euler;
 use lib::vector::{vec2d, vec3d, vec3i8};
-
-use crate::entity::{ActionState, ActionTarget};
+use lib::world::Health;
 
 #[derive(Debug)]
 pub struct ClientPlayerHandle {
     pub transform: ClientPlayerTransformHandle,
     pub input: ClientPlayerInputHandle,
+    health: Sender<Health>,
+}
+
+impl ClientPlayerHandle {
+    pub fn set_health(&self, health: Health) {
+        let _ = self.health.try_send(health);
+    }
 }
 
 #[derive(Debug)]
@@ -61,6 +68,13 @@ impl ClientPlayerInputHandle {
 pub struct ServerPlayerHandle {
     pub transform: ServerPlayerTransformHandle,
     pub input: ServerPlayerInputHandle,
+    health: Receiver<Health>,
+}
+
+impl ServerPlayerHandle {
+    pub fn next_health(&self) -> Option<Health> {
+        self.health.try_recv().ok()
+    }
 }
 
 #[derive(Debug)]
@@ -118,6 +132,7 @@ pub fn create() -> (ClientPlayerHandle, ServerPlayerHandle) {
     let (input_mouse_movement_tx, input_mouse_movement_rx) = bounded(8);
     let (input_speed_delta_tx, input_speed_delta_rx) = bounded(1);
     let (input_action_state_tx, input_action_state_rx) = bounded(1);
+    let (health_tx, health_rx) = bounded(1);
 
     (
         ClientPlayerHandle {
@@ -132,6 +147,7 @@ pub fn create() -> (ClientPlayerHandle, ServerPlayerHandle) {
                 speed_delta: input_speed_delta_rx,
                 action_state: input_action_state_rx,
             },
+            health: health_tx,
         },
         ServerPlayerHandle {
             transform: ServerPlayerTransformHandle {
@@ -145,6 +161,7 @@ pub fn create() -> (ClientPlayerHandle, ServerPlayerHandle) {
                 speed_delta: input_speed_delta_tx,
                 action_state: input_action_state_tx,
             },
+            health: health_rx,
         },
     )
 }

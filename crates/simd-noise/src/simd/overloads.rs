@@ -768,15 +768,15 @@ macro_rules! impl_i8_simd_type {
                 .partial_horizontal_add()
         });
 
-        impl $crate::simd::SimdInt8 for $i8_ty {
+        impl $crate::simd::SimdI8 for $i8_ty {
             #[inline(always)]
-            fn extend_to_i16(self) -> (<Self::Backend as Simd>::Vi16, <Self::Backend as Simd>::Vi16) {
+            fn extend_to_i16(self) -> (<Self::Backend as Simd>::I16, <Self::Backend as Simd>::I16) {
                 let (a, b) = unsafe { $crate::simd::Ops::<$engine, i8>::extend_i16(self.0) };
                 ($i16_ty(a), $i16_ty(b))
             }
 
             #[inline(always)]
-            fn unsigned_extend_to_i16(self) -> (<Self::Backend as Simd>::Vi16, <Self::Backend as Simd>::Vi16) {
+            fn unsigned_extend_to_i16(self) -> (<Self::Backend as Simd>::I16, <Self::Backend as Simd>::I16) {
                 let (a, b) = unsafe { $crate::simd::Ops::<$engine, i8>::unsigned_extend_i16(self.0) };
                 ($i16_ty(a), $i16_ty(b))
             }
@@ -807,15 +807,15 @@ macro_rules! impl_i16_simd_type {
                 .partial_horizontal_add()
         });
 
-        impl $crate::simd::SimdInt16 for $i16_ty {
+        impl $crate::simd::SimdI16 for $i16_ty {
             #[inline(always)]
-            fn extend_to_i32(self) -> (<Self::Backend as Simd>::Vi32, <Self::Backend as Simd>::Vi32) {
+            fn extend_to_i32(self) -> (<Self::Backend as Simd>::I32, <Self::Backend as Simd>::I32) {
                 let (a, b) = unsafe { $crate::simd::Ops::<$engine, i16>::extend_i32(self.0) };
                 ($i32_ty(a), $i32_ty(b))
             }
 
             #[inline(always)]
-            fn unsigned_extend_to_i32(self) -> (<Self::Backend as Simd>::Vi32, <Self::Backend as Simd>::Vi32) {
+            fn unsigned_extend_to_i32(self) -> (<Self::Backend as Simd>::I32, <Self::Backend as Simd>::I32) {
                 let (a, b) = unsafe { $crate::simd::Ops::<$engine, i16>::unsigned_extend_i32(self.0) };
                 ($i32_ty(a), $i32_ty(b))
             }
@@ -835,25 +835,25 @@ macro_rules! impl_i32_simd_type {
                 .partial_horizontal_add()
         });
 
-        impl $crate::simd::SimdInt32 for $i32_ty {
+        impl $crate::simd::SimdI32 for $i32_ty {
             #[inline(always)]
-            fn bitcast_f32(self) -> <Self::Backend as Simd>::Vf32 {
+            fn bitcast_f32(self) -> <Self::Backend as Simd>::F32 {
                 unsafe { $f32_ty($crate::simd::Ops::<$engine, i32>::bitcast_f32(self.0)) }
             }
 
             #[inline(always)]
-            fn cast_f32(self) -> <Self::Backend as Simd>::Vf32 {
+            fn cast_f32(self) -> <Self::Backend as Simd>::F32 {
                 unsafe { $f32_ty($crate::simd::Ops::<$engine, i32>::cast_f32(self.0)) }
             }
 
             #[inline(always)]
-            fn extend_to_i64(self) -> (<Self::Backend as Simd>::Vi64, <Self::Backend as Simd>::Vi64) {
+            fn extend_to_i64(self) -> (<Self::Backend as Simd>::I64, <Self::Backend as Simd>::I64) {
                 let (a, b) = unsafe { $crate::simd::Ops::<$engine, i32>::extend_i64(self.0) };
                 ($i64_ty(a), $i64_ty(b))
             }
 
             #[inline(always)]
-            fn unsigned_extend_to_i64(self) -> (<Self::Backend as Simd>::Vi64, <Self::Backend as Simd>::Vi64) {
+            fn unsigned_extend_to_i64(self) -> (<Self::Backend as Simd>::I64, <Self::Backend as Simd>::I64) {
                 let (a, b) = unsafe { $crate::simd::Ops::<$engine, i32>::unsigned_extend_i64(self.0) };
                 ($i64_ty(a), $i64_ty(b))
             }
@@ -867,14 +867,14 @@ macro_rules! impl_i64_simd_type {
 
         $crate::impl_simd_int!($engine, $i64_ty, i64, |self| { self.partial_horizontal_add() });
 
-        impl $crate::simd::SimdInt64 for $i64_ty {
+        impl $crate::simd::SimdI64 for $i64_ty {
             #[inline(always)]
-            fn bitcast_f64(self) -> <Self::Backend as Simd>::Vf64 {
+            fn bitcast_f64(self) -> <Self::Backend as Simd>::F64 {
                 unsafe { $f64_ty($crate::simd::Ops::<$engine, i64>::bitcast_f64(self.0)) }
             }
 
             #[inline(always)]
-            fn cast_f64(self) -> <Self::Backend as Simd>::Vf64 {
+            fn cast_f64(self) -> <Self::Backend as Simd>::F64 {
                 unsafe { $f64_ty($crate::simd::Ops::<$engine, i64>::cast_f64(self.0)) }
             }
 
@@ -894,14 +894,14 @@ macro_rules! impl_f32_simd_type {
 
         $crate::impl_simd_float!($engine, $f32_ty, f32);
 
-        impl $crate::simd::SimdFloat32 for $f32_ty {
+        impl $crate::simd::SimdF32 for $f32_ty {
             #[inline(always)]
-            fn bitcast_i32(self) -> <Self::Backend as Simd>::Vi32 {
+            fn bitcast_i32(self) -> <Self::Backend as Simd>::I32 {
                 unsafe { $i32_ty($crate::simd::Ops::<$engine, f32>::bitcast_i32(self.0)) }
             }
 
             #[inline(always)]
-            fn cast_i32(self) -> <Self::Backend as Simd>::Vi32 {
+            fn cast_i32(self) -> <Self::Backend as Simd>::I32 {
                 unsafe { $i32_ty($crate::simd::Ops::<$engine, f32>::cast_i32(self.0)) }
             }
 
@@ -921,14 +921,14 @@ macro_rules! impl_f64_simd_type {
 
         $crate::impl_simd_float!($engine, $f64_ty, f64);
 
-        impl $crate::simd::SimdFloat64 for $f64_ty {
+        impl $crate::simd::SimdF64 for $f64_ty {
             #[inline(always)]
-            fn bitcast_i64(self) -> <Self::Backend as Simd>::Vi64 {
+            fn bitcast_i64(self) -> <Self::Backend as Simd>::I64 {
                 unsafe { $i64_ty($crate::simd::Ops::<$engine, f64>::bitcast_i64(self.0)) }
             }
 
             #[inline(always)]
-            fn cast_i64(self) -> <Self::Backend as Simd>::Vi64 {
+            fn cast_i64(self) -> <Self::Backend as Simd>::I64 {
                 unsafe { $i64_ty($crate::simd::Ops::<$engine, f64>::cast_i64(self.0)) }
             }
         }

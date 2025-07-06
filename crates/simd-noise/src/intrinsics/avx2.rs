@@ -1,10 +1,10 @@
 #[cfg(target_arch = "x86")]
 use std::arch::x86::*;
+#[cfg(target_arch = "x86_64")]
+use std::arch::x86_64::*;
 
 use crate::functions::{cell_32, fbm_32, fbm_64, ridge_32, ridge_64, simplex_32, simplex_64, turbulence_32, turbulence_64};
 use crate::simd::{SimdTransmuteF32, SimdTransmuteF64};
-#[cfg(target_arch = "x86_64")]
-use std::arch::x86_64::*;
 
 cellular!(
     "2d",

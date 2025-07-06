@@ -23,6 +23,7 @@ pub struct Player {
     sky_box_color: Rgba<f32>,
     /// The identifier for the GPU buffer containing the quads of the sky box, which is rendered as a cube around the player.
     pub(crate) sky_box_id: SetId,
+    pub(crate) health: Health,
 }
 
 impl Player {
@@ -42,6 +43,7 @@ impl Player {
                 .sculptor
                 .sets()
                 .insert_from(cube(Vec3::ZERO, sky_box_color)),
+            health: Health::default(),
         }
     }
 
@@ -77,6 +79,10 @@ impl Player {
 
         camera_position.y += self.view_bob.sin() * 0.1;
          */
+
+        if let Some(health) = handle.next_health() {
+            self.health = health;
+        }
 
         if let Some(x) = handle.transform.next_rotation() {
             self.camera.rotation = x;
@@ -181,20 +187,20 @@ fn cube(position: vec3d, color: Rgba<f32>) -> impl IntoIterator<Item = Instance3
         .map(move |rotation| Instance3d::new(position, rotation, Vec3::splat(1.0), color, 1))
 }
 
-use lib::chunk;
-use lib::matrix::Mat4;
-use lib::proj::Perspective;
-use lib::rotation::Euler;
-use lib::size::size2u;
-use lib::spatial::Face;
-use lib::vector::{vec3d, vec3i, vec3i8, Vec3};
-
 use crate::app::Update;
 use crate::video::camera::{VideoCamera, View};
 use crate::video::resource::{SetId, Sets};
 use crate::video::world::{Instance3d, Sculptor};
 use crate::video::Video;
 use crate::world::frustum::Frustum;
+use lib::matrix::Mat4;
+use lib::proj::Perspective;
+use lib::rotation::Euler;
+use lib::size::size2u;
+use lib::spatial::Face;
+use lib::vector::{vec3d, vec3i, vec3i8, Vec3};
+use lib::world;
+use lib::world::Health;
 
 /// The camera with additional information used for culling and camera-relative rendering.
 #[derive(Debug)]
@@ -235,6 +241,6 @@ impl PlayerCamera {
         video.sculptor.update_camera(&video_camera);
         self.frustum = Frustum::new(video_camera.view_proj);
 
-        self.chunk_position = self.position.cast() / chunk::LENGTH as i32;
+        self.chunk_position = self.position.cast() / world::CHUNK_LENGTH as i32;
     }
 }

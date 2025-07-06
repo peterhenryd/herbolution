@@ -21,10 +21,7 @@ impl<const D: NoiseDim> DimNoise<D> for GradientNoise<D> {
 
 impl<const D: NoiseDim> From<NoiseTransform<D>> for GradientNoise<D> {
     fn from(dim: NoiseTransform<D>) -> Self {
-        GradientNoise {
-            dim,
-            freq: [0.02; 4],
-        }
+        GradientNoise { dim, freq: [0.02; 4] }
     }
 }
 
@@ -54,8 +51,7 @@ impl<const D: NoiseDim> Noise<D> for GradientNoise<D> {
         }
     }
 
-    fn validate(&self) {
-    }
+    fn validate(&self) {}
 
     fn generate_scaled(self, min: f32, max: f32) -> [f32; D.size()] {
         let mut new_self = self;
@@ -73,22 +69,22 @@ impl<const D: NoiseDim> Noise<D> for GradientNoise<D> {
 
 impl<const D: NoiseDim, S: Simd> Sample32<D, S> for GradientNoise<D> {
     #[inline(always)]
-    fn sample_1d(&self, x: S::Vf32) -> S::Vf32 {
+    fn sample_1d(&self, x: S::F32) -> S::F32 {
         simplex_1d::<S>(x, self.dim.seed)
     }
 
     #[inline(always)]
-    fn sample_2d(&self, x: S::Vf32, y: S::Vf32) -> S::Vf32 {
+    fn sample_2d(&self, x: S::F32, y: S::F32) -> S::F32 {
         simplex_2d::<S>(x, y, self.dim.seed)
     }
 
     #[inline(always)]
-    fn sample_3d(&self, x: S::Vf32, y: S::Vf32, z: S::Vf32) -> S::Vf32 {
+    fn sample_3d(&self, x: S::F32, y: S::F32, z: S::F32) -> S::F32 {
         simplex_3d::<S>(x, y, z, self.dim.seed)
     }
 
     #[inline(always)]
-    fn sample_4d(&self, x: S::Vf32, y: S::Vf32, z: S::Vf32, w: S::Vf32) -> S::Vf32 {
+    fn sample_4d(&self, x: S::F32, y: S::F32, z: S::F32, w: S::F32) -> S::F32 {
         simplex_4d::<S>(x, y, z, w, self.dim.seed)
     }
 }

@@ -1,7 +1,7 @@
 use std::ops::{Add, AddAssign, BitAnd, Sub, SubAssign};
 
-use crate::chunk;
-use crate::vector::{Vec3, vec3i, vec3u5};
+use crate::vector::{vec3i, vec3u5, Vec3};
+use crate::world;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub struct CubePt(pub vec3i);
@@ -14,7 +14,7 @@ impl From<vec3i> for CubePt {
 
 impl From<ChunkCubePt> for CubePt {
     fn from(value: ChunkCubePt) -> Self {
-        Self(value.chunk.0 * chunk::LENGTH as i32 + value.local.try_cast().unwrap())
+        Self(value.chunk.0 * world::CHUNK_LENGTH as i32 + value.local.try_cast().unwrap())
     }
 }
 
@@ -26,8 +26,11 @@ pub struct ChunkCubePt {
 impl From<CubePt> for ChunkCubePt {
     fn from(value: CubePt) -> Self {
         Self {
-            chunk: ChunkPt(value.0 >> chunk::EXP as i32),
-            local: value.0.bitand(chunk::LENGTH as i32 - 1).into(),
+            chunk: ChunkPt(value.0 >> world::CHUNK_EXP as i32),
+            local: value
+                .0
+                .bitand(world::CHUNK_LENGTH as i32 - 1)
+                .into(),
         }
     }
 }

@@ -75,7 +75,7 @@ impl FontsBuilder {
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct FontId {
     index: usize,
 }

@@ -4,7 +4,6 @@
 #![feature(const_ops)]
 #![feature(ptr_metadata)]
 
-pub mod chunk;
 pub mod collections;
 pub mod color;
 pub mod fs;
@@ -19,3 +18,4 @@ pub mod size;
 pub mod spatial;
 pub mod util;
 pub mod vector;
+pub mod world;

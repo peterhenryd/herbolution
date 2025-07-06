@@ -1,15 +1,21 @@
 #[cfg(target_arch = "wasm32")]
 use core::arch::wasm32::*;
-use crate::Simd;
+
+use crate::simd::Simd;
+use crate::{
+    define_simd_type, impl_f32_simd_type, impl_f64_simd_type, impl_i16_simd_type, impl_i32_simd_type, impl_i64_simd_type, impl_i8_simd_type,
+    impl_simd_float_overloads, impl_simd_int_overloads,
+};
 
 pub struct Wasm;
+
 impl Simd for Wasm {
-    type Vi8 = I8x16Wasm;
-    type Vi16 = I16x8Wasm;
-    type Vi32 = I32x4Wasm;
-    type Vf32 = F32x4Wasm;
-    type Vf64 = F64x2Wasm;
-    type Vi64 = I64x2Wasm;
+    type I8 = I8x16Wasm;
+    type I16 = I16x8Wasm;
+    type I32 = I32x4Wasm;
+    type F32 = F32x4Wasm;
+    type F64 = F64x2Wasm;
+    type I64 = I64x2Wasm;
 
     #[inline]
     fn invoke<R>(f: impl FnOnce() -> R) -> R {
@@ -22,13 +28,6 @@ impl Simd for Wasm {
         unsafe { inner(f) }
     }
 }
-
-
-use crate::ops::*;
-use crate::*;
-
-mod simd;
-pub use self::simd::*;
 
 define_simd_type!(Wasm, i8, 16, v128, Wasm);
 impl_simd_int_overloads!(I8x16Wasm);

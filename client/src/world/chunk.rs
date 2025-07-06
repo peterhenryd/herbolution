@@ -2,11 +2,11 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 use std::ops::Mul;
 
 use fastrand::Rng;
-use lib::chunk;
 use lib::collections::Mailbox;
 use lib::point::ChunkPt;
 use lib::spatial::PerFace;
-use lib::vector::{Vec3, vec3u5};
+use lib::vector::{vec3u5, Vec3};
+use lib::world;
 use server::chunk::cube::Cube;
 use server::chunk::handle::{ChunkCube, GameChunkHandle};
 use server::chunk::material::{Palette, PaletteCube};
@@ -14,8 +14,8 @@ use wgpu::BufferUsages;
 
 use crate::video::gpu;
 use crate::video::resource::GrowBuffer;
-use crate::video::world::Instance3d;
 use crate::video::world::chisel::Chisel;
+use crate::video::world::Instance3d;
 use crate::world::player::PlayerCamera;
 
 /// The video-side representation of a chunk within the world.
@@ -42,7 +42,7 @@ pub struct Chunk {
 struct MovableContext {
     position: ChunkPt,
     cached_quad_instances: Vec<Instance3d>,
-    data: Box<[PaletteCube; chunk::VOLUME]>,
+    data: Box<[PaletteCube; world::CHUNK_VOLUME]>,
     mesh: GrowBuffer<Instance3d>,
     palette: Palette,
 }
@@ -60,7 +60,7 @@ impl Chunk {
             context: Some(MovableContext {
                 position,
                 cached_quad_instances: vec![],
-                data: Box::new([Cube::new(None); chunk::VOLUME]),
+                data: Box::new([Cube::new(None); world::CHUNK_VOLUME]),
                 mesh,
                 palette: Palette::new(),
             }),
@@ -80,7 +80,7 @@ impl Chunk {
         // If the chunk is not within the camera's frustum, don't video it.
         if !camera
             .frustum
-            .contains_cube(chunk.cast(), chunk::LENGTH as f32)
+            .contains_cube(chunk.cast(), world::CHUNK_LENGTH as f32)
         {
             return;
         }
@@ -133,16 +133,16 @@ impl Chunk {
             let chunk_position = context
                 .position
                 .0
-                .mul(chunk::LENGTH as i32)
+                .mul(world::CHUNK_LENGTH as i32)
                 .cast::<f64>();
 
             // Clear the instance cache and remesh the chunk.
             context.cached_quad_instances.clear();
 
             let (mut cached_material, mut prev_material_id) = (None, None);
-            for x in 0..chunk::LENGTH {
-                for z in 0..chunk::LENGTH {
-                    for y in 0..chunk::LENGTH {
+            for x in 0..world::CHUNK_LENGTH {
+                for z in 0..world::CHUNK_LENGTH {
+                    for y in 0..world::CHUNK_LENGTH {
                         let position = vec3u5::new(x as u8, y as u8, z as u8);
                         let cube = context.data[position.linearize()];
 

@@ -6,10 +6,10 @@ use wgpu::SurfaceTarget;
 
 use crate::video::frame::FrameOptions;
 use crate::video::resource::SampleCount;
-use crate::video::ui::Painter;
 use crate::video::ui::brush::Brush;
-use crate::video::world::Sculptor;
+use crate::video::ui::Painter;
 use crate::video::world::chisel::Chisel;
+use crate::video::world::Sculptor;
 
 pub mod camera;
 pub mod frame;
@@ -30,8 +30,6 @@ pub struct Video<'w> {
 pub struct Options {
     pub resolution: size2u,
     pub clear_color: Rgba<f64>,
-    pub painter: ui::Options,
-    pub sculptor: world::Options,
     pub sample_count: SampleCount,
     pub asset_path: PathBuf,
 }
@@ -85,6 +83,10 @@ impl<'w> Video<'w> {
             painter: &self.painter,
             sculptor: &self.sculptor,
         }
+    }
+
+    pub fn set_clear_color(&mut self, color: Rgba<f64>) {
+        self.clear_color = color;
     }
 }
 

@@ -1,18 +1,19 @@
-use crate::simd::{Simd, SimdBaseIo, SimdInt16, SimdInt32, SimdInt64, SimdInt8};
+use std::arch::aarch64::{float32x4_t, float64x2_t, int16x8_t, int32x4_t, int64x2_t, int8x16_t};
+
+use crate::simd::{Simd, SimdBaseIo, SimdI16, SimdI32, SimdI64, SimdI8};
 use crate::{
     define_simd_type, impl_f32_simd_type, impl_f64_simd_type, impl_i16_simd_type, impl_i32_simd_type, impl_i64_simd_type, impl_i8_simd_type,
     impl_simd_float_overloads, impl_simd_int_overloads,
 };
-use std::arch::aarch64::{float32x4_t, float64x2_t, int16x8_t, int32x4_t, int64x2_t, int8x16_t};
 
 pub struct Neon;
 impl Simd for Neon {
-    type Vi8 = I8x16Neon;
-    type Vi16 = I16x8Neon;
-    type Vi32 = I32x4Neon;
-    type Vi64 = I64x2Neon;
-    type Vf32 = F32x4Neon;
-    type Vf64 = F64x2Neon;
+    type I8 = I8x16Neon;
+    type I16 = I16x8Neon;
+    type I32 = I32x4Neon;
+    type I64 = I64x2Neon;
+    type F32 = F32x4Neon;
+    type F64 = F64x2Neon;
 }
 
 use crate::simd::{SimdTransmuteF32, SimdTransmuteF64, SimdTransmuteI16, SimdTransmuteI32, SimdTransmuteI64, SimdTransmuteI8};

@@ -2,10 +2,10 @@ use std::fmt::Debug;
 use std::sync::Arc;
 
 use crossbeam_channel::{unbounded, Receiver, Sender, TryIter};
-use lib::chunk;
 use lib::point::ChunkPt;
 use lib::util::ProgressiveMeasurement;
 use lib::vector::{vec2f, vec3u5};
+use lib::world;
 use simd_noise::noise::{FbmNoise, Noise, NoiseDim, NoiseTransform, OctaveNoise};
 
 use crate::chunk::material::Palette;
@@ -72,15 +72,15 @@ impl GenerationParams {
             .palette
             .insert(self.global_palette.get("herbolution:grass"));
 
-        let chunk_position = chunk.position.0.xz().cast() * chunk::LENGTH as f32;
+        let chunk_position = chunk.position.0.xz().cast() * world::CHUNK_LENGTH as f32;
 
         let noise = self.get_noise(chunk_position);
-        for x in 0..chunk::LENGTH {
-            for z in 0..chunk::LENGTH {
-                let h = (noise[x + z * chunk::LENGTH] * chunk::LENGTH as f32) as i32;
+        for x in 0..world::CHUNK_LENGTH {
+            for z in 0..world::CHUNK_LENGTH {
+                let h = (noise[x + z * world::CHUNK_LENGTH] * world::CHUNK_LENGTH as f32) as i32;
 
-                for chunk_y in 0..chunk::LENGTH {
-                    let y = chunk.position.0.y * chunk::LENGTH as i32 + chunk_y as i32;
+                for chunk_y in 0..world::CHUNK_LENGTH {
+                    let y = chunk.position.0.y * world::CHUNK_LENGTH as i32 + chunk_y as i32;
                     let position = vec3u5::new(x as u8, chunk_y as u8, z as u8);
 
                     if y < h - 6 {
@@ -97,8 +97,9 @@ impl GenerationParams {
         stopwatch.stop();
     }
 
-    fn get_noise(&self, position: vec2f) -> [f32; chunk::AREA] {
-        let transform: NoiseTransform<{ NoiseDim::new_2d(chunk::LENGTH, chunk::LENGTH) }> = NoiseTransform::from_seed(self.seed)
+    #[inline]
+    fn get_noise(&self, position: vec2f) -> [f32; world::CHUNK_AREA] {
+        let transform: NoiseTransform<{ NoiseDim::new_2d(world::CHUNK_LENGTH, world::CHUNK_LENGTH) }> = NoiseTransform::from_seed(self.seed)
             .with_x(position.x)
             .with_y(position.y);
 

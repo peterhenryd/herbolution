@@ -1,19 +1,20 @@
+use std::arch::x86_64::{__m256, __m256d, __m256i};
+
 use crate::simd::Simd;
 use crate::{
     define_simd_type, impl_f32_simd_type, impl_f64_simd_type, impl_i16_simd_type, impl_i32_simd_type, impl_i64_simd_type, impl_i8_simd_type,
     impl_simd_float_overloads, impl_simd_int_overloads,
 };
-use std::arch::x86_64::{__m256, __m256d, __m256i};
 
 pub struct Avx2;
 
 impl Simd for Avx2 {
-    type Vi8 = I8x32;
-    type Vi16 = I16x16;
-    type Vi32 = I32x8;
-    type Vi64 = I64x4;
-    type Vf32 = F32x8;
-    type Vf64 = F64x4;
+    type I8 = I8x32;
+    type I16 = I16x16;
+    type I32 = I32x8;
+    type I64 = I64x4;
+    type F32 = F32x8;
+    type F64 = F64x4;
 
     #[inline]
     fn invoke<R>(f: impl FnOnce() -> R) -> R {

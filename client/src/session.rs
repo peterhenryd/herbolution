@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::time::Duration;
 
-use lib::color::{ColorConsts, Rgba};
+use lib::color::{Color, ColorConsts, Rgba};
 use lib::save::Save;
 use lib::size::size2u;
 use lib::util::IntervalCounter;
@@ -14,6 +14,7 @@ use winit::window::CursorGrabMode;
 
 use crate::app::{Command, Render, Update};
 use crate::video::resource::{Mesh, MeshId, Meshes};
+use crate::video::ui::brush::Brush;
 use crate::video::ui::text::{Text, TextBrush};
 use crate::video::world::Vertex3d;
 use crate::video::{world, Video};
@@ -102,9 +103,12 @@ impl Session {
             chisel.render_each_by_id(self.world.player.targeted_cube_wireframe_id);
         }
 
-        // Render debugger and cross-hair
+        // Render overlay (HUD, debugger and cross-hair)
         {
             let mut brush = ctx.frame.draw_2d();
+
+            self.render_hud(ctx.resolution, &mut brush);
+
             let mut text_brush = brush.draw_text();
 
             self.debugger
@@ -121,6 +125,26 @@ impl Session {
                 },
             );
         }
+    }
+
+    fn render_hud(&mut self, resolution: size2u, brush: &mut Brush) {
+        let health = self.world.player.health.percent();
+
+        let position = Vec2::new(64., resolution.height as f32 - 48. - 64.);
+        let scale = Vec2::new(128., 48.);
+
+        let filled_scale = Vec2::new(scale.x * health, scale.y);
+        let unfilled_position = position + Vec2::new(filled_scale.x, 0.);
+        let unfilled_scale = Vec2::new(scale.x * (1.0 - health), scale.y);
+
+        brush.draw_rect(
+            Vec2::new(60., resolution.height as f32 - 48. - 64. - 4.),
+            Vec2::new(136., 56.),
+            Rgba::from_rgb(14, 14, 14).into(),
+        );
+
+        brush.draw_rect(position, filled_scale, Rgba::from_rgb(255, 0, 0).into());
+        brush.draw_rect(unfilled_position, unfilled_scale, Rgba::BLACK);
     }
 
     pub fn set_resolution(&mut self, _: size2u) {}
