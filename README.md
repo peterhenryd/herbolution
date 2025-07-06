@@ -23,7 +23,6 @@ If you don't have Cargo installed, [here](https://rustup.rs) is the official ins
 
 ## Usage
 
-qwertyuiopasdfghjklzxcvbnm
 If you decide to run Herbolution, please note that the client will create a `.herbolution` directory in your home directory.
 
 Herbolution has the following (currently hard-coded) controls:
