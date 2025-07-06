@@ -1,8 +1,9 @@
-# rust-simd-noise
+# simd-noise
 
-This is a fork of [verpeteren/rust-simd-noise](https://github.com/verpeteren/rust-simd-noise) and [arduano/simdeez](https://github.com/arduano/simdeez). I
-have made the following changes to both:
+This is a fork of [verpeteren/rust-simd-noise](https://github.com/verpeteren/rust-simd-noise) (`crate::`)
+and [arduano/simdeez](https://github.com/arduano/simdeez) (`crate::simd`). The following changes have been made:
 
-- "finished" (exposed as a public API, really) support for ARM Neon,
-- noise dimensions are now compile-time constants removing the need for heap allocation (dynamic sizes will be added back later),
-- overall API changes to what I personally find to be more ergonomic.
+- Support for Neon has been exposed, and the crate doesn't fail to compile on ARM targets;
+- noise dimensions are now compile-time constants removing the need for heap allocation (dynamic sizes will be added back later as an option, since heap
+  allocation is often desirable);
+- overall API changes to better suit the needs of the Herbolution project.
