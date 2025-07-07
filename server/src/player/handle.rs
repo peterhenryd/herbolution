@@ -1,8 +1,9 @@
-use crate::entity::{ActionState, ActionTarget};
-use crossbeam_channel::{bounded, Receiver, Sender};
+use crossbeam_channel::{Receiver, Sender, bounded};
 use lib::rotation::Euler;
 use lib::vector::{vec2d, vec3d, vec3i8};
 use lib::world::Health;
+
+use crate::entity::{ActionState, ActionTarget};
 
 #[derive(Debug)]
 pub struct ClientPlayerHandle {

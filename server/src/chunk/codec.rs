@@ -1,5 +1,5 @@
 use lib::point::ChunkPt;
-use lib::world;
+use lib::world::CHUNK_VOLUME;
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, IntoParallelRefMutIterator, ParallelIterator};
 
 use crate::chunk::material::{Palette, PaletteMaterialId};
@@ -13,7 +13,7 @@ pub struct CubeGrid {
 impl CubeGrid {
     pub fn new(palette: Palette) -> Self {
         Self {
-            data: Box::new([None; world::CHUNK_VOLUME]),
+            data: Box::new([None; CHUNK_VOLUME]),
             palette,
         }
     }

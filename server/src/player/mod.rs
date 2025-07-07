@@ -3,18 +3,19 @@ use std::mem::take;
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::chunk::map::CubeHit;
-use crate::chunk::material::Material;
-use crate::entity::behavior::{EntityBehavior, EntityBehaviorType, EntityContext};
-use crate::entity::{ActionState, ActionTarget, CubeTarget};
-use crate::handle::Particle;
-use crate::player::handle::ClientPlayerHandle;
 use lib::motile::Motile;
 use lib::rotation::Euler;
 use lib::spatial::Aabb;
 use lib::util::default;
 use lib::vector::{Vec2, Vec3};
 use lib::world::Health;
+
+use crate::chunk::map::CubeHit;
+use crate::chunk::material::Material;
+use crate::entity::behavior::{EntityBehavior, EntityBehaviorType, EntityContext};
+use crate::entity::{ActionState, ActionTarget, CubeTarget};
+use crate::handle::Particle;
+use crate::player::handle::ClientPlayerHandle;
 
 pub mod handle;
 
@@ -204,7 +205,6 @@ impl EntityBehavior for Player {
             .set_rotation(*body.rotation());
 
         if let Some(fall_distance) = ctx.entity.body.last_fell.take() {
-            dbg!(fall_distance);
             if fall_distance > 3.0 {
                 self.health -= (fall_distance as f32 - 3.0) * 2.0;
             }

@@ -1,10 +1,11 @@
 use crate::video::frame::Frame;
 use crate::video::resource::{AtlasTextureCoord, Buffer, MeshId, SetId};
-use crate::video::ui::text::TextBrush;
+use crate::video::ui::font::FontId;
 use crate::video::ui::vertex::Instance2d;
 use crate::video::ui::{Painter, RenderType};
-use lib::color::Rgba;
+use lib::color::{ColorConsts, Rgba};
 use lib::rotation::Quat;
+use lib::size::{size2f, Size2};
 use lib::vector::vec2f;
 use wgpu::{BufferUsages, RenderPass};
 
@@ -12,21 +13,23 @@ pub struct Brush<'h, 'f, 'a> {
     pub frame: &'f mut Frame<'h>,
     pub painter: &'a Painter,
     mesh_index_count: Option<u32>,
-
-    pub(crate) quads: Encoding,
+    quads: Vec<Instance2d>,
 }
 
 impl<'h, 'f, 'a> Brush<'h, 'f, 'a> {
-    pub fn create(render_type: RenderType, frame: &'f mut Frame<'h>, renderer: &'a Painter) -> Self {
-        renderer
+    pub fn create(render_type: RenderType, frame: &'f mut Frame<'h>, painter: &'a Painter) -> Self {
+        painter
             .pipeline_map
             .load_by_type(render_type, frame.pass());
 
+        let mesh = painter.meshes.get(painter.quad_mesh);
+        let mesh_index_count = Some(mesh.load_into_render_pass(&mut frame.pass()));
+
         Self {
-            quads: Encoding::new(),
+            quads: vec![],
             frame,
-            painter: renderer,
-            mesh_index_count: None,
+            painter,
+            mesh_index_count,
         }
     }
 
@@ -43,21 +46,51 @@ impl<'h, 'f, 'a> Brush<'h, 'f, 'a> {
         self.render(self.painter.instance_sets.get(id));
     }
 
-    pub fn draw_text(&mut self) -> TextBrush<'h, 'f, 'a, '_> {
-        TextBrush::new(self)
+    pub fn draw_rect(&mut self, position: vec2f, scale: size2f, color: Rgba<f32>) {
+        self.quads
+            .push(Instance2d::new(position, Quat::IDENTITY, scale, color, AtlasTextureCoord::NONE));
     }
 
-    pub fn draw_rect(&mut self, position: vec2f, scale: vec2f, color: Rgba<f32>) {
-        self.quads
-            .instances
-            .push(Instance2d::new(position, Quat::IDENTITY, scale, color, AtlasTextureCoord::NONE));
+    pub fn draw_text(&mut self, position: vec2f, text: &Text) {
+        let mut x = 0.0;
+
+        for char in text.content.chars() {
+            let coord = self
+                .painter
+                .atlas
+                .glyph_coord(text.font_id, char, text.font_size)
+                .unwrap();
+
+            let position = vec2f::new(position.x + x + coord.metrics.xmin as f32, position.y + coord.metrics.ymin as f32);
+
+            self.quads.push(Instance2d::new(
+                position,
+                Quat::IDENTITY,
+                Size2::new(coord.metrics.width as f32, coord.metrics.height as f32),
+                Rgba::new(text.color.r, text.color.g, text.color.b, 0.0),
+                coord.texture,
+            ));
+
+            x += coord.metrics.advance_width;
+        }
+    }
+
+    pub fn default_font_id(&self) -> FontId {
+        self.painter
+            .atlas
+            .font_coords
+            .iter()
+            .next()
+            .unwrap()
+            .0
+            .font_id
     }
 }
 
 impl Drop for Brush<'_, '_, '_> {
     fn drop(&mut self) {
-        if !self.quads.instances.is_empty() {
-            let buffer = Buffer::from_data(self.frame.handle, &self.quads.instances, BufferUsages::VERTEX | BufferUsages::COPY_DST);
+        if !self.quads.is_empty() {
+            let buffer = Buffer::from_data(self.frame.handle, &self.quads, BufferUsages::VERTEX | BufferUsages::COPY_DST);
             self.render(&buffer);
         }
     }
@@ -77,16 +110,21 @@ fn draw_mesh(pass: &mut RenderPass<'_>, buffer: &Buffer<Instance2d>, mesh_index_
     pass.draw_indexed(0..index_count, 0, 0..buffer.len() as u32);
 }
 
-pub struct Encoding {
-    pub(crate) instances: Vec<Instance2d>,
+#[derive(Debug)]
+pub struct Text {
+    pub font_id: FontId,
+    pub content: String,
+    pub font_size: f32,
+    pub color: Rgba<f32>,
 }
 
-impl Encoding {
-    pub fn new() -> Self {
-        Self { instances: Vec::new() }
-    }
-
-    pub fn add(&mut self, instance: Instance2d) {
-        self.instances.push(instance);
+impl Default for Text {
+    fn default() -> Self {
+        Self {
+            font_id: FontId::default(),
+            content: String::new(),
+            font_size: 12.0,
+            color: Rgba::BLACK,
+        }
     }
 }

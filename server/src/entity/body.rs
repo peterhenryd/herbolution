@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use lib::rotation::Euler;
 use lib::spatial::Aabb;
-use lib::vector::{vec3d, vec3f, Vec3};
+use lib::vector::{Vec3, vec3d, vec3f};
 
 use crate::chunk::map::ChunkMap;
 
@@ -144,7 +144,6 @@ impl EntityBody {
         self.is_on_ground = (step.y < 0.0) && (clipped_step.y != step.y);
 
         if self.is_on_ground && self.fall > 0.0 {
-            dbg!(self.fall);
             self.last_fell = Some(self.fall);
             self.fall = 0.0;
         }

@@ -187,20 +187,20 @@ fn cube(position: vec3d, color: Rgba<f32>) -> impl IntoIterator<Item = Instance3
         .map(move |rotation| Instance3d::new(position, rotation, Vec3::splat(1.0), color, 1))
 }
 
-use crate::app::Update;
-use crate::video::camera::{VideoCamera, View};
-use crate::video::resource::{SetId, Sets};
-use crate::video::world::{Instance3d, Sculptor};
-use crate::video::Video;
-use crate::world::frustum::Frustum;
 use lib::matrix::Mat4;
 use lib::proj::Perspective;
 use lib::rotation::Euler;
 use lib::size::size2u;
 use lib::spatial::Face;
-use lib::vector::{vec3d, vec3i, vec3i8, Vec3};
-use lib::world;
-use lib::world::Health;
+use lib::vector::{Vec3, vec3d, vec3i, vec3i8};
+use lib::world::{CHUNK_LENGTH, Health};
+
+use crate::app::Update;
+use crate::video::Video;
+use crate::video::camera::{VideoCamera, View};
+use crate::video::resource::{SetId, Sets};
+use crate::video::world::{Instance3d, Sculptor};
+use crate::world::frustum::Frustum;
 
 /// The camera with additional information used for culling and camera-relative rendering.
 #[derive(Debug)]
@@ -241,6 +241,6 @@ impl PlayerCamera {
         video.sculptor.update_camera(&video_camera);
         self.frustum = Frustum::new(video_camera.view_proj);
 
-        self.chunk_position = self.position.cast() / world::CHUNK_LENGTH as i32;
+        self.chunk_position = self.position.cast() / CHUNK_LENGTH as i32;
     }
 }

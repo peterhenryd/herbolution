@@ -1,10 +1,13 @@
+use crate::app::{Command, Update};
+use crate::input::ClickEvent;
+use crate::video::ui::brush::{Brush, Text};
+use lib::color::{ColorConsts, Rgba};
+use lib::save::{SaveAttributes, WorldAttributes, WorldDescriptor};
+use lib::size::Size2;
+use lib::vector::Vec2;
 use std::random::random;
 use std::time::Duration;
-
-use lib::save::{SaveAttributes, WorldAttributes, WorldDescriptor};
-
-use crate::app::{Command, Update};
-use crate::video::ui::brush::Brush;
+use winit::event::MouseButton;
 
 /// The title menu, where the user can view information about the server, navigate to other menus, or quit the application.
 #[derive(Debug)]
@@ -22,7 +25,21 @@ impl TitleMenu {
     pub fn update(&mut self, context: &mut Update) -> Option<Command> {
         self.timer += context.dt;
 
+        /*
         if self.timer.as_secs_f32() >= 2.0 {
+        }
+
+         */
+
+        for &ClickEvent { button, position } in &context.input.click_events {
+            if button != MouseButton::Left {
+                continue;
+            }
+
+            if position.x < 128. || position.x > 256. || position.y < 192. || position.y > 256. {
+                continue;
+            }
+
             let save = context
                 .store
                 .fs
@@ -48,9 +65,28 @@ impl TitleMenu {
     }
 
     /// Renders the title menu.
-    pub fn render<'t>(&'t mut self, drawing: &mut Brush<'_, '_, 't>) {
-        let _ = drawing;
+    pub fn render<'t>(&'t mut self, brush: &mut Brush<'_, '_, 't>) {
+        let font_id = brush.default_font_id();
 
-        // TODO: video the title menu
+        brush.draw_text(
+            Vec2::splat(128.),
+            &Text {
+                font_id,
+                content: "Herbolution".to_string(),
+                font_size: 96.0,
+                color: Rgba::BLACK,
+            },
+        );
+
+        brush.draw_rect(Vec2::new(128., 192.), Size2::new(208., 64.), Rgba::BLACK);
+        brush.draw_text(
+            Vec2::new(136., 212.),
+            &Text {
+                font_id,
+                content: "Start Game".to_string(),
+                font_size: 36.0,
+                color: Rgba::WHITE,
+            },
+        );
     }
 }

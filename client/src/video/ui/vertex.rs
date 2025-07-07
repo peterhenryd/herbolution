@@ -1,11 +1,11 @@
+use crate::video::resource::{AtlasTextureCoord, Vertex};
 use bytemuck::{Pod, Zeroable};
 use lib::color::Rgba;
 use lib::matrix::Mat3;
 use lib::rotation::Quat;
+use lib::size::size2f;
 use lib::vector::{vec2f, vec3f};
 use wgpu::{vertex_attr_array, VertexBufferLayout, VertexStepMode};
-
-use crate::video::resource::{AtlasTextureCoord, Vertex};
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Pod, Zeroable)]
@@ -46,6 +46,7 @@ pub struct Instance2d {
     color: Rgba<f32>,
     uv_t: vec2f,
     uv_s: vec2f,
+    scale: size2f,
 }
 
 impl Instance2d {
@@ -62,16 +63,17 @@ impl Instance2d {
         ],
     };
 
-    pub fn new(position: vec2f, rotation: Quat, scale: vec2f, color: Rgba<f32>, texture_coord: AtlasTextureCoord) -> Self {
+    pub fn new(position: vec2f, rotation: Quat, scale: size2f, color: Rgba<f32>, texture_coord: AtlasTextureCoord) -> Self {
         let Mat3 { x: rx, y: ry, .. } = rotation.to_axes();
 
         Self {
-            model_0: vec2f::new(rx.x * scale.x, ry.x * scale.y),
-            model_1: vec2f::new(rx.y * scale.x, ry.y * scale.y),
+            model_0: vec2f::new(rx.x * scale.width, ry.x * scale.height),
+            model_1: vec2f::new(rx.y * scale.width, ry.y * scale.height),
             model_2: position,
             color,
             uv_t: texture_coord.translation,
             uv_s: texture_coord.scale,
+            scale,
         }
     }
 }

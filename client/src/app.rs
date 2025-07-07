@@ -24,7 +24,7 @@ use crate::menu::Menu;
 use crate::session::Session;
 use crate::video;
 use crate::video::resource::SampleCount;
-use crate::video::ui::text::Text;
+use crate::video::ui::brush::Text;
 use crate::video::Video;
 
 /// An Herbolution application.
@@ -391,10 +391,9 @@ impl Splash {
             .clear_color(Rgba::from_rgb(20u8, 40, 80).into());
 
         let mut brush = ctx.frame.draw_2d();
-        let mut text_brush = brush.draw_text();
 
-        let font_id = text_brush.font_id();
-        text_brush.add(
+        let font_id = brush.default_font_id();
+        brush.draw_text(
             (ctx.resolution.to_vec2().cast::<f32>() - Vec2::new(504.576, 56.0)) / 2.0,
             &Text {
                 font_id,

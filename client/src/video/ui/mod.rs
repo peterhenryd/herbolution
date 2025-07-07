@@ -22,7 +22,6 @@ use crate::video::ui::vertex::{Instance2d, Vertex2d};
 pub mod atlas;
 pub mod brush;
 pub mod font;
-pub mod text;
 pub mod vertex;
 
 #[derive(Debug)]

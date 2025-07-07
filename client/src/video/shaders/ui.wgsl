@@ -38,7 +38,7 @@ fn vs(vert: Vertex, inst: Instance) -> Fragment {
     let position = model * vec3(vert.position, 1.0);
 
     var frag: Fragment;
-    frag.clip_position = camera.view_proj * vec4f(position, 1.0);
+    frag.clip_position = camera.view_proj * vec4(position, 1.0);
     frag.world_position = position;
     frag.uv = inst.uv_t + vert.uv * inst.uv_s;
     frag.color = inst.color;
@@ -61,5 +61,5 @@ fn fs(frag: Fragment) -> @location(0) vec4f {
         return frag.color;
     }
 
-    return textureSample(albedo_texture, albedo_sampler, frag.uv);
+    return vec4(frag.color.rgb, textureSample(albedo_texture, albedo_sampler, frag.uv).a);
 }

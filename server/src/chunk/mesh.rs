@@ -3,9 +3,8 @@ use std::ops::{Not, Range};
 
 use lib::point::ChunkPt;
 use lib::spatial::{Face, Faces};
-use lib::vector::{vec3u5, Vec3};
-use lib::world;
-use lib::world::CHUNK_VOLUME;
+use lib::vector::{Vec3, vec3u5};
+use lib::world::{CHUNK_LENGTH, CHUNK_VOLUME};
 use rayon::prelude::{IntoParallelRefMutIterator, ParallelIterator};
 
 use crate::chunk::cube::Cube;
@@ -42,7 +41,7 @@ impl CubeMesh {
         let inverse_face = face.inverse();
 
         fn sized_boundary_slice(face: Face) -> Vec3<Range<u8>> {
-            let l = world::CHUNK_LENGTH as u8;
+            let l = CHUNK_LENGTH as u8;
             match face {
                 Face::East => Vec3::new(l - 1..l, 0..l, 0..l),
                 Face::West => Vec3::new(0..1, 0..l, 0..l),
@@ -254,7 +253,7 @@ impl CubeMesh {
 }
 
 fn boundary(face: Face) -> Vec3<Range<u8>> {
-    let l = world::CHUNK_LENGTH as u8;
+    let l = CHUNK_LENGTH as u8;
     match face {
         Face::East => Vec3::new(l - 1..l, 0..l, 0..l),
         Face::West => Vec3::new(0..1, 0..l, 0..l),

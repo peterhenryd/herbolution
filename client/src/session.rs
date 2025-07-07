@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use lib::color::{Color, ColorConsts, Rgba};
 use lib::save::Save;
-use lib::size::size2u;
+use lib::size::{size2u, Size2};
 use lib::util::IntervalCounter;
 use lib::vector::{vec3d, Vec2};
 use server::handle::GameHandle;
@@ -14,8 +14,7 @@ use winit::window::CursorGrabMode;
 
 use crate::app::{Command, Render, Update};
 use crate::video::resource::{Mesh, MeshId, Meshes};
-use crate::video::ui::brush::Brush;
-use crate::video::ui::text::{Text, TextBrush};
+use crate::video::ui::brush::{Brush, Text};
 use crate::video::world::Vertex3d;
 use crate::video::{world, Video};
 use crate::world::World;
@@ -109,13 +108,11 @@ impl Session {
 
             self.render_hud(ctx.resolution, &mut brush);
 
-            let mut text_brush = brush.draw_text();
-
             self.debugger
-                .render(self.fps.get(), self.world.player.camera.position, &mut text_brush);
+                .render(self.fps.get(), self.world.player.camera.position, &mut brush);
 
-            let font_id = text_brush.font_id();
-            text_brush.add(
+            let font_id = brush.default_font_id();
+            brush.draw_text(
                 ctx.resolution.to_vec2().cast() / 2.0,
                 &Text {
                     font_id,
@@ -131,15 +128,15 @@ impl Session {
         let health = self.world.player.health.percent();
 
         let position = Vec2::new(64., resolution.height as f32 - 48. - 64.);
-        let scale = Vec2::new(128., 48.);
+        let scale = Size2::new(128., 48.);
 
-        let filled_scale = Vec2::new(scale.x * health, scale.y);
-        let unfilled_position = position + Vec2::new(filled_scale.x, 0.);
-        let unfilled_scale = Vec2::new(scale.x * (1.0 - health), scale.y);
+        let filled_scale = Size2::new(scale.width * health, scale.height);
+        let unfilled_position = position + Vec2::new(filled_scale.width, 0.);
+        let unfilled_scale = Size2::new(scale.width * (1.0 - health), scale.height);
 
         brush.draw_rect(
             Vec2::new(60., resolution.height as f32 - 48. - 64. - 4.),
-            Vec2::new(136., 56.),
+            Size2::new(136., 56.),
             Rgba::from_rgb(14, 14, 14).into(),
         );
 
@@ -171,13 +168,13 @@ impl Debugger {
         }
     }
 
-    pub fn render(&mut self, fps: u64, player_position: vec3d, brush: &mut TextBrush) {
+    pub fn render(&mut self, fps: u64, player_position: vec3d, brush: &mut Brush) {
         if !self.is_enabled {
             return;
         }
 
-        let font_id = brush.font_id();
-        brush.add(
+        let font_id = brush.default_font_id();
+        brush.draw_text(
             Vec2::ZERO,
             &Text {
                 font_id,
@@ -187,7 +184,7 @@ impl Debugger {
             },
         );
 
-        brush.add(
+        brush.draw_text(
             Vec2::new(0., 40.),
             &Text {
                 font_id,
@@ -197,7 +194,7 @@ impl Debugger {
             },
         );
 
-        brush.add(
+        brush.draw_text(
             Vec2::new(0., 80.),
             &Text {
                 font_id,
@@ -207,7 +204,7 @@ impl Debugger {
             },
         );
 
-        brush.add(
+        brush.draw_text(
             Vec2::new(0., 120.),
             &Text {
                 font_id,

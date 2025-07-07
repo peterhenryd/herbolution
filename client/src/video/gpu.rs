@@ -75,7 +75,7 @@ impl<'w> Surface<'w> {
             height: resolution.height,
             present_mode: PresentMode::AutoVsync,
             desired_maximum_frame_latency: 2,
-            alpha_mode: CompositeAlphaMode::PostMultiplied,
+            alpha_mode: CompositeAlphaMode::Opaque,
             view_formats: vec![],
         };
         let depth_texture = Texture::depth(gpu, resolution, sample_count);

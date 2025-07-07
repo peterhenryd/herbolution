@@ -1,10 +1,11 @@
-use std::ops::Add;
-
+use bytemuck::{Pod, Zeroable};
 use num::traits::ConstZero;
 use num::{NumCast, ToPrimitive, Zero};
+use std::ops::Add;
 
 use crate::vector::Vec2;
 
+#[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Size2<T> {
     pub width: T,
@@ -67,3 +68,7 @@ impl<T> From<(T, T)> for Size2<T> {
         Self::new(width, height)
     }
 }
+
+unsafe impl<T: Zeroable> Zeroable for Size2<T> {}
+
+unsafe impl<T: Pod> Pod for Size2<T> {}

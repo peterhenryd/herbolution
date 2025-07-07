@@ -11,7 +11,7 @@ use server::handle::GameHandle;
 use crate::app::Update;
 use crate::session::MeshIds;
 use crate::video::world::chisel::Chisel;
-use crate::video::{world, Video};
+use crate::video::{Video, world};
 use crate::world::particle::Particles;
 use crate::world::player::Player;
 

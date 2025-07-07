@@ -7,14 +7,14 @@ use lib::collections::mailbox::Mailbox;
 use lib::point::{ChunkCubePt, ChunkPt, CubePt};
 use lib::spatial::{Aabb, Face, Faces};
 use lib::util::{GroupKey, GroupKeyBuf};
-use lib::vector::{vec3d, vec3f, vec3i, vec3u5, Vec3};
-use lib::world;
+use lib::vector::{Vec3, vec3d, vec3f, vec3i, vec3u5};
+use lib::world::CHUNK_LENGTH;
 use line_drawing::{VoxelOrigin, WalkVoxels};
 
 use crate::chunk::handle::ChunkLoad;
 use crate::chunk::material::{Material, PaletteMaterialId};
 use crate::chunk::provider::ChunkProvider;
-use crate::chunk::{handle, Chunk};
+use crate::chunk::{Chunk, handle};
 use crate::handle::ClientHandle;
 
 #[derive(Debug)]
@@ -82,11 +82,11 @@ impl ChunkMap {
 
         let edges = [
             (Vec3::new(-1, 0, 0), Faces::EAST, local.x() == 0),
-            (Vec3::new(1, 0, 0), Faces::WEST, local.x() == world::CHUNK_LENGTH as u8 - 1),
+            (Vec3::new(1, 0, 0), Faces::WEST, local.x() == CHUNK_LENGTH as u8 - 1),
             (Vec3::new(0, -1, 0), Faces::UP, local.y() == 0),
-            (Vec3::new(0, 1, 0), Faces::DOWN, local.y() == world::CHUNK_LENGTH as u8 - 1),
+            (Vec3::new(0, 1, 0), Faces::DOWN, local.y() == CHUNK_LENGTH as u8 - 1),
             (Vec3::new(0, 0, -1), Faces::NORTH, local.z() == 0),
-            (Vec3::new(0, 0, 1), Faces::SOUTH, local.z() == world::CHUNK_LENGTH as u8 - 1),
+            (Vec3::new(0, 0, 1), Faces::SOUTH, local.z() == CHUNK_LENGTH as u8 - 1),
         ];
 
         for (offset, face, condition) in edges {
@@ -96,11 +96,11 @@ impl ChunkMap {
 
             let neighbor_chunk_coord = ChunkPt(chunk.0 + offset);
             let neighbor_local_pos = match offset {
-                Vec3 { x: -1, y: 0, z: 0 } => vec3u5::new(world::CHUNK_LENGTH as u8 - 1, local.y(), local.z()),
+                Vec3 { x: -1, y: 0, z: 0 } => vec3u5::new(CHUNK_LENGTH as u8 - 1, local.y(), local.z()),
                 Vec3 { x: 1, y: 0, z: 0 } => vec3u5::new(0, local.y(), local.z()),
-                Vec3 { x: 0, y: -1, z: 0 } => vec3u5::new(local.x(), world::CHUNK_LENGTH as u8 - 1, local.z()),
+                Vec3 { x: 0, y: -1, z: 0 } => vec3u5::new(local.x(), CHUNK_LENGTH as u8 - 1, local.z()),
                 Vec3 { x: 0, y: 1, z: 0 } => vec3u5::new(local.x(), 0, local.z()),
-                Vec3 { x: 0, y: 0, z: -1 } => vec3u5::new(local.x(), local.y(), world::CHUNK_LENGTH as u8 - 1),
+                Vec3 { x: 0, y: 0, z: -1 } => vec3u5::new(local.x(), local.y(), CHUNK_LENGTH as u8 - 1),
                 Vec3 { x: 0, y: 0, z: 1 } => vec3u5::new(local.x(), local.y(), 0),
                 _ => unreachable!(),
             };

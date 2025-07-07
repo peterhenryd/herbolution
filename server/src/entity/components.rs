@@ -3,7 +3,7 @@ use std::collections::HashSet;
 
 use lib::point::ChunkPt;
 use lib::vector::vec3i;
-use lib::world;
+use lib::world::CHUNK_LENGTH;
 
 use crate::entity::behavior::{EntityBehavior, EntityBehaviorType, EntityContext};
 
@@ -24,7 +24,7 @@ impl ChunkLoader {
 
 impl EntityBehavior for ChunkLoader {
     fn update(&mut self, ctx: &mut EntityContext<'_>) {
-        let chunk_position = ChunkPt(ctx.entity.body.position().cast() / world::CHUNK_LENGTH as i32);
+        let chunk_position = ChunkPt(ctx.entity.body.position().cast() / CHUNK_LENGTH as i32);
         if chunk_position == self.prev_chunk_position {
             return;
         }
