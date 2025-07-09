@@ -4,7 +4,7 @@ use std::slice;
 
 use fontdue::{Font, FontSettings};
 use lib::proj::Orthographic;
-use lib::size::size2u;
+use lib::size::{size2f, size2u};
 use lib::vector::Vec3;
 use wgpu::{BufferUsages, ShaderModule, ShaderStages};
 
@@ -16,7 +16,8 @@ use crate::video::resource::{
     ShaderSources, Texture,
 };
 use crate::video::ui::atlas::Atlas;
-use crate::video::ui::font::Fonts;
+use crate::video::ui::brush::Text;
+use crate::video::ui::font::{FontId, Fonts};
 use crate::video::ui::vertex::{Instance2d, Vertex2d};
 
 pub mod atlas;
@@ -106,6 +107,35 @@ impl Painter {
 
     pub fn set_resolution(&mut self, gpu: &Handle, resolution: size2u) {
         self.update_camera(gpu, &VideoCamera::new(Vec3::ZERO, View::Forward, Orthographic::from(resolution)));
+    }
+
+    pub fn compute_text_size(&self, text: &Text) -> Result<size2f, char> {
+        let mut width = 0.0;
+        let mut height: f32 = 0.0;
+
+        for char in text.content.chars() {
+            let Some(coord) = self
+                .atlas
+                .glyph_coord(text.font_id, char, text.font_size)
+            else {
+                return Err(char);
+            };
+
+            width += coord.metrics.advance_width;
+            height = height.max(coord.metrics.height as f32);
+        }
+
+        Ok(size2f::new(width, height))
+    }
+
+    pub fn default_font_id(&self) -> FontId {
+        self.atlas
+            .font_coords
+            .iter()
+            .next()
+            .unwrap()
+            .0
+            .font_id
     }
 }
 

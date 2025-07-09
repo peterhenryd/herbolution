@@ -34,10 +34,7 @@ impl<'h> Frame<'h> {
     }
 
     pub fn pass(&mut self) -> &mut RenderPass<'_> {
-        unsafe {
-            // Narrows the static lifetime of the RenderPass to the lifetime of the Frame.
-            transmute(&mut self.state.as_mut().unwrap().pass)
-        }
+        unsafe { transmute(&mut self.state.as_mut().unwrap().pass) }
     }
 
     pub fn advance_pass(&mut self, clear_color: Option<Rgba<f64>>, no_depth: bool) {
@@ -70,7 +67,6 @@ impl Drop for Frame<'_> {
 }
 
 struct State {
-    // Don't drop until the encoder is submitted
     _surface: SurfaceTexture,
     encoder: CommandEncoder,
     view: TextureView,

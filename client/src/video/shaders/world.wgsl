@@ -21,6 +21,7 @@ struct World {
 // Vertex shader
 
 struct Vertex {
+    @builtin(vertex_index) index: u32,
     @location(0) position: vec3f,
     @location(1) normal: vec3f,
     @location(2) uv: vec2f,
@@ -34,6 +35,7 @@ struct Instance {
     @location(7) position_frac: vec3f,
     @location(8) color: vec4f,
     @location(9) light: u32,
+    @location(10) ao: vec4f,
 }
 
 @vertex
@@ -57,6 +59,7 @@ fn vs(vert: Vertex, inst: Instance) -> Fragment {
     frag.normal = (model * vec4(vert.normal, 0.0)).xyz;
     frag.color = inst.color;
     frag.light = inst.light;
+    frag.ao = inst.ao[vert.index];
 
     return frag;
 }
@@ -69,6 +72,7 @@ struct Fragment {
     @location(1) normal: vec3f,
     @location(2) color: vec4f,
     @location(3) light: u32,
+    @location(4) ao: f32,
 }
 
 @fragment
@@ -79,7 +83,7 @@ fn fs(frag: Fragment) -> @location(0) vec4f {
 
     let albedo_color = frag.color;
     let diffuse = max(dot(frag.normal, world.light_dir), 0.0);
-    let lit_color = (diffuse + world.ambient_light) * albedo_color.xyz;
+    let lit_color = (diffuse + world.ambient_light) * albedo_color.xyz * frag.ao;
 
     let fog_amount = smoothstep(world.fog.x - world.fog.y, world.fog.x, length(frag.world_position - camera.position));
     let color_with_fog = mix(lit_color.xyz, world.fog_color, fog_amount);

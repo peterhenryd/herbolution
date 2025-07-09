@@ -1,5 +1,4 @@
-use crate::app::{Command, Update};
-use crate::video::ui::brush::Brush;
+use crate::app::{Command, Render, Update};
 
 /// The play menu, where the user can view pre-existing saves, create new ones, or start the server.
 #[derive(Debug)]
@@ -19,7 +18,7 @@ impl PlayMenu {
     }
 
     /// Renders the play menu.
-    pub fn render<'t>(&'t mut self, _: &mut Brush<'_, '_, '_>) {
+    pub fn render(&mut self, _: &mut Render) {
         // TODO: video the play menu
     }
 }

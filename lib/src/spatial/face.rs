@@ -7,29 +7,28 @@ use bytemuck::{Pod, Zeroable};
 use serde::{Deserialize, Serialize};
 
 use crate::rotation::{Euler, Quat};
-use crate::vector::{Vec3, vec3i, vec3u5};
+use crate::vector::{vec3i, vec3u5, Vec3};
 
 // Face
 
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]
-pub enum Face {
-    // Positive X
+pub enum CubeFace {
     East,
-    // Negative X
+
     West,
-    // Positive Y
+
     Up,
-    // Negative Y
+
     Down,
-    // Positive Z
+
     North,
-    // Negative Z
+
     South,
 }
 
-impl Face {
-    pub const VALUES: [Self; 6] = [Face::East, Face::West, Face::Up, Face::Down, Face::North, Face::South];
+impl CubeFace {
+    pub const VALUES: [Self; 6] = [CubeFace::East, CubeFace::West, CubeFace::Up, CubeFace::Down, CubeFace::North, CubeFace::South];
 
     #[inline]
     pub fn values() -> IntoIter<Self, 6> {
@@ -39,64 +38,76 @@ impl Face {
     #[inline]
     pub fn from_normal(position: vec3i) -> Option<Self> {
         match position {
-            Vec3 { x: 1, y: 0, z: 0 } => Some(Face::East),
-            Vec3 { x: -1, y: 0, z: 0 } => Some(Face::West),
-            Vec3 { x: 0, y: 1, z: 0 } => Some(Face::Up),
-            Vec3 { x: 0, y: -1, z: 0 } => Some(Face::Down),
-            Vec3 { x: 0, y: 0, z: 1 } => Some(Face::North),
-            Vec3 { x: 0, y: 0, z: -1 } => Some(Face::South),
+            Vec3 { x: 1, y: 0, z: 0 } => Some(CubeFace::East),
+            Vec3 { x: -1, y: 0, z: 0 } => Some(CubeFace::West),
+            Vec3 { x: 0, y: 1, z: 0 } => Some(CubeFace::Up),
+            Vec3 { x: 0, y: -1, z: 0 } => Some(CubeFace::Down),
+            Vec3 { x: 0, y: 0, z: 1 } => Some(CubeFace::North),
+            Vec3 { x: 0, y: 0, z: -1 } => Some(CubeFace::South),
             _ => None,
         }
     }
 
     #[inline]
-    pub fn to_normal(self) -> vec3i {
+    pub fn normal(self) -> vec3i {
         match self {
-            Face::East => vec3i::new(1, 0, 0),
-            Face::West => vec3i::new(-1, 0, 0),
-            Face::Up => vec3i::new(0, 1, 0),
-            Face::Down => vec3i::new(0, -1, 0),
-            Face::North => vec3i::new(0, 0, 1),
-            Face::South => vec3i::new(0, 0, -1),
+            Self::East => vec3i::new(1, 0, 0),
+            Self::West => vec3i::new(-1, 0, 0),
+            Self::Up => vec3i::new(0, 1, 0),
+            Self::Down => vec3i::new(0, -1, 0),
+            Self::North => vec3i::new(0, 0, 1),
+            Self::South => vec3i::new(0, 0, -1),
         }
     }
 
-    pub fn to_rotation(self) -> Quat {
+    pub fn rotation(self) -> Quat {
         match self {
-            Face::East => Euler::new(0.0, FRAC_PI_2, 0.0).into(),
-            Face::West => Euler::new(0.0, -FRAC_PI_2, 0.0).into(),
-            Face::Up => Euler::new(-FRAC_PI_2, 0.0, 0.0).into(),
-            Face::Down => Euler::new(FRAC_PI_2, 0.0, 0.0).into(),
-            Face::North => Euler::new(0.0, 0.0, 0.0).into(),
-            Face::South => Euler::new(0.0, PI, 0.0).into(),
+            Self::East => Euler::new(0.0, FRAC_PI_2, 0.0).into(),
+            Self::West => Euler::new(0.0, -FRAC_PI_2, 0.0).into(),
+            Self::Up => Euler::new(-FRAC_PI_2, 0.0, 0.0).into(),
+            Self::Down => Euler::new(FRAC_PI_2, 0.0, 0.0).into(),
+            Self::North => Euler::new(0.0, 0.0, 0.0).into(),
+            Self::South => Euler::new(0.0, PI, 0.0).into(),
         }
     }
 
     #[inline]
     pub fn inverse(self) -> Self {
         match self {
-            Face::East => Face::West,
-            Face::West => Face::East,
-            Face::Up => Face::Down,
-            Face::Down => Face::Up,
-            Face::North => Face::South,
-            Face::South => Face::North,
+            Self::East => CubeFace::West,
+            Self::West => CubeFace::East,
+            Self::Up => CubeFace::Down,
+            Self::Down => CubeFace::Up,
+            Self::North => CubeFace::South,
+            Self::South => CubeFace::North,
+        }
+    }
+
+    #[inline]
+    pub fn orthonormal_basis(self) -> (vec3i, vec3i, vec3i) {
+        match self {
+            Self::East => (-Vec3::Z, Vec3::Y, Vec3::X),
+            Self::West => (Vec3::Z, Vec3::Y, -Vec3::X),
+            Self::Up => (Vec3::X, -Vec3::Z, Vec3::Y),
+            Self::Down => (Vec3::X, Vec3::Z, -Vec3::Y),
+            Self::North => (Vec3::X, Vec3::Y, Vec3::Z),
+            Self::South => (-Vec3::X, Vec3::Y, -Vec3::Z),
         }
     }
 }
 
-impl Display for Face {
+impl Display for CubeFace {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{}",
             match self {
-                Face::East => "East",
-                Face::West => "West",
-                Face::Up => "Up",
-                Face::Down => "Down",
-                Face::North => "North",
-                Face::South => "South",
+                CubeFace::East => "East",
+                CubeFace::West => "West",
+                CubeFace::Up => "Up",
+                CubeFace::Down => "Down",
+                CubeFace::North => "North",
+                CubeFace::South => "South",
             }
         )
     }
@@ -106,17 +117,17 @@ impl Display for Face {
 
 #[repr(transparent)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct Faces(u8);
+pub struct CubeFaces(u8);
 
-const MASK: u8 = 0b0011_1111;
-
-impl Faces {
+impl CubeFaces {
     pub const EAST: Self = Self(1 << 0);
     pub const WEST: Self = Self(1 << 1);
     pub const UP: Self = Self(1 << 2);
     pub const DOWN: Self = Self(1 << 3);
     pub const NORTH: Self = Self(1 << 4);
     pub const SOUTH: Self = Self(1 << 5);
+
+    const MASK: u8 = 0b0011_1111;
 
     pub fn all() -> Self {
         Self::EAST | Self::WEST | Self::UP | Self::DOWN | Self::NORTH | Self::SOUTH
@@ -127,7 +138,7 @@ impl Faces {
     }
 
     pub fn is_full(self) -> bool {
-        self.0 & MASK == MASK
+        self.0 & Self::MASK == Self::MASK
     }
 
     pub fn is_empty(self) -> bool {
@@ -138,14 +149,14 @@ impl Faces {
         FaceIter { faces: self, index: 0 }
     }
 
-    pub fn to_single(self) -> Option<Face> {
+    pub fn to_single(self) -> Option<CubeFace> {
         match self {
-            Self::EAST => Some(Face::East),
-            Self::WEST => Some(Face::West),
-            Self::UP => Some(Face::Up),
-            Self::DOWN => Some(Face::Down),
-            Self::NORTH => Some(Face::North),
-            Self::SOUTH => Some(Face::South),
+            Self::EAST => Some(CubeFace::East),
+            Self::WEST => Some(CubeFace::West),
+            Self::UP => Some(CubeFace::Up),
+            Self::DOWN => Some(CubeFace::Down),
+            Self::NORTH => Some(CubeFace::North),
+            Self::SOUTH => Some(CubeFace::South),
             _ => None,
         }
     }
@@ -154,7 +165,7 @@ impl Faces {
         self.0
     }
 
-    pub fn set(&mut self, face: Face, active: bool) {
+    pub fn set(&mut self, face: CubeFace, active: bool) {
         if active {
             self.0 |= face as u8;
         } else {
@@ -162,31 +173,31 @@ impl Faces {
         }
     }
 
-    pub fn contains(self, face: Face) -> bool {
+    pub fn contains(self, face: CubeFace) -> bool {
         self.0 & face as u8 != 0
     }
 }
 
-impl From<u8> for Faces {
+impl From<u8> for CubeFaces {
     fn from(value: u8) -> Self {
-        Self(value & MASK)
+        Self(value & Self::MASK)
     }
 }
 
-impl From<Face> for Faces {
-    fn from(value: Face) -> Self {
+impl From<CubeFace> for CubeFaces {
+    fn from(value: CubeFace) -> Self {
         match value {
-            Face::East => Faces::EAST,
-            Face::West => Faces::WEST,
-            Face::Up => Faces::UP,
-            Face::Down => Faces::DOWN,
-            Face::North => Faces::NORTH,
-            Face::South => Faces::SOUTH,
+            CubeFace::East => CubeFaces::EAST,
+            CubeFace::West => CubeFaces::WEST,
+            CubeFace::Up => CubeFaces::UP,
+            CubeFace::Down => CubeFaces::DOWN,
+            CubeFace::North => CubeFaces::NORTH,
+            CubeFace::South => CubeFaces::SOUTH,
         }
     }
 }
 
-impl Display for Faces {
+impl Display for CubeFaces {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "[")?;
 
@@ -203,8 +214,8 @@ impl Display for Faces {
     }
 }
 
-impl IntoIterator for Faces {
-    type Item = Face;
+impl IntoIterator for CubeFaces {
+    type Item = CubeFace;
     type IntoIter = FaceIter;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -212,7 +223,7 @@ impl IntoIterator for Faces {
     }
 }
 
-impl BitAnd for Faces {
+impl BitAnd for CubeFaces {
     type Output = Self;
 
     fn bitand(self, rhs: Self) -> Self::Output {
@@ -220,13 +231,13 @@ impl BitAnd for Faces {
     }
 }
 
-impl BitAndAssign for Faces {
+impl BitAndAssign for CubeFaces {
     fn bitand_assign(&mut self, rhs: Self) {
         self.0 &= rhs.0;
     }
 }
 
-impl BitOr for Faces {
+impl BitOr for CubeFaces {
     type Output = Self;
 
     fn bitor(self, rhs: Self) -> Self::Output {
@@ -234,49 +245,49 @@ impl BitOr for Faces {
     }
 }
 
-impl BitOrAssign for Faces {
+impl BitOrAssign for CubeFaces {
     fn bitor_assign(&mut self, rhs: Self) {
         self.0 |= rhs.0;
     }
 }
 
-impl Not for Faces {
+impl Not for CubeFaces {
     type Output = Self;
 
     fn not(self) -> Self::Output {
-        Self(!self.0 & MASK)
+        Self(!self.0 & Self::MASK)
     }
 }
 
-impl Add for Faces {
+impl Add for CubeFaces {
     type Output = Self;
 
-    fn add(self, rhs: Faces) -> Self::Output {
+    fn add(self, rhs: CubeFaces) -> Self::Output {
         Self(self.0 | rhs.0)
     }
 }
 
-impl AddAssign for Faces {
+impl AddAssign for CubeFaces {
     fn add_assign(&mut self, rhs: Self) {
         self.0 |= rhs.0;
     }
 }
 
-impl Add<Face> for Faces {
+impl Add<CubeFace> for CubeFaces {
     type Output = Self;
 
-    fn add(self, rhs: Face) -> Self::Output {
+    fn add(self, rhs: CubeFace) -> Self::Output {
         Self(self.0 | rhs as u8)
     }
 }
 
-impl AddAssign<Face> for Faces {
-    fn add_assign(&mut self, rhs: Face) {
+impl AddAssign<CubeFace> for CubeFaces {
+    fn add_assign(&mut self, rhs: CubeFace) {
         self.0 |= rhs as u8;
     }
 }
 
-impl Sub for Faces {
+impl Sub for CubeFaces {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
@@ -284,22 +295,22 @@ impl Sub for Faces {
     }
 }
 
-impl SubAssign for Faces {
+impl SubAssign for CubeFaces {
     fn sub_assign(&mut self, rhs: Self) {
         *self &= !rhs;
     }
 }
 
-impl Sub<Face> for Faces {
+impl Sub<CubeFace> for CubeFaces {
     type Output = Self;
 
-    fn sub(self, rhs: Face) -> Self::Output {
+    fn sub(self, rhs: CubeFace) -> Self::Output {
         Self(self.0 & !(rhs as u8))
     }
 }
 
-impl SubAssign<Face> for Faces {
-    fn sub_assign(&mut self, rhs: Face) {
+impl SubAssign<CubeFace> for CubeFaces {
+    fn sub_assign(&mut self, rhs: CubeFace) {
         self.0 &= !(rhs as u8);
     }
 }
@@ -308,19 +319,19 @@ impl SubAssign<Face> for Faces {
 
 #[derive(Debug, Clone)]
 pub struct FaceIter {
-    faces: Faces,
+    faces: CubeFaces,
     index: u8,
 }
 
 impl Iterator for FaceIter {
-    type Item = Face;
+    type Item = CubeFace;
 
     fn next(&mut self) -> Option<Self::Item> {
         while self.index < 6 {
             self.index += 1;
 
             if self.faces.0 & (1 << self.index - 1) != 0 {
-                return Some(Face::VALUES[self.index as usize - 1]);
+                return Some(CubeFace::VALUES[self.index as usize - 1]);
             }
         }
 
@@ -371,35 +382,46 @@ impl<T> IndexMut<u8> for PerFace<T> {
     }
 }
 
-impl<T> Index<Face> for PerFace<T> {
+impl<T> Index<CubeFace> for PerFace<T> {
     type Output = T;
 
-    fn index(&self, index: Face) -> &Self::Output {
+    fn index(&self, index: CubeFace) -> &Self::Output {
         match index {
-            Face::East => &self.east,
-            Face::West => &self.west,
-            Face::Up => &self.up,
-            Face::Down => &self.down,
-            Face::North => &self.north,
-            Face::South => &self.south,
+            CubeFace::East => &self.east,
+            CubeFace::West => &self.west,
+            CubeFace::Up => &self.up,
+            CubeFace::Down => &self.down,
+            CubeFace::North => &self.north,
+            CubeFace::South => &self.south,
         }
     }
 }
 
-impl<T> IndexMut<Face> for PerFace<T> {
-    fn index_mut(&mut self, index: Face) -> &mut Self::Output {
+impl<T> IndexMut<CubeFace> for PerFace<T> {
+    fn index_mut(&mut self, index: CubeFace) -> &mut Self::Output {
         match index {
-            Face::East => &mut self.east,
-            Face::West => &mut self.west,
-            Face::Up => &mut self.up,
-            Face::Down => &mut self.down,
-            Face::North => &mut self.north,
-            Face::South => &mut self.south,
+            CubeFace::East => &mut self.east,
+            CubeFace::West => &mut self.west,
+            CubeFace::Up => &mut self.up,
+            CubeFace::Down => &mut self.down,
+            CubeFace::North => &mut self.north,
+            CubeFace::South => &mut self.south,
         }
     }
 }
 
 impl<T> PerFace<T> {
+    pub const fn new(east: T, west: T, up: T, down: T, north: T, south: T) -> Self {
+        Self {
+            east,
+            west,
+            up,
+            down,
+            north,
+            south,
+        }
+    }
+
     pub const fn splat(value: T) -> Self
     where
         T: Copy,
@@ -416,15 +438,15 @@ impl<T> PerFace<T> {
 
     pub fn mapped<F>(mut f: F) -> Self
     where
-        F: FnMut(Face) -> T,
+        F: FnMut(CubeFace) -> T,
     {
         Self {
-            east: f(Face::East),
-            west: f(Face::West),
-            up: f(Face::Up),
-            down: f(Face::Down),
-            north: f(Face::North),
-            south: f(Face::South),
+            east: f(CubeFace::East),
+            west: f(CubeFace::West),
+            up: f(CubeFace::Up),
+            down: f(CubeFace::Down),
+            north: f(CubeFace::North),
+            south: f(CubeFace::South),
         }
     }
 
@@ -466,12 +488,12 @@ pub struct PerFaceIter<'a, T> {
 }
 
 impl<'a, T> Iterator for PerFaceIter<'a, T> {
-    type Item = (Face, &'a T);
+    type Item = (CubeFace, &'a T);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index < 6 {
             self.index += 1;
-            Some((Face::VALUES[self.index as usize], &self.value[self.index]))
+            Some((CubeFace::VALUES[self.index as usize], &self.value[self.index]))
         } else {
             None
         }

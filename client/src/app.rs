@@ -19,8 +19,7 @@ use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::{Window, WindowAttributes, WindowId};
 
 use crate::input::{Input, InputFrame};
-use crate::menu::config::MenuConfig;
-use crate::menu::Menu;
+use crate::menu::{Menu, MenuConfig};
 use crate::session::Session;
 use crate::video;
 use crate::video::resource::SampleCount;
@@ -46,23 +45,19 @@ pub struct Options {
 
 /// A portable context frame that contains data for updating the application state.
 pub struct Update<'w, 'a> {
-    // Application data
     pub store: &'a mut Store,
     pub window: &'a Window,
     pub event_loop: &'a ActiveEventLoop,
     pub video: &'a mut Video<'w>,
 
-    // Frame data
     pub dt: Duration,
     pub input: InputFrame,
 }
 
 /// A portable context frame that contains data for rendering the application state.
 pub struct Render<'a> {
-    // Application data
     pub store: &'a mut Store,
 
-    // Frame data
     pub frame: video::Frame<'a, 'a>,
     pub resolution: size2u,
 }
@@ -98,18 +93,15 @@ impl ApplicationHandler for App<'_> {
             self.init = true;
         }
 
-        // If the application was suspended, initialize or resume the window and create a new herbolution_engine.
         self.switch
             .resume(event_loop, self.store.fs.path().join("assets"));
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _: WindowId, event: WindowEvent) {
-        // If the application was suspended by the operating system, do not handle window events.
         let Switch::Resumed { window, video } = &mut self.switch else {
             return;
         };
 
-        // Handle the window event and update the application accordingly.
         match event {
             WindowEvent::Resized(PhysicalSize { width, height }) => {
                 video.set_resolution(Size2::new(width, height));
@@ -169,7 +161,6 @@ impl ApplicationHandler for App<'_> {
                 }
             }
             WindowEvent::RedrawRequested => {
-                // Update the application.
                 let input = self.store.input.take_frame();
                 self.state.update(&mut Update {
                     dt: self.store.delta_time.next(),
@@ -180,14 +171,12 @@ impl ApplicationHandler for App<'_> {
                     event_loop,
                 });
 
-                // Render the application.
                 self.state.render(&mut Render {
                     store: &mut self.store,
                     resolution: video.resolution(),
                     frame: video.create_frame(),
                 });
 
-                // Request a redraw from the operating system to repeat the update and video cycle.
                 window.request_redraw();
             }
             _ => {}
@@ -306,24 +295,21 @@ pub enum State {
 impl State {
     /// Updates the current state of the application using the provided context.
     pub fn update(&mut self, context: &mut Update) {
-        // Run the update behavior for the current state.
         let command = match self {
             State::Loading(splash) => splash.update(context),
             State::Browsing(menu) => menu.update(context),
             State::Playing(session) => session.update(context),
         };
 
-        // If a command was returned, transition to its associated state.
         if let Some(x) = command {
             self.transition(x, context);
         };
     }
 
-    // Replaces or mutates the current state based on the command.
     pub(crate) fn transition(&mut self, command: Command, ctx: &mut Update) {
         match command {
             Command::OpenMenu(config) => {
-                *self = State::Browsing(config.into());
+                *self = State::Browsing(Menu::new(config, &ctx.video.painter));
             }
             Command::StartGame { save } => {
                 let session = Session::create(save, &mut ctx.video, &ctx.store.fs.path().join("assets"));

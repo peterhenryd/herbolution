@@ -1,6 +1,13 @@
 use std::path::Path;
 use std::time::Duration;
 
+use crate::app::{Command, Render, Update};
+use crate::video::resource::{Mesh, MeshId, Meshes};
+use crate::video::ui::brush::{Brush, Text};
+use crate::video::world::Vertex3d;
+use crate::video::{world, Video};
+use crate::world::World;
+use lib::aabb::Aabb2;
 use lib::color::{Color, ColorConsts, Rgba};
 use lib::save::Save;
 use lib::size::{size2u, Size2};
@@ -11,13 +18,6 @@ use server::{Game, Options};
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
 use winit::window::CursorGrabMode;
-
-use crate::app::{Command, Render, Update};
-use crate::video::resource::{Mesh, MeshId, Meshes};
-use crate::video::ui::brush::{Brush, Text};
-use crate::video::world::Vertex3d;
-use crate::video::{world, Video};
-use crate::world::World;
 
 /// The render-side representation of a herbolution_game session.
 #[derive(Debug)]
@@ -81,14 +81,12 @@ impl Session {
 
     /// Renders the herbolution_game.
     pub fn render(&mut self, ctx: &mut Render) {
-        // Render sky box
         {
             let mut chisel = ctx.frame.draw_3d(world::RenderType::Sky);
             chisel.load_mesh(self.mesh_ids.solid_quad);
             chisel.render_each_by_id(self.world.player.sky_box_id);
         }
 
-        // Render world
         {
             ctx.frame.advance_pass(None, false);
             let mut chisel = ctx.frame.draw_3d(world::RenderType::Terrain);
@@ -102,7 +100,6 @@ impl Session {
             chisel.render_each_by_id(self.world.player.targeted_cube_wireframe_id);
         }
 
-        // Render overlay (HUD, debugger and cross-hair)
         {
             let mut brush = ctx.frame.draw_2d();
 
@@ -135,13 +132,11 @@ impl Session {
         let unfilled_scale = Size2::new(scale.width * (1.0 - health), scale.height);
 
         brush.draw_rect(
-            Vec2::new(60., resolution.height as f32 - 48. - 64. - 4.),
-            Size2::new(136., 56.),
+            Aabb2::sized(Vec2::new(60., resolution.height as f32 - 48. - 64. - 4.), Size2::new(136., 56.)),
             Rgba::from_rgb(14, 14, 14).into(),
         );
-
-        brush.draw_rect(position, filled_scale, Rgba::from_rgb(255, 0, 0).into());
-        brush.draw_rect(unfilled_position, unfilled_scale, Rgba::BLACK);
+        brush.draw_rect(Aabb2::sized(position, filled_scale), Rgba::from_rgb(255, 0, 0).into());
+        brush.draw_rect(Aabb2::sized(unfilled_position, unfilled_scale), Rgba::BLACK);
     }
 
     pub fn set_resolution(&mut self, _: size2u) {}

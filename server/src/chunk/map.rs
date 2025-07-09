@@ -3,19 +3,19 @@ use std::ops::Add;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use lib::collections::mailbox::Mailbox;
-use lib::point::{ChunkCubePt, ChunkPt, CubePt};
-use lib::spatial::{Aabb, Face, Faces};
-use lib::util::{GroupKey, GroupKeyBuf};
-use lib::vector::{Vec3, vec3d, vec3f, vec3i, vec3u5};
-use lib::world::CHUNK_LENGTH;
-use line_drawing::{VoxelOrigin, WalkVoxels};
-
 use crate::chunk::handle::ChunkLoad;
 use crate::chunk::material::{Material, PaletteMaterialId};
 use crate::chunk::provider::ChunkProvider;
-use crate::chunk::{Chunk, handle};
+use crate::chunk::{handle, Chunk};
 use crate::handle::ClientHandle;
+use lib::aabb::Aabb3;
+use lib::collections::mailbox::Mailbox;
+use lib::point::{ChunkCubePt, ChunkPt, CubePt};
+use lib::spatial::{CubeFace, CubeFaces};
+use lib::util::{GroupKey, GroupKeyBuf};
+use lib::vector::{vec3d, vec3f, vec3i, vec3u5, Vec3};
+use lib::world::CHUNK_LENGTH;
+use line_drawing::{VoxelOrigin, WalkVoxels};
 
 #[derive(Debug)]
 pub struct ChunkMap {
@@ -33,7 +33,7 @@ impl ChunkMap {
         }
     }
 
-    pub fn get_near_colliders(&self, aabb: Aabb<f64>, colliders: &mut Vec<Aabb<f64>>) {
+    pub fn get_near_colliders(&self, aabb: Aabb3<f64>, colliders: &mut Vec<Aabb3<f64>>) {
         let min = aabb.min.floor().cast() - 1;
         let max = aabb.max.ceil().cast() + 1;
 
@@ -46,7 +46,7 @@ impl ChunkMap {
                         continue;
                     }
 
-                    colliders.push(Aabb::cube(position.cast()));
+                    colliders.push(Aabb3::cube(position.cast()));
                 }
             }
         }
@@ -81,12 +81,12 @@ impl ChunkMap {
         let material_key = material_ref.as_key_ref();
 
         let edges = [
-            (Vec3::new(-1, 0, 0), Faces::EAST, local.x() == 0),
-            (Vec3::new(1, 0, 0), Faces::WEST, local.x() == CHUNK_LENGTH as u8 - 1),
-            (Vec3::new(0, -1, 0), Faces::UP, local.y() == 0),
-            (Vec3::new(0, 1, 0), Faces::DOWN, local.y() == CHUNK_LENGTH as u8 - 1),
-            (Vec3::new(0, 0, -1), Faces::NORTH, local.z() == 0),
-            (Vec3::new(0, 0, 1), Faces::SOUTH, local.z() == CHUNK_LENGTH as u8 - 1),
+            (Vec3::new(-1, 0, 0), CubeFaces::EAST, local.x() == 0),
+            (Vec3::new(1, 0, 0), CubeFaces::WEST, local.x() == CHUNK_LENGTH as u8 - 1),
+            (Vec3::new(0, -1, 0), CubeFaces::UP, local.y() == 0),
+            (Vec3::new(0, 1, 0), CubeFaces::DOWN, local.y() == CHUNK_LENGTH as u8 - 1),
+            (Vec3::new(0, 0, -1), CubeFaces::NORTH, local.z() == 0),
+            (Vec3::new(0, 0, 1), CubeFaces::SOUTH, local.z() == CHUNK_LENGTH as u8 - 1),
         ];
 
         for (offset, face, condition) in edges {
@@ -113,7 +113,7 @@ impl ChunkMap {
             let Vec3 { x, y, z } = local.try_cast::<i32>().unwrap().add(offset);
             if x == 0 || x == 15 && material_key.is_none() {
                 mesh.exposed_faces.set(
-                    Face::from_normal(Vec3::new(x / 15 * 2 - 1, 0, 0))
+                    CubeFace::from_normal(Vec3::new(x / 15 * 2 - 1, 0, 0))
                         .unwrap()
                         .into(),
                     true,
@@ -121,7 +121,7 @@ impl ChunkMap {
             }
             if y == 0 || y == 15 && material_key.is_none() {
                 mesh.exposed_faces.set(
-                    Face::from_normal(Vec3::new(0, y / 15 * 2 - 1, 0))
+                    CubeFace::from_normal(Vec3::new(0, y / 15 * 2 - 1, 0))
                         .unwrap()
                         .into(),
                     true,
@@ -129,7 +129,7 @@ impl ChunkMap {
             }
             if z == 0 || z == 15 && material_key.is_none() {
                 mesh.exposed_faces.set(
-                    Face::from_normal(Vec3::new(0, 0, z / 15 * 2 - 1))
+                    CubeFace::from_normal(Vec3::new(0, 0, z / 15 * 2 - 1))
                         .unwrap()
                         .into(),
                     true,
@@ -189,8 +189,8 @@ impl ChunkMap {
                 let position = position.cast();
                 return Some(CubeHit {
                     position: position.cast(),
-                    face: Face::from_normal(normal).unwrap(),
-                    contact_point: Aabb::cube(position).intersect_ray(start, dir.cast()),
+                    face: CubeFace::from_normal(normal).unwrap(),
+                    contact_point: Aabb3::cube(position).intersect_ray(start, dir.cast()),
                 });
             }
         }
@@ -208,9 +208,8 @@ impl ChunkMap {
                 .chunks
                 .load(ChunkLoad { position, handle: game_handle });
 
-            for face in Face::values() {
-                // Get the adjacent chunk if it exists.
-                let Some(other) = self.get_chunk(position + face.to_normal()) else {
+            for face in CubeFace::values() {
+                let Some(other) = self.get_chunk(position + face.normal()) else {
                     continue;
                 };
 
@@ -274,6 +273,6 @@ impl MaterialRef for Option<&str> {
 #[derive(Debug, Copy, Clone)]
 pub struct CubeHit {
     pub position: vec3i,
-    pub face: Face,
+    pub face: CubeFace,
     pub contact_point: vec3d,
 }

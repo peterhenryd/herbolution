@@ -1,14 +1,13 @@
+use lib::aabb::Aabb3;
+use lib::motile::Motile;
+use lib::rotation::Euler;
+use lib::util::default;
+use lib::vector::{Vec2, Vec3};
+use lib::world::Health;
 use std::any::Any;
 use std::mem::take;
 use std::sync::Arc;
 use std::time::Duration;
-
-use lib::motile::Motile;
-use lib::rotation::Euler;
-use lib::spatial::Aabb;
-use lib::util::default;
-use lib::vector::{Vec2, Vec3};
-use lib::world::Health;
 
 use crate::chunk::map::CubeHit;
 use crate::chunk::material::Material;
@@ -43,7 +42,7 @@ impl Player {
             handle,
             prev_target: None,
             health: Health::new(100.0),
-            regeneration: 1.0,
+            regeneration: 3.0,
             dig_speed: 1.0,
             dig_state: None,
         }
@@ -157,8 +156,8 @@ impl Player {
     }
 
     fn handle_right_hand(&mut self, cube_hit: CubeHit, ctx: &mut EntityContext) {
-        let position = cube_hit.position + cube_hit.face.to_normal();
-        let collider = Aabb::new(
+        let position = cube_hit.position + cube_hit.face.normal();
+        let collider = Aabb3::new(
             Vec3::new(position.x as f32, position.y as f32, position.z as f32),
             Vec3::new(position.x as f32 + 1.0, position.y as f32 + 1.0, position.z as f32 + 1.0),
         );

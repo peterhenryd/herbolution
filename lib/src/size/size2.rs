@@ -1,7 +1,7 @@
 use bytemuck::{Pod, Zeroable};
 use num::traits::ConstZero;
 use num::{NumCast, ToPrimitive, Zero};
-use std::ops::Add;
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
 use crate::vector::Vec2;
 
@@ -41,6 +41,10 @@ impl<T> Size2<T> {
     }
 }
 
+impl<T: ConstZero> Size2<T> {
+    pub const ZERO: Self = Self::new(T::ZERO, T::ZERO);
+}
+
 impl<T: Zero> Zero for Size2<T> {
     fn zero() -> Self {
         Self::new(T::zero(), T::zero())
@@ -59,8 +63,116 @@ impl<T: Add<Output = T>> Add for Size2<T> {
     }
 }
 
-impl<T: ConstZero> ConstZero for Size2<T> {
-    const ZERO: Self = Self::new(T::ZERO, T::ZERO);
+impl<T: AddAssign> AddAssign for Size2<T> {
+    fn add_assign(&mut self, rhs: Self) {
+        self.width += rhs.width;
+        self.height += rhs.height;
+    }
+}
+
+impl<T: Copy + Add<Output = T>> Add<T> for Size2<T> {
+    type Output = Self;
+
+    fn add(self, rhs: T) -> Self::Output {
+        Self::new(self.width + rhs, self.height + rhs)
+    }
+}
+
+impl<T: Copy + AddAssign> AddAssign<T> for Size2<T> {
+    fn add_assign(&mut self, rhs: T) {
+        self.width += rhs;
+        self.height += rhs;
+    }
+}
+
+impl<T: Sub<Output = T>> Sub for Size2<T> {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self::new(self.width - rhs.width, self.height - rhs.height)
+    }
+}
+
+impl<T: SubAssign> SubAssign for Size2<T> {
+    fn sub_assign(&mut self, rhs: Self) {
+        self.width -= rhs.width;
+        self.height -= rhs.height;
+    }
+}
+
+impl<T: Copy + Sub<Output = T>> Sub<T> for Size2<T> {
+    type Output = Self;
+
+    fn sub(self, rhs: T) -> Self::Output {
+        Self::new(self.width - rhs, self.height - rhs)
+    }
+}
+
+impl<T: Copy + SubAssign> SubAssign<T> for Size2<T> {
+    fn sub_assign(&mut self, rhs: T) {
+        self.width -= rhs;
+        self.height -= rhs;
+    }
+}
+
+impl<T: Mul<Output = T>> Mul for Size2<T> {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        Self::new(self.width * rhs.width, self.height * rhs.height)
+    }
+}
+
+impl<T: MulAssign> MulAssign for Size2<T> {
+    fn mul_assign(&mut self, rhs: Self) {
+        self.width *= rhs.width;
+        self.height *= rhs.height;
+    }
+}
+
+impl<T: Copy + Mul<Output = T>> Mul<T> for Size2<T> {
+    type Output = Self;
+
+    fn mul(self, rhs: T) -> Self::Output {
+        Self::new(self.width * rhs, self.height * rhs)
+    }
+}
+
+impl<T: Copy + MulAssign> MulAssign<T> for Size2<T> {
+    fn mul_assign(&mut self, rhs: T) {
+        self.width *= rhs;
+        self.height *= rhs;
+    }
+}
+
+impl<T: Div<Output = T>> Div for Size2<T> {
+    type Output = Self;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        Self::new(self.width / rhs.width, self.height / rhs.height)
+    }
+}
+
+impl<T: DivAssign> DivAssign for Size2<T> {
+    fn div_assign(&mut self, rhs: Self) {
+        self.width /= rhs.width;
+        self.height /= rhs.height;
+    }
+}
+
+impl<T: Copy + Div<Output = T>> Div<T> for Size2<T> {
+    type Output = Self;
+
+    fn div(self, rhs: T) -> Self::Output {
+        Self::new(self.width / rhs, self.height / rhs)
+    }
+}
+
+impl<T: Copy + DivAssign> DivAssign<T> for Size2<T> {
+    fn div_assign(&mut self, rhs: T) {
+        self.width /= rhs;
+        self.height /= rhs;
+    }
 }
 
 impl<T> From<(T, T)> for Size2<T> {

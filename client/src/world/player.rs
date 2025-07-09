@@ -49,10 +49,8 @@ impl Player {
 
     /// Updates the player state.
     pub fn update(&mut self, ctx: &mut Update) {
-        // If the behavior-side server has not processed the player creation yet, skip the update.
         let Some(handle) = &mut self.handle else { return };
 
-        // Receive the latest camera position and rotation from the behavior-side player.
         let mut update_camera = false;
         if let Some(x) = handle.transform.next_position() {
             //self.prev_position = self.position;
@@ -94,7 +92,7 @@ impl Player {
         }
 
         let sets = ctx.video.sculptor.sets();
-        // Overwrite the targeted cube wireframe with the latest target from the server-side player.
+
         match handle.transform.next_target() {
             Some(Some(ActionTarget::Cube(target))) => {
                 self.set_targeted_cube(sets, target)
@@ -130,7 +128,6 @@ impl Player {
             return;
         };
 
-        // Process mouse button input
         let mut action_state = ActionState::default();
 
         let is_lmb_active = ctx
@@ -146,7 +143,6 @@ impl Player {
 
         handle.input.set_action_state(action_state);
 
-        // Process keyboard input
         let mut forces = vec3i8::ZERO;
         if ctx.store.input.is_key_active(KeyCode::KeyW) {
             forces.x += 1;
@@ -169,7 +165,6 @@ impl Player {
 
         handle.input.set_movement(forces);
 
-        // Process mouse movement
         let movement = ctx.input.mouse_movement;
         if movement.x != 0.0 || movement.y != 0.0 {
             handle.input.push_mouse_movement(movement);
@@ -177,29 +172,29 @@ impl Player {
 
         handle
             .input
-            .push_speed_delta(ctx.input.mouse_scroll);
+            .push_speed_delta(ctx.input.mouse_scroll * 0.01);
     }
 }
 
 fn cube(position: vec3d, color: Rgba<f32>) -> impl IntoIterator<Item = Instance3d> {
-    Face::values()
-        .map(Face::to_rotation)
-        .map(move |rotation| Instance3d::new(position, rotation, Vec3::splat(1.0), color, 1))
+    CubeFace::values()
+        .map(CubeFace::rotation)
+        .map(move |rotation| Instance3d::new(position, rotation, Vec3::splat(1.0), color, 1, Vec4::ZERO))
 }
 
 use lib::matrix::Mat4;
 use lib::proj::Perspective;
 use lib::rotation::Euler;
 use lib::size::size2u;
-use lib::spatial::Face;
-use lib::vector::{Vec3, vec3d, vec3i, vec3i8};
-use lib::world::{CHUNK_LENGTH, Health};
+use lib::spatial::CubeFace;
+use lib::vector::{vec3d, vec3i, vec3i8, Vec3, Vec4};
+use lib::world::{Health, CHUNK_LENGTH};
 
 use crate::app::Update;
-use crate::video::Video;
 use crate::video::camera::{VideoCamera, View};
 use crate::video::resource::{SetId, Sets};
 use crate::video::world::{Instance3d, Sculptor};
+use crate::video::Video;
 use crate::world::frustum::Frustum;
 
 /// The camera with additional information used for culling and camera-relative rendering.

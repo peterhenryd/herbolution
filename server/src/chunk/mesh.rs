@@ -2,8 +2,8 @@ use std::iter::zip;
 use std::ops::{Not, Range};
 
 use lib::point::ChunkPt;
-use lib::spatial::{Face, Faces};
-use lib::vector::{Vec3, vec3u5};
+use lib::spatial::{CubeFace, CubeFaces};
+use lib::vector::{vec3u5, Vec3};
 use lib::world::{CHUNK_LENGTH, CHUNK_VOLUME};
 use rayon::prelude::{IntoParallelRefMutIterator, ParallelIterator};
 
@@ -15,7 +15,7 @@ pub struct CubeMesh {
     pub position: ChunkPt,
     pub(crate) data: Box<[PaletteCube; CHUNK_VOLUME]>,
     pub(crate) updated_positions: Vec<vec3u5>,
-    pub(crate) exposed_faces: Faces,
+    pub(crate) exposed_faces: CubeFaces,
     pub(crate) palette: Palette,
 }
 
@@ -25,7 +25,7 @@ impl CubeMesh {
             position,
             data: Box::new([Cube::new(None); CHUNK_VOLUME]),
             updated_positions: vec![],
-            exposed_faces: Faces::all(),
+            exposed_faces: CubeFaces::all(),
             palette: Palette::new(),
         }
     }
@@ -35,20 +35,20 @@ impl CubeMesh {
     }
 
     pub fn cull_shared_face(&mut self, other: &CubeMesh) {
-        let Some(face) = Face::from_normal(other.position.0 - self.position.0) else {
+        let Some(face) = CubeFace::from_normal(other.position.0 - self.position.0) else {
             return;
         };
         let inverse_face = face.inverse();
 
-        fn sized_boundary_slice(face: Face) -> Vec3<Range<u8>> {
+        fn sized_boundary_slice(face: CubeFace) -> Vec3<Range<u8>> {
             let l = CHUNK_LENGTH as u8;
             match face {
-                Face::East => Vec3::new(l - 1..l, 0..l, 0..l),
-                Face::West => Vec3::new(0..1, 0..l, 0..l),
-                Face::Up => Vec3::new(0..l, l - 1..l, 0..l),
-                Face::Down => Vec3::new(0..l, 0..1, 0..l),
-                Face::North => Vec3::new(0..l, 0..l, l - 1..l),
-                Face::South => Vec3::new(0..l, 0..l, 0..1),
+                CubeFace::East => Vec3::new(l - 1..l, 0..l, 0..l),
+                CubeFace::West => Vec3::new(0..1, 0..l, 0..l),
+                CubeFace::Up => Vec3::new(0..l, l - 1..l, 0..l),
+                CubeFace::Down => Vec3::new(0..l, 0..1, 0..l),
+                CubeFace::North => Vec3::new(0..l, 0..l, l - 1..l),
+                CubeFace::South => Vec3::new(0..l, 0..l, 0..1),
             }
         }
 
@@ -75,7 +75,7 @@ impl CubeMesh {
     }
 
     pub fn cull_shared_faces(&mut self, other: &mut CubeMesh) {
-        let Some(shared_face) = Face::from_normal(other.position.0 - self.position.0) else {
+        let Some(shared_face) = CubeFace::from_normal(other.position.0 - self.position.0) else {
             return;
         };
         let other_shared_face = shared_face.inverse();
@@ -101,10 +101,11 @@ impl CubeMesh {
                             .cullable_faces(&other.palette)
                             .is_empty()
                     {
-                        cube.flags.remove_faces(Faces::from(shared_face));
+                        cube.flags
+                            .remove_faces(CubeFaces::from(shared_face));
                         other_cube
                             .flags
-                            .remove_faces(Faces::from(other_shared_face));
+                            .remove_faces(CubeFaces::from(other_shared_face));
 
                         self.updated_positions.push(position);
                         other.updated_positions.push(other_position);
@@ -140,7 +141,7 @@ impl CubeMesh {
                 .is_empty()
         {
             let missing = self.data[i].flags.faces().not();
-            self.data[i].flags.set_opaque(Faces::all());
+            self.data[i].flags.set_opaque(CubeFaces::all());
             self.remove_neighboring_faces(missing, position);
         }
 
@@ -152,14 +153,14 @@ impl CubeMesh {
                 .is_empty()
         {
             let present = self.data[i].flags.faces();
-            self.data[i].flags.set_opaque(Faces::none());
+            self.data[i].flags.set_opaque(CubeFaces::none());
             self.add_neighboring_faces(present, position);
         }
 
         let (x, y, z) = (position.x(), position.y(), position.z());
         if x == 0 || x == 15 && new_material.is_none() {
             self.exposed_faces.set(
-                Face::from_normal(Vec3::new(if x == 0 { -1 } else { 1 }, 0, 0))
+                CubeFace::from_normal(Vec3::new(if x == 0 { -1 } else { 1 }, 0, 0))
                     .unwrap()
                     .into(),
                 true,
@@ -167,7 +168,7 @@ impl CubeMesh {
         }
         if y == 0 || y == 15 && new_material.is_none() {
             self.exposed_faces.set(
-                Face::from_normal(Vec3::new(0, if y == 0 { -1 } else { 1 }, 0))
+                CubeFace::from_normal(Vec3::new(0, if y == 0 { -1 } else { 1 }, 0))
                     .unwrap()
                     .into(),
                 true,
@@ -175,7 +176,7 @@ impl CubeMesh {
         }
         if z == 0 || z == 15 && new_material.is_none() {
             self.exposed_faces.set(
-                Face::from_normal(Vec3::new(0, 0, if y == 0 { -1 } else { 1 }))
+                CubeFace::from_normal(Vec3::new(0, 0, if y == 0 { -1 } else { 1 }))
                     .unwrap()
                     .into(),
                 true,
@@ -190,7 +191,7 @@ impl CubeMesh {
             *cube = Cube::new(material);
         });
 
-        for face in Face::values() {
+        for face in CubeFace::values() {
             let boundary = boundary(face);
             for x in boundary.x {
                 for y in boundary.y.clone() {
@@ -206,10 +207,10 @@ impl CubeMesh {
         }
     }
 
-    fn remove_neighboring_faces(&mut self, faces: Faces, position: vec3u5) {
+    fn remove_neighboring_faces(&mut self, faces: CubeFaces, position: vec3u5) {
         faces
             .iter()
-            .map(|f| (f, f.to_normal()))
+            .map(|f| (f, f.normal()))
             .map(|(f, v)| (f, position.try_cast::<i32>().unwrap() + v))
             //.filter(|(_, x)| in_bounds(*x))
             .filter_map(|(f, v)| v.try_cast::<u8>().map(|x| (f, x)))
@@ -232,11 +233,11 @@ impl CubeMesh {
             });
     }
 
-    fn add_neighboring_faces(&mut self, faces: Faces, position: vec3u5) {
+    fn add_neighboring_faces(&mut self, faces: CubeFaces, position: vec3u5) {
         let position = position.try_cast::<i32>().unwrap();
 
         let in_chunk = faces.not().iter().filter_map(|a| {
-            (a.to_normal() + position)
+            (a.normal() + position)
                 .try_cast::<u8>()
                 .map(|v| vec3u5::try_from(v))
                 .flatten()
@@ -252,14 +253,14 @@ impl CubeMesh {
     }
 }
 
-fn boundary(face: Face) -> Vec3<Range<u8>> {
+fn boundary(face: CubeFace) -> Vec3<Range<u8>> {
     let l = CHUNK_LENGTH as u8;
     match face {
-        Face::East => Vec3::new(l - 1..l, 0..l, 0..l),
-        Face::West => Vec3::new(0..1, 0..l, 0..l),
-        Face::Up => Vec3::new(0..l, l - 1..l, 0..l),
-        Face::Down => Vec3::new(0..l, 0..1, 0..l),
-        Face::North => Vec3::new(0..l, 0..l, l - 1..l),
-        Face::South => Vec3::new(0..l, 0..l, 0..1),
+        CubeFace::East => Vec3::new(l - 1..l, 0..l, 0..l),
+        CubeFace::West => Vec3::new(0..1, 0..l, 0..l),
+        CubeFace::Up => Vec3::new(0..l, l - 1..l, 0..l),
+        CubeFace::Down => Vec3::new(0..l, 0..1, 0..l),
+        CubeFace::North => Vec3::new(0..l, 0..l, l - 1..l),
+        CubeFace::South => Vec3::new(0..l, 0..l, 0..1),
     }
 }

@@ -4,6 +4,7 @@
 #![feature(const_ops)]
 #![feature(ptr_metadata)]
 
+pub mod aabb;
 pub mod collections;
 pub mod color;
 pub mod fs;

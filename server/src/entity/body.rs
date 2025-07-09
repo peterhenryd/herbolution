@@ -1,10 +1,9 @@
+use lib::aabb::Aabb3;
+use lib::rotation::Euler;
+use lib::vector::{vec3d, vec3f, Vec3};
 use std::f32::consts::FRAC_PI_2;
 use std::ops::{Add, Deref, DerefMut};
 use std::time::Duration;
-
-use lib::rotation::Euler;
-use lib::spatial::Aabb;
-use lib::vector::{Vec3, vec3d, vec3f};
 
 use crate::chunk::map::ChunkMap;
 
@@ -21,7 +20,7 @@ pub struct EntityBody {
     boundary: Boundary,
     pub(crate) motion: vec3f,
     is_on_ground: bool,
-    near_colliders: Vec<Aabb<f64>>,
+    near_colliders: Vec<Aabb3<f64>>,
     pub attrs: EntityAttrs,
     fall: f32,
     pub(crate) last_fell: Option<f32>,
@@ -159,7 +158,7 @@ impl EntityBody {
         }
     }
 
-    pub fn bounds(&self) -> Aabb<f64> {
+    pub fn bounds(&self) -> Aabb3<f64> {
         self.boundary.aabb.cast() + self.position
     }
 
@@ -210,6 +209,6 @@ impl Drop for RotateEntity<'_> {
 
 #[derive(Debug, Clone)]
 pub struct Boundary {
-    pub aabb: Aabb<f32>,
+    pub aabb: Aabb3<f32>,
     pub eye_offset: vec3f,
 }

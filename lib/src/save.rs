@@ -1,4 +1,4 @@
-use std::fs::{ReadDir, create_dir, read_dir, read_to_string, write};
+use std::fs::{create_dir, read_dir, read_to_string, write, ReadDir};
 use std::io;
 use std::path::{Path, PathBuf};
 
@@ -118,7 +118,7 @@ impl Iterator for Saves {
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut entry = self.read_dir.next()?.ok()?;
-        // Skip non-directory entries
+
         while !entry.file_type().ok()?.is_dir() {
             entry = self.read_dir.next()?.ok()?;
         }
@@ -154,7 +154,7 @@ impl Iterator for Worlds {
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut entry = self.read_dir.next()?.ok()?;
-        // Skip non-directory entries
+
         while !entry.file_type().ok()?.is_dir() {
             entry = self.read_dir.next()?.ok()?;
         }

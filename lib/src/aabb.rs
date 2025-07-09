@@ -1,20 +1,63 @@
 use std::fmt::Debug;
-use std::ops::{Add, AddAssign};
+use std::ops::{Add, AddAssign, Sub};
 
+use crate::size::Size2;
+use crate::vector::{Vec2, Vec3};
 use bytemuck::Pod;
 use num::traits::real::Real;
 use num::traits::{ConstOne, ConstZero};
 use num::{Float, Num, NumCast, ToPrimitive};
 
-use crate::vector::Vec3;
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+pub struct Aabb2<T> {
+    pub min: Vec2<T>,
+    pub max: Vec2<T>,
+}
+
+impl<T> Aabb2<T> {
+    pub fn sized(position: Vec2<T>, size: Size2<T>) -> Self
+    where
+        T: Copy + Add<Output = T>,
+    {
+        Self {
+            min: position,
+            max: position + size.to_vec2(),
+        }
+    }
+
+    #[inline]
+    pub fn contains(&self, point: Vec2<T>) -> bool
+    where
+        T: Copy + PartialOrd,
+    {
+        point.x >= self.min.x && point.x <= self.max.x && point.y >= self.min.y && point.y <= self.max.y
+    }
+
+    #[inline]
+    pub fn size(self) -> Size2<T>
+    where
+        T: Sub<Output = T>,
+    {
+        Size2::new(self.max.x - self.min.x, self.max.y - self.min.y)
+    }
+
+    #[inline]
+    pub fn set_position(&mut self, position: Vec2<T>)
+    where
+        T: Copy + Num,
+    {
+        self.max = position + self.size().to_vec2();
+        self.min = position;
+    }
+}
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-pub struct Aabb<T> {
+pub struct Aabb3<T> {
     pub min: Vec3<T>,
     pub max: Vec3<T>,
 }
 
-impl<T> Aabb<T> {
+impl<T> Aabb3<T> {
     pub const fn new(min: Vec3<T>, max: Vec3<T>) -> Self {
         Self { min, max }
     }
@@ -40,7 +83,15 @@ impl<T> Aabb<T> {
                 min: lhs.min.min(rhs.min),
                 max: lhs.max.max(rhs.max),
             })
-            .unwrap_or(Aabb::ZERO)
+            .unwrap_or(Aabb3::ZERO)
+    }
+
+    #[inline]
+    pub fn contains(&self, point: Vec3<T>) -> bool
+    where
+        T: Copy + PartialOrd,
+    {
+        point.x >= self.min.x && point.x <= self.max.x && point.y >= self.min.y && point.y <= self.max.y && point.z >= self.min.z && point.z <= self.max.z
     }
 
     #[inline]
@@ -124,7 +175,7 @@ impl<T> Aabb<T> {
         self.max.z += z;
     }
 
-    pub fn intersect(&self, other: &Aabb<T>) -> Self
+    pub fn intersect(&self, other: &Aabb3<T>) -> Self
     where
         T: Copy + Num,
     {
@@ -134,7 +185,7 @@ impl<T> Aabb<T> {
         }
     }
 
-    pub fn intersects(&self, other: &Aabb<T>) -> bool
+    pub fn intersects(&self, other: &Aabb3<T>) -> bool
     where
         T: Copy + PartialOrd,
     {
@@ -146,7 +197,7 @@ impl<T> Aabb<T> {
             && self.max.z > other.min.z
     }
 
-    pub fn is_touching(&self, other: &Aabb<T>) -> bool
+    pub fn is_touching(&self, other: &Aabb3<T>) -> bool
     where
         T: Copy + Num,
     {
@@ -154,7 +205,7 @@ impl<T> Aabb<T> {
         intersection.width() == T::zero() || intersection.height() == T::zero() || intersection.depth() == T::zero()
     }
 
-    pub fn clip_collision(&self, other: &Aabb<T>, velocity: &mut Vec3<T>)
+    pub fn clip_collision(&self, other: &Aabb3<T>, velocity: &mut Vec3<T>)
     where
         T: Copy + ConstZero + Real + PartialOrd + NumCast,
     {
@@ -163,7 +214,7 @@ impl<T> Aabb<T> {
         velocity.z = self.clip_dz_collision(other, velocity.z);
     }
 
-    pub fn clip_dx_collision(&self, other: &Aabb<T>, mut dx: T) -> T
+    pub fn clip_dx_collision(&self, other: &Aabb3<T>, mut dx: T) -> T
     where
         T: Copy + ConstZero + Num + PartialOrd,
     {
@@ -192,7 +243,7 @@ impl<T> Aabb<T> {
         dx
     }
 
-    pub fn clip_dy_collision(&self, other: &Aabb<T>, mut dy: T) -> T
+    pub fn clip_dy_collision(&self, other: &Aabb3<T>, mut dy: T) -> T
     where
         T: Copy + ConstZero + Num + PartialOrd,
     {
@@ -221,7 +272,7 @@ impl<T> Aabb<T> {
         dy
     }
 
-    pub fn clip_dz_collision(&self, other: &Aabb<T>, mut dz: T) -> T
+    pub fn clip_dz_collision(&self, other: &Aabb3<T>, mut dz: T) -> T
     where
         T: Copy + ConstZero + Num + PartialOrd,
     {
@@ -271,17 +322,17 @@ impl<T> Aabb<T> {
         (self.min.z + self.max.z) * T::from(0.5).unwrap()
     }
 
-    pub fn try_cast<U: NumCast>(self) -> Option<Aabb<U>>
+    pub fn try_cast<U: NumCast>(self) -> Option<Aabb3<U>>
     where
         T: ToPrimitive,
     {
-        Some(Aabb {
+        Some(Aabb3 {
             min: Vec3::new(NumCast::from(self.min.x)?, NumCast::from(self.min.y)?, NumCast::from(self.min.z)?),
             max: Vec3::new(NumCast::from(self.max.x)?, NumCast::from(self.max.y)?, NumCast::from(self.max.z)?),
         })
     }
 
-    pub fn cast<U: NumCast>(self) -> Aabb<U>
+    pub fn cast<U: NumCast>(self) -> Aabb3<U>
     where
         T: ToPrimitive,
     {
@@ -305,14 +356,14 @@ impl<T> Aabb<T> {
     }
 }
 
-impl<T: ConstZero + Copy + PartialEq> Aabb<T> {
+impl<T: ConstZero + Copy + PartialEq> Aabb3<T> {
     pub const ZERO: Self = Self {
         min: Vec3::ZERO,
         max: Vec3::ZERO,
     };
 }
 
-impl<T: Copy + Add<Output = T>> Add<Vec3<T>> for Aabb<T> {
+impl<T: Copy + Add<Output = T>> Add<Vec3<T>> for Aabb3<T> {
     type Output = Self;
 
     fn add(self, rhs: Vec3<T>) -> Self::Output {
@@ -323,7 +374,7 @@ impl<T: Copy + Add<Output = T>> Add<Vec3<T>> for Aabb<T> {
     }
 }
 
-impl<T: Copy + AddAssign> AddAssign<Vec3<T>> for Aabb<T> {
+impl<T: Copy + AddAssign> AddAssign<Vec3<T>> for Aabb3<T> {
     fn add_assign(&mut self, rhs: Vec3<T>) {
         self.min += rhs;
         self.max += rhs;

@@ -2,9 +2,9 @@ use bytemuck::{Pod, Zeroable};
 use lib::color::Rgba;
 use lib::matrix::Mat3;
 use lib::rotation::Quat;
-use lib::vector::{Vec3, vec2f, vec3d, vec3f, vec3i, vec4f};
+use lib::vector::{vec2f, vec3d, vec3f, vec3i, vec4f, Vec3, Vec4};
 use serde::{Deserialize, Serialize};
-use wgpu::{VertexBufferLayout, VertexStepMode, vertex_attr_array};
+use wgpu::{vertex_attr_array, VertexBufferLayout, VertexStepMode};
 
 use crate::video::resource::Vertex;
 
@@ -48,10 +48,11 @@ pub struct Instance3d {
     position_fract: vec3f,
     color: Rgba<f32>,
     light: u32,
+    ao: vec4f,
 }
 
 impl Instance3d {
-    pub fn new(position: vec3d, rotation: Quat, scale: vec3f, color: Rgba<f32>, light: u32) -> Self {
+    pub fn new(position: vec3d, rotation: Quat, scale: vec3f, color: Rgba<f32>, light: u32, ao: vec4f) -> Self {
         let rotation_matrix = rotation.to_axes();
         let model_matrix = rotation_matrix * Mat3::from(scale);
 
@@ -65,6 +66,7 @@ impl Instance3d {
             position_fract: fractional,
             color,
             light,
+            ao,
         }
     }
 }
@@ -81,12 +83,13 @@ impl Instance3d {
             7 => Float32x3,
             8 => Float32x4,
             9 => Uint32,
+            10 => Float32x4,
         ],
     };
 }
 
 impl Default for Instance3d {
     fn default() -> Self {
-        Instance3d::new(vec3d::ZERO, Quat::IDENTITY, Vec3::ONE, Rgba::TRANSPARENT, 1)
+        Instance3d::new(vec3d::ZERO, Quat::IDENTITY, Vec3::ONE, Rgba::TRANSPARENT, 1, Vec4::ZERO)
     }
 }

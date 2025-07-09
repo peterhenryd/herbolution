@@ -1,5 +1,4 @@
-use crate::app::{Command, Update};
-use crate::video::ui::brush::Brush;
+use crate::app::{Command, Render, Update};
 
 /// The options menu, where the user can view and modify the application settings.
 #[derive(Debug)]
@@ -19,7 +18,7 @@ impl OptionsMenu {
     }
 
     /// Renders the options menu.
-    pub fn render<'t>(&'t mut self, _: &mut Brush<'_, '_, '_>) {
+    pub fn render(&mut self, _: &mut Render) {
         // TODO: video the options menu
     }
 }

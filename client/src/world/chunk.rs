@@ -1,46 +1,77 @@
+use std::collections::HashMap;
 use std::hash::{DefaultHasher, Hash, Hasher};
+use std::mem::take;
 use std::ops::Mul;
 
+use crate::video::gpu;
+use crate::video::resource::GrowBuffer;
+use crate::video::world::chisel::Chisel;
+use crate::video::world::Instance3d;
+use crate::world::player::PlayerCamera;
 use fastrand::Rng;
-use lib::collections::Mailbox;
+use lib::aabb::Aabb3;
 use lib::point::ChunkPt;
-use lib::spatial::PerFace;
-use lib::vector::{Vec3, vec3u5};
+use lib::spatial::{CubeFace, PerFace};
+use lib::vector::{vec3i, vec3u5, Vec3, Vec4};
 use lib::world::{CHUNK_LENGTH, CHUNK_VOLUME};
 use server::chunk::cube::Cube;
 use server::chunk::handle::{ChunkCube, GameChunkHandle};
 use server::chunk::material::{Palette, PaletteCube};
 use wgpu::BufferUsages;
 
-use crate::video::gpu;
-use crate::video::resource::GrowBuffer;
-use crate::video::world::Instance3d;
-use crate::video::world::chisel::Chisel;
-use crate::world::player::PlayerCamera;
+type ChunkShell<'a> = [Option<&'a Chunk>; 27];
 
-/// The video-side representation of a chunk within the world.
 #[derive(Debug)]
-pub struct Chunk {
-    /// The position of this chunk in chunk space.
-    position: ChunkPt,
-    /// An array of cubes that make up this chunk, linearized in YXZ-order in ascending power.
-    /// The channel used to receive updates of this chunk from its corresponding behavior-side chunk.
-    handle: GameChunkHandle,
-    /// The GPU buffer that holds the mesh data for this chunk.
-    /// A flag that indicates whether this chunk should be rendered according to the behavior-side server.
-    /// An instance cache used during remeshing to avoid excessive allocations.
-    context_mailbox: Mailbox<MovableContext>,
-    context: Option<MovableContext>,
-    mesh: GrowBuffer<Instance3d>,
+pub struct ChunkMap {
+    pub(crate) map: HashMap<ChunkPt, Chunk>,
+    remesh_queue: Vec<(ChunkPt, Vec<Instance3d>)>,
 }
 
-// TODO: this may not be the best way to multithread the chunk remeshing process
-// instead of moving the entire context, we could just move the cached quad instances and the updated values in the mesh function, make it so the vector is
-// linearized instead of sequential, and only remesh the chunk data that has been changed. this will remove the potential for stale mesh data to be rendered, as
-// the current cloning of GrowBuffer3d is hacky due to the instance count not necessarily matching the instances in the buffer.
+impl ChunkMap {
+    pub fn new() -> Self {
+        Self {
+            map: HashMap::new(),
+            remesh_queue: vec![],
+        }
+    }
+
+    pub fn update(&mut self, handle: &gpu::Handle) {
+        self.remesh_queue.clear();
+        for (position, chunk) in &mut self.map {
+            let updated = chunk.apply_updates_from_server();
+            if !updated {
+                continue;
+            }
+
+            let instances = take(&mut chunk.cached_quad_instances);
+            self.remesh_queue.push((*position, instances));
+        }
+
+        for (chunk_position, mut instances) in self.remesh_queue.drain(..) {
+            let chunk_shell = create_chunk_shell(&self.map, chunk_position);
+            generate_mesh(&chunk_shell, &mut instances);
+
+            self.map
+                .get_mut(&chunk_position)
+                .unwrap()
+                .submit_mesh(handle, instances);
+        }
+    }
+
+    pub fn render(&self, camera: &PlayerCamera, chisel: &mut Chisel) {
+        for chunk in self.map.values() {
+            chunk.render(camera, chisel);
+        }
+    }
+}
+
+// TODO: reimplement multi-threaded chunk meshing
+// TODO: cache neighboring cube solidity for ao calculations instead of querying 26 neighbors every time
+
 #[derive(Debug)]
-struct MovableContext {
+pub struct Chunk {
     position: ChunkPt,
+    handle: GameChunkHandle,
     cached_quad_instances: Vec<Instance3d>,
     data: Box<[PaletteCube; CHUNK_VOLUME]>,
     mesh: GrowBuffer<Instance3d>,
@@ -48,36 +79,22 @@ struct MovableContext {
 }
 
 impl Chunk {
-    /// Creates and allocates a full chunk at the given position filled with air.
     pub fn create(gpu: &gpu::Handle, position: ChunkPt, handle: GameChunkHandle) -> Self {
         let mesh = GrowBuffer::empty(gpu, BufferUsages::VERTEX | BufferUsages::COPY_DST);
 
         Self {
             position,
             handle,
-            mesh: mesh.clone(),
-            context_mailbox: Mailbox::default(),
-            context: Some(MovableContext {
-                position,
-                cached_quad_instances: vec![],
-                data: Box::new([Cube::new(None); CHUNK_VOLUME]),
-                mesh,
-                palette: Palette::new(),
-            }),
+            cached_quad_instances: vec![],
+            data: Box::new([Cube::new(None); CHUNK_VOLUME]),
+            mesh,
+            palette: Palette::new(),
         }
     }
 
-    /// Renders this chunk using the provided camera and drawing context.
-    ///
-    /// # Panics
-    ///
-    /// This function assumes that there is a unit-size quad mesh (e.g., see [crate::gpu::mesh::c_quad]) already loaded in the drawing context. If no mesh is
-    /// loaded, the function will result in a panic.
     pub fn render(&self, camera: &PlayerCamera, chisel: &mut Chisel) {
-        // Offset the chunk position by the camera's chunk position because of camera-relative rendering.
         let chunk = self.position.0 - camera.chunk_position;
 
-        // If the chunk is not within the camera's frustum, don't video it.
         if !camera
             .frustum
             .contains_cube(chunk.cast(), CHUNK_LENGTH as f32)
@@ -85,7 +102,6 @@ impl Chunk {
             return;
         }
 
-        // If the chunk is culled by the behavior-side server, don't video it.
         if !self.handle.is_rendered() {
             return;
         }
@@ -93,94 +109,146 @@ impl Chunk {
         chisel.render_each(&self.mesh);
     }
 
-    /// Regenerates the mesh for this chunk if the behavior-side chunk has sent updates.
-    pub fn update(&mut self, handle: &gpu::Handle) {
-        for context in &self.context_mailbox {
-            self.mesh = context.mesh.clone();
-            self.context = Some(context);
+    fn apply_updates_from_server(&mut self) -> bool {
+        let updated = !self.handle.cube_update.is_empty();
+        while let Some(update) = self.handle.next_cube_update() {
+            for ChunkCube { position, cube } in update.overwrites {
+                self.data[position.linearize()] = cube;
+            }
         }
 
-        let not_updated = self.handle.cube_update.is_empty();
-        if let Some(context) = self.context.as_mut() {
-            while let Some(update) = self.handle.next_cube_update() {
-                for ChunkCube { position, cube } in update.overwrites {
-                    context.data[position.linearize()] = cube;
-                }
-            }
-
-            while let Some(update) = self.handle.next_palette_update() {
-                context.palette.insert(update.material);
-            }
-        };
-
-        if not_updated {
-            return;
+        while let Some(update) = self.handle.next_palette_update() {
+            self.palette.insert(update.material);
         }
 
-        let Some(mut context) = self.context.take() else {
-            return;
-        };
+        updated
+    }
 
-        let tx = self.context_mailbox.sender();
-        let handle = handle.clone();
+    fn submit_mesh(&mut self, handle: &gpu::Handle, instances: Vec<Instance3d>) {
+        self.cached_quad_instances = instances;
+        self.mesh
+            .write(handle, &self.cached_quad_instances);
+    }
+}
 
-        let mut hasher = DefaultHasher::new();
-        self.position.hash(&mut hasher);
-        let mut rng = Rng::with_seed(hasher.finish());
+fn create_chunk_shell(map: &HashMap<ChunkPt, Chunk>, position: ChunkPt) -> ChunkShell<'_> {
+    let mut shell = [None; 27];
 
-        rayon::spawn(move || {
-            // Converts the chunk position from chunk space to world space.
-            let chunk_position = context
-                .position
-                .0
-                .mul(CHUNK_LENGTH as i32)
-                .cast::<f64>();
+    let mut i = 0;
+    for x in -1..=1 {
+        for y in -1..=1 {
+            for z in -1..=1 {
+                let pt = position + Vec3::new(x, y, z);
+                shell[i] = map.get(&pt);
+                i += 1;
+            }
+        }
+    }
 
-            // Clear the instance cache and remesh the chunk.
-            context.cached_quad_instances.clear();
+    shell
+}
 
-            let (mut cached_material, mut prev_material_id) = (None, None);
-            for x in 0..CHUNK_LENGTH {
-                for z in 0..CHUNK_LENGTH {
-                    for y in 0..CHUNK_LENGTH {
-                        let position = vec3u5::new(x as u8, y as u8, z as u8);
-                        let cube = context.data[position.linearize()];
+fn generate_mesh(shell: &ChunkShell, instances: &mut Vec<Instance3d>) {
+    let Some(center_chunk) = shell[13] else {
+        return;
+    };
 
+    let mut hasher = DefaultHasher::new();
+    center_chunk.position.hash(&mut hasher);
+    let mut rng = Rng::with_seed(hasher.finish());
+
+    let chunk_position = center_chunk
+        .position
+        .0
+        .mul(CHUNK_LENGTH as i32)
+        .cast::<f64>();
+
+    let (mut cached_material, mut prev_material_id) = (None, None);
+    for x in 0..CHUNK_LENGTH {
+        for z in 0..CHUNK_LENGTH {
+            for y in 0..CHUNK_LENGTH {
+                let position = vec3u5::new(x as u8, y as u8, z as u8);
+                let cube = center_chunk.data[position.linearize()];
+
+                if let Some(material_id) = cube.material {
+                    if Some(material_id) != prev_material_id {
+                        prev_material_id = Some(material_id);
+                        cached_material = center_chunk.palette.get_by_id(material_id);
+                    }
+
+                    let Some(material) = &cached_material else {
+                        continue;
+                    };
+
+                    for face in cube.flags.faces() {
                         let perms = PerFace::mapped(|_| rng.f32());
-                        if let Some(material) = cube.material {
-                            if Some(material) != prev_material_id {
-                                prev_material_id = Some(material);
-                                cached_material = context.palette.get_by_id(material);
-                            }
+                        let color = material.get_color(perms[face]);
+                        let ao = facial_ao(shell, face, position.cast());
 
-                            let Some(material) = &cached_material else {
-                                return;
-                            };
-
-                            for face in cube.flags.faces() {
-                                let color = material.get_color(perms[face]);
-
-                                context
-                                    .cached_quad_instances
-                                    .push(Instance3d::new(
-                                        chunk_position + position.try_cast().unwrap(),
-                                        face.to_rotation(),
-                                        Vec3::ONE,
-                                        color,
-                                        0,
-                                    ));
-                            }
-                        }
+                        instances.push(Instance3d::new(
+                            chunk_position + position.cast::<f64>(),
+                            face.rotation(),
+                            Vec3::ONE,
+                            color,
+                            0,
+                            ao,
+                        ));
                     }
                 }
             }
-
-            // Write the quad instances to the GPU buffer.
-            context
-                .mesh
-                .write(&handle, &context.cached_quad_instances);
-
-            let _ = tx.send(context);
-        });
+        }
     }
+}
+
+fn is_cube_present(shell: &ChunkShell, position: vec3i) -> bool {
+    let chunk_offset = position.div_euclid(Vec3::splat(CHUNK_LENGTH as i32));
+
+    if !Aabb3::new(-Vec3::ONE, Vec3::ONE).contains(chunk_offset) {
+        return false;
+    }
+
+    let index = (chunk_offset + 1).linearize(3) as usize;
+    let Some(target_chunk) = shell[index] else {
+        return false;
+    };
+
+    let local_position = position.rem_euclid(Vec3::splat(CHUNK_LENGTH as i32));
+    let Some(local_position) = local_position
+        .try_cast::<u8>()
+        .map(vec3u5::try_from)
+        .flatten()
+    else {
+        return false;
+    };
+
+    target_chunk.data[local_position.linearize()]
+        .material
+        .is_some()
+}
+
+fn vertex_ao(s1: bool, s2: bool, c: bool) -> u8 {
+    if s1 && s2 { 3 } else { s1 as u8 + s2 as u8 + c as u8 }
+}
+
+fn facial_ao(shell: &ChunkShell, face: CubeFace, position: vec3i) -> Vec4<f32> {
+    let (u, v, n) = face.orthonormal_basis();
+
+    let tl = is_cube_present(shell, position + n - v - u);
+    let tc = is_cube_present(shell, position + n - v);
+    let tr = is_cube_present(shell, position + n - v + u);
+    let ml = is_cube_present(shell, position + n - u);
+    let mr = is_cube_present(shell, position + n + u);
+    let bl = is_cube_present(shell, position + n + v - u);
+    let bc = is_cube_present(shell, position + n + v);
+    let br = is_cube_present(shell, position + n + v + u);
+
+    let occlusion_bl = vertex_ao(ml, tc, tl);
+    let occlusion_tl = vertex_ao(ml, bc, bl);
+    let occlusion_br = vertex_ao(mr, tc, tr);
+    let occlusion_tr = vertex_ao(mr, bc, br);
+
+    let ao_amount = Vec4::new(occlusion_bl, occlusion_tl, occlusion_br, occlusion_tr).cast() / 3.0;
+    let ao_factor = -ao_amount.cast::<f32>() + 1.0;
+
+    Vec4::max(ao_factor, Vec4::splat(0.15))
 }

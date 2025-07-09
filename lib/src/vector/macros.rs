@@ -369,6 +369,26 @@ macro_rules! vector {
                     $($field: if self.$field < other.$field { self.$field } else { other.$field }),+
                 }
             }
+
+            #[inline]
+            pub fn div_euclid(self, other: Self) -> Self
+            where
+                $t: num::traits::Euclid
+            {
+                Self {
+                    $($field: self.$field.div_euclid(&other.$field)),+
+                }
+            }
+
+            #[inline]
+            pub fn rem_euclid(self, other: Self) -> Self
+            where
+                $t: num::traits::Euclid
+            {
+                Self {
+                    $($field: self.$field.rem_euclid(&other.$field)),+
+                }
+            }
         }
 
         impl<$t: num::traits::ConstZero> $name<$t> {

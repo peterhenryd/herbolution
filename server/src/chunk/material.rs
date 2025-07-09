@@ -2,12 +2,12 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::num::NonZeroU16;
 use std::slice::Iter;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 
 use hashbrown::{Equivalent, HashMap};
 use lib::color::Rgba;
-use lib::spatial::Faces;
+use lib::spatial::CubeFaces;
 use lib::util::GroupKeyBuf;
 use serde::{Deserialize, Serialize};
 
@@ -18,7 +18,7 @@ use crate::chunk::handle::ClientChunkHandle;
 pub struct Material {
     pub group_key: GroupKeyBuf,
     pub has_collider: bool,
-    pub cullable_faces: Faces,
+    pub cullable_faces: CubeFaces,
     pub texture: Texture,
     // time to break by hand in seconds
     pub toughness: f32,
@@ -29,7 +29,7 @@ impl Material {
         Self {
             group_key: GroupKeyBuf::new("herbolution", "stone"),
             has_collider: true,
-            cullable_faces: Faces::all(),
+            cullable_faces: CubeFaces::all(),
             texture: Texture::Colors {
                 vec: vec![Rgba::new(0.5, 0.5, 0.5, 1.0), Rgba::new(0.6, 0.6, 0.6, 1.0), Rgba::new(0.7, 0.7, 0.7, 1.0)],
             },
@@ -41,7 +41,7 @@ impl Material {
         Self {
             group_key: GroupKeyBuf::new("herbolution", "dirt"),
             has_collider: true,
-            cullable_faces: Faces::all(),
+            cullable_faces: CubeFaces::all(),
             texture: Texture::Colors {
                 vec: vec![Rgba::new(0.4, 0.3, 0.2, 1.0), Rgba::new(0.5, 0.4, 0.3, 1.0), Rgba::new(0.6, 0.5, 0.4, 1.0)],
             },
@@ -53,7 +53,7 @@ impl Material {
         Self {
             group_key: GroupKeyBuf::new("herbolution", "grass"),
             has_collider: true,
-            cullable_faces: Faces::all(),
+            cullable_faces: CubeFaces::all(),
             texture: Texture::Colors {
                 vec: vec![Rgba::new(0.1, 0.8, 0.1, 1.0), Rgba::new(0.2, 0.9, 0.2, 1.0), Rgba::new(0.3, 1.0, 0.3, 1.0)],
             },
@@ -107,7 +107,7 @@ impl Material {
 
         let encoded_0 = bytes.next()?;
         let has_collider = (encoded_0 >> 6) != 0;
-        let cullable_faces = Faces::from(encoded_0);
+        let cullable_faces = CubeFaces::from(encoded_0);
 
         let texture;
         match bytes.next()? {
@@ -234,9 +234,9 @@ impl PaletteMaterialId {
 pub trait PaletteMaterialOptionExt: Copy {
     fn using<T>(self, palette: &Palette, f: impl FnOnce(&Arc<Material>) -> T) -> Option<T>;
 
-    fn cullable_faces(self, palette: &Palette) -> Faces {
+    fn cullable_faces(self, palette: &Palette) -> CubeFaces {
         self.using(palette, |material| material.cullable_faces)
-            .unwrap_or(Faces::none())
+            .unwrap_or(CubeFaces::none())
     }
 }
 

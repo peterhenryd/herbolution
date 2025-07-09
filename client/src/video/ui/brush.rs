@@ -3,9 +3,10 @@ use crate::video::resource::{AtlasTextureCoord, Buffer, MeshId, SetId};
 use crate::video::ui::font::FontId;
 use crate::video::ui::vertex::Instance2d;
 use crate::video::ui::{Painter, RenderType};
+use lib::aabb::Aabb2;
 use lib::color::{ColorConsts, Rgba};
 use lib::rotation::Quat;
-use lib::size::{size2f, Size2};
+use lib::size::Size2;
 use lib::vector::vec2f;
 use wgpu::{BufferUsages, RenderPass};
 
@@ -46,9 +47,9 @@ impl<'h, 'f, 'a> Brush<'h, 'f, 'a> {
         self.render(self.painter.instance_sets.get(id));
     }
 
-    pub fn draw_rect(&mut self, position: vec2f, scale: size2f, color: Rgba<f32>) {
+    pub fn draw_rect(&mut self, bounds: Aabb2<f32>, color: Rgba<f32>) {
         self.quads
-            .push(Instance2d::new(position, Quat::IDENTITY, scale, color, AtlasTextureCoord::NONE));
+            .push(Instance2d::new(bounds.min, Quat::IDENTITY, bounds.size(), color, AtlasTextureCoord::NONE));
     }
 
     pub fn draw_text(&mut self, position: vec2f, text: &Text) {
@@ -76,14 +77,7 @@ impl<'h, 'f, 'a> Brush<'h, 'f, 'a> {
     }
 
     pub fn default_font_id(&self) -> FontId {
-        self.painter
-            .atlas
-            .font_coords
-            .iter()
-            .next()
-            .unwrap()
-            .0
-            .font_id
+        self.painter.default_font_id()
     }
 }
 
@@ -110,7 +104,7 @@ fn draw_mesh(pass: &mut RenderPass<'_>, buffer: &Buffer<Instance2d>, mesh_index_
     pass.draw_indexed(0..index_count, 0, 0..buffer.len() as u32);
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Text {
     pub font_id: FontId,
     pub content: String,

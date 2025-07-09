@@ -1,12 +1,13 @@
 use std::num::NonZeroU16;
-use std::ops::Sub;
+use std::ops::{Mul, Sub};
 
 use num::NumCast;
 use serde::{Deserialize, Serialize};
 use static_assertions::assert_eq_size;
 
 use crate::vector::macros::vector;
-use crate::vector::{Vec2, Vec4, vec3d, vec3f, vec3i, vec3u8};
+use crate::vector::{vec3d, vec3f, vec3i, vec3u8, Vec2, Vec4};
+
 // Vec3<T>
 
 vector! {
@@ -15,7 +16,7 @@ vector! {
         y(Y = 0, 1, 0): T,
         z(Z = 0, 0, 1): T,
     }
-    linearize(y, z, x)
+    linearize(z, y, x)
 }
 
 impl<T> Vec3<T> {
@@ -32,8 +33,8 @@ impl<T> Vec3<T> {
     #[inline]
     pub fn cross(self, rhs: Self) -> Self
     where
-        T: Copy + std::ops::Sub<Output = T>,
-        T: std::ops::Mul<Output = T>,
+        T: Copy + Sub<Output = T>,
+        T: Mul<Output = T>,
     {
         Self {
             x: self.y * rhs.z - self.z * rhs.y,

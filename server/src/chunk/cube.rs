@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Formatter};
 
-use lib::spatial::{Faces, PerFaceU5};
+use lib::spatial::{CubeFaces, PerFaceU5};
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -44,19 +44,19 @@ impl CubeFlags {
         Self { value: 0 }
     }
 
-    pub fn faces(&self) -> Faces {
+    pub fn faces(&self) -> CubeFaces {
         if self.value & 1 == 0 {
-            Faces::none()
+            CubeFaces::none()
         } else {
-            Faces::from((self.value >> 1) as u8)
+            CubeFaces::from((self.value >> 1) as u8)
         }
     }
 
-    pub fn insert_faces(&mut self, faces: impl Into<Faces>) {
+    pub fn insert_faces(&mut self, faces: impl Into<CubeFaces>) {
         self.set_opaque(self.faces() + faces.into())
     }
 
-    pub fn remove_faces(&mut self, faces: impl Into<Faces>) {
+    pub fn remove_faces(&mut self, faces: impl Into<CubeFaces>) {
         self.set_opaque(self.faces() - faces.into())
     }
 
@@ -76,7 +76,7 @@ impl CubeFlags {
     }
 
     #[inline]
-    pub fn set_opaque(&mut self, faces: Faces) {
+    pub fn set_opaque(&mut self, faces: CubeFaces) {
         self.value = (faces.bits() as u32) << 1 | 1;
     }
 

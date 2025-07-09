@@ -20,9 +20,9 @@ impl Vertex2d {
         array_stride: size_of::<Vertex2d>() as u64,
         step_mode: VertexStepMode::Vertex,
         attributes: &vertex_attr_array![
-            0 => Float32x2, // position
-            1 => Float32x2, // normal
-            2 => Float32x2, // uv
+            0 => Float32x2,
+            1 => Float32x2,
+            2 => Float32x2,
         ],
     };
 
@@ -54,10 +54,10 @@ impl Instance2d {
         array_stride: size_of::<Self>() as u64,
         step_mode: VertexStepMode::Instance,
         attributes: &vertex_attr_array![
-            3 => Float32x2, // model matrix column 0
-            4 => Float32x2, // model matrix column 1
-            5 => Float32x2, // model matrix column 2
-            6 => Float32x4, // color
+            3 => Float32x2,
+            4 => Float32x2,
+            5 => Float32x2,
+            6 => Float32x4,
             7 => Float32x2, // texture translation
             8 => Float32x2, // texture scale
         ],
