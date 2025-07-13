@@ -4,30 +4,26 @@ use server::player::handle::ServerPlayerHandle;
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
 
-/// The video-side representation of the player within the world.
 #[derive(Debug)]
 pub struct Player {
-    /// The channel used to receive updates from the behavior-side player.
     pub(crate) handle: Option<ServerPlayerHandle>,
-    /// The previous entity or cube the player was looking at.
+
     prev_target: Option<CubeTarget>,
-    /// The camera, positioned at the player's eye.
+
     pub(crate) camera: PlayerCamera,
     //prev_position: vec3f,
     //position: vec3f,
     //view_bob: f32,
-    /// The identifier for the GPU buffer containing the quads to be rendered as a wireframe when the player is targeting a cube.
     pub(crate) targeted_cube_wireframe_id: SetId,
     pub(crate) targeted_cube_shell_id: SetId,
-    /// The color of the sky box.
+
     sky_box_color: Rgba<f32>,
-    /// The identifier for the GPU buffer containing the quads of the sky box, which is rendered as a cube around the player.
+
     pub(crate) sky_box_id: SetId,
     pub(crate) health: Health,
 }
 
 impl Player {
-    /// Creates a new instance, while also sending a signal to the behavior-side server to create the player entity.
     pub fn create(sky_box_color: Rgba<f32>, video: &mut Video) -> Self {
         Self {
             handle: None,
@@ -47,7 +43,6 @@ impl Player {
         }
     }
 
-    /// Updates the player state.
     pub fn update(&mut self, ctx: &mut Update) {
         let Some(handle) = &mut self.handle else { return };
 
@@ -102,9 +97,9 @@ impl Player {
             Some(Some(ActionTarget::Entity(_))) => {}
             Some(None) => {
                 sets.get_mut(self.targeted_cube_wireframe_id)
-                    .set_len(0);
+                    .truncate(0);
                 sets.get_mut(self.targeted_cube_shell_id)
-                    .set_len(0);
+                    .truncate(0);
                 self.prev_target = None;
             }
             _ => {}
@@ -176,7 +171,7 @@ impl Player {
     }
 }
 
-fn cube(position: vec3d, color: Rgba<f32>) -> impl IntoIterator<Item = Instance3d> {
+fn cube(position: vec3f, color: Rgba<f32>) -> impl IntoIterator<Item = Instance3d> {
     CubeFace::values()
         .map(CubeFace::rotation)
         .map(move |rotation| Instance3d::new(position, rotation, Vec3::splat(1.0), color, 1, Vec4::ZERO))
@@ -187,8 +182,8 @@ use lib::proj::Perspective;
 use lib::rotation::Euler;
 use lib::size::size2u;
 use lib::spatial::CubeFace;
-use lib::vector::{vec3d, vec3i, vec3i8, Vec3, Vec4};
-use lib::world::{Health, CHUNK_LENGTH};
+use lib::vector::{vec3d, vec3f, vec3i8, Vec3, Vec4};
+use lib::world::Health;
 
 use crate::app::Update;
 use crate::video::camera::{VideoCamera, View};
@@ -197,18 +192,15 @@ use crate::video::world::{Instance3d, Sculptor};
 use crate::video::Video;
 use crate::world::frustum::Frustum;
 
-/// The camera with additional information used for culling and camera-relative rendering.
 #[derive(Debug)]
 pub struct PlayerCamera {
     pub(crate) position: vec3d,
     rotation: Euler<f32>,
     pub(crate) frustum: Frustum,
-    pub(crate) chunk_position: vec3i,
     perspective: Perspective,
 }
 
 impl PlayerCamera {
-    /// Creates a new instance.
     pub fn new(resolution: size2u, sculptor: &mut Sculptor) -> Self {
         let aspect = resolution.cast::<f32>().unwrap().aspect();
         let perspective = Perspective::new(70f32.to_radians(), aspect, 0.001, 500.0);
@@ -219,23 +211,19 @@ impl PlayerCamera {
             position: Vec3::ZERO,
             rotation: Euler::IDENTITY,
             frustum: Frustum::new(Mat4::IDENTITY),
-            chunk_position: vec3i::ZERO,
             perspective,
         }
     }
 
     #[inline]
     fn to_video_camera(&self) -> VideoCamera {
-        VideoCamera::new(self.position, View::Rotate { rotation: self.rotation }, self.perspective)
+        VideoCamera::new(self.position.cast(), View::Rotate { rotation: self.rotation }, self.perspective)
     }
 
-    /// Submits the camera to the video state and calculates a new frustum and chunk position.
     pub fn update(&mut self, video: &mut Video) {
         let video_camera = self.to_video_camera();
 
         video.sculptor.update_camera(&video_camera);
         self.frustum = Frustum::new(video_camera.view_proj);
-
-        self.chunk_position = self.position.cast() / CHUNK_LENGTH as i32;
     }
 }

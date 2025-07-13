@@ -7,7 +7,7 @@ use std::time::Duration;
 use lib::color::{Color, ColorConsts, Rgba};
 use lib::fs::Fs;
 use lib::save::Save;
-use lib::size::{size2u, Size2};
+use lib::size::{Size2, size2u};
 use lib::util::DeltaTime;
 use lib::vector::Vec2;
 use winit::application::ApplicationHandler;
@@ -22,28 +22,23 @@ use crate::input::{Input, InputFrame};
 use crate::menu::{Menu, MenuConfig};
 use crate::session::Session;
 use crate::video;
+use crate::video::Video;
 use crate::video::resource::SampleCount;
 use crate::video::ui::brush::Text;
-use crate::video::Video;
 
-/// An Herbolution application.
 pub struct App<'w> {
-    /// The data that persists through the entire duration of the program irrespective of the operating system or user directive.
     store: Store,
-    /// The state for the active portion of the application as determined by the user.
+
     state: State,
-    /// The suspended or resumed window and herbolution_engine as determined by the operating system.
+
     switch: Switch<'w>,
     init: bool,
 }
 
-/// Options for configuring an Herbolution application.
 pub struct Options {
-    /// The root directory path of the application. See [herbolution_lib::world::fs::Fs::new] for more details.
     pub root_dir: Option<PathBuf>,
 }
 
-/// A portable context frame that contains data for updating the application state.
 pub struct Update<'w, 'a> {
     pub store: &'a mut Store,
     pub window: &'a Window,
@@ -54,7 +49,6 @@ pub struct Update<'w, 'a> {
     pub input: InputFrame,
 }
 
-/// A portable context frame that contains data for rendering the application state.
 pub struct Render<'a> {
     pub store: &'a mut Store,
 
@@ -63,7 +57,6 @@ pub struct Render<'a> {
 }
 
 impl App<'_> {
-    /// Creates a new Herbolution application with the specified options.
     pub fn new(options: Options) -> Self {
         Self {
             store: Store::new(options.root_dir),
@@ -73,7 +66,6 @@ impl App<'_> {
         }
     }
 
-    /// Runs the Herbolution application with `winit`.
     pub fn run(&mut self) -> Result<(), EventLoopError> {
         EventLoop::new()?.run_app(self)
     }
@@ -203,9 +195,6 @@ impl ApplicationHandler for App<'_> {
     }
 }
 
-/// The data that persists through the entire duration of the application execution irrespective of the operating system or user directive.
-///
-/// This structure should only export data that is not dependent on the window, herbolution_engine, or navigation state.
 pub struct Store {
     pub(crate) input: Input,
     pub(crate) fs: Fs,
@@ -213,7 +202,6 @@ pub struct Store {
 }
 
 impl Store {
-    /// Creates a new instance with the specified file system root path.
     pub fn new(root_dir: Option<PathBuf>) -> Self {
         Self {
             input: Input::default(),
@@ -223,7 +211,6 @@ impl Store {
     }
 }
 
-/// A switch that allows the application to be resumed or suspended by the operating system gracefully.
 pub enum Switch<'w> {
     Resumed { window: Arc<Window>, video: Video<'w> },
     Suspended(Option<Arc<Window>>),
@@ -279,21 +266,16 @@ fn create_window(event_loop: &ActiveEventLoop) -> Arc<Window> {
     Arc::new(window)
 }
 
-/// The navigable state of the application. This structure uses the senses provided by the herbolution_engine and persistent data during the update phase to
-/// mutate itself for the following cycles.
 #[derive(Debug)]
 pub enum State {
-    /// The initial state of the application, where it is loading resources. A splash screen is rendering during this state. Upon completion, it transitions to
-    /// the title menu.
     Loading(Splash),
-    /// The state where the user is not actively playing, and is viewing and interacting with a given menu.
+
     Browsing(Menu),
-    /// The state where the user is playing the server. It also manages a potential overlay menu and has pause mechanics.
+
     Playing(Session),
 }
 
 impl State {
-    /// Updates the current state of the application using the provided context.
     pub fn update(&mut self, context: &mut Update) {
         let command = match self {
             State::Loading(splash) => splash.update(context),
@@ -326,7 +308,6 @@ impl State {
         }
     }
 
-    /// Renders the current state of the application using the provided context.
     pub fn render(&mut self, ctx: &mut Render) {
         match self {
             State::Loading(splash) => splash.render(ctx),
@@ -342,17 +323,13 @@ impl Default for State {
     }
 }
 
-/// A state configuration used to construct the next state of the application.
 #[derive(Debug, Clone)]
 pub enum Command {
-    /// Opens the specified menu.
     OpenMenu(MenuConfig),
-    /// Starts the server with the specified save.
-    StartGame {
-        save: Save,
-    },
+
+    StartGame { save: Save },
     PauseGame,
-    /// Exits the application.
+
     Exit,
 }
 

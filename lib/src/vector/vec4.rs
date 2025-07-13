@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::vector::macros::vector;
 use crate::vector::vec4u8;
-// Vec4<T>
 
 vector! {
     struct Vec4<T> {
@@ -65,8 +64,6 @@ impl<T> Vec4<T> {
         }
     }
 }
-
-// vec4u4
 
 #[repr(transparent)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Pod, Zeroable, Deserialize, Serialize)]

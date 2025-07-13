@@ -1,9 +1,11 @@
-use lib::aabb::Aabb3;
-use lib::rotation::Euler;
-use lib::vector::{vec3d, vec3f, Vec3};
 use std::f32::consts::FRAC_PI_2;
 use std::ops::{Add, Deref, DerefMut};
 use std::time::Duration;
+
+use lib::aabb::Aabb3;
+use lib::rotation::Euler;
+use lib::size::size3f;
+use lib::vector::{Vec3, vec3d, vec3f};
 
 use crate::chunk::map::ChunkMap;
 
@@ -17,7 +19,7 @@ pub struct EntityBody {
     position: vec3d,
     velocity: vec3d,
     rotation: Euler<f32>,
-    boundary: Boundary,
+    bounds: Bounds,
     pub(crate) motion: vec3f,
     is_on_ground: bool,
     near_colliders: Vec<Aabb3<f64>>,
@@ -34,12 +36,12 @@ pub struct EntityAttrs {
 }
 
 impl EntityBody {
-    pub fn new(position: vec3d, boundary: Boundary, attrs: EntityAttrs) -> Self {
+    pub fn new(position: vec3d, boundary: Bounds, attrs: EntityAttrs) -> Self {
         Self {
             position,
             velocity: Vec3::ZERO,
             rotation: Euler::IDENTITY,
-            boundary,
+            bounds: boundary,
             motion: Vec3::ZERO,
             is_on_ground: false,
             attrs,
@@ -159,11 +161,11 @@ impl EntityBody {
     }
 
     pub fn bounds(&self) -> Aabb3<f64> {
-        self.boundary.aabb.cast() + self.position
+        Aabb3::sized(self.position, self.bounds.size.cast())
     }
 
     pub fn eye_position(&self) -> vec3d {
-        self.position + self.boundary.eye_offset.cast()
+        self.position + self.bounds.eye_offset.cast()
     }
 
     pub fn position(&self) -> vec3d {
@@ -208,7 +210,7 @@ impl Drop for RotateEntity<'_> {
 }
 
 #[derive(Debug, Clone)]
-pub struct Boundary {
-    pub aabb: Aabb3<f32>,
+pub struct Bounds {
+    pub size: size3f,
     pub eye_offset: vec3f,
 }

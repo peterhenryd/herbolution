@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::{BufferDescriptor, BufferUsages};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Buffer<T> {
     inner: wgpu::Buffer,
     len: u64,
@@ -94,7 +94,7 @@ impl<T> Buffer<T> {
         &self.inner
     }
 
-    pub fn set_len(&mut self, new_len: u64) {
+    pub fn truncate(&mut self, new_len: u64) {
         if new_len < self.len {
             self.len = new_len;
         }
@@ -107,7 +107,7 @@ impl<'a, T> AsRef<Buffer<T>> for &'a Buffer<T> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct GrowBuffer<T> {
     buffer: Buffer<T>,
 }

@@ -1,12 +1,13 @@
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Sub};
 
-use crate::size::Size2;
-use crate::vector::{Vec2, Vec3};
 use bytemuck::Pod;
 use num::traits::real::Real;
 use num::traits::{ConstOne, ConstZero};
 use num::{Float, Num, NumCast, ToPrimitive};
+
+use crate::size::{Size2, Size3};
+use crate::vector::{Vec2, Vec3};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Aabb2<T> {
@@ -58,10 +59,23 @@ pub struct Aabb3<T> {
 }
 
 impl<T> Aabb3<T> {
+    #[inline]
     pub const fn new(min: Vec3<T>, max: Vec3<T>) -> Self {
         Self { min, max }
     }
 
+    #[inline]
+    pub fn sized(position: Vec3<T>, size: Size3<T>) -> Self
+    where
+        T: Copy + Add<Output = T>,
+    {
+        Self {
+            min: position,
+            max: position + size.to_vec3(),
+        }
+    }
+
+    #[inline]
     pub fn cube(position: Vec3<T>) -> Self
     where
         T: Copy + ConstOne + Add<Output = T>,

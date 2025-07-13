@@ -2,12 +2,10 @@ use lib::matrix::{Mat4, mat4f};
 use lib::spatial::Plane;
 use lib::vector::{Vec3, vec3f};
 
-/// A frustum used for culling objects that are outside the camera's view volume.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Frustum([Plane<f32>; 6]);
 
 impl Frustum {
-    /// Creates a new frustum from the provided view-projection matrix.
     pub fn new(view_proj: mat4f) -> Self {
         let Mat4 { x, y, z, w } = view_proj;
 
@@ -21,7 +19,6 @@ impl Frustum {
         Self([near, far, left, right, top, bottom].map(Plane::normalize))
     }
 
-    /// Checks if the frustum contains a cube at the specified origin with the given size.
     pub fn contains_cube(&self, origin: vec3f, size: f32) -> bool {
         let origin = origin * size;
         let center = origin + Vec3::splat(size / 2.0);

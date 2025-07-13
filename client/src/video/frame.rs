@@ -7,7 +7,6 @@ use crate::video::gpu;
 use crate::video::gpu::SurfaceTexture;
 use crate::video::resource::{SampleCount, Texture};
 
-/// A specialized command encoder for rendering to a surface with automatic queue submission and texture presentation.
 pub struct Frame<'h> {
     pub handle: &'h gpu::Handle,
     state: Option<State>,

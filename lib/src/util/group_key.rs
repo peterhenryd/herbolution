@@ -53,36 +53,6 @@ impl Display for GroupKey {
 pub struct GroupKeyBuf(Box<GroupKey>);
 
 impl GroupKeyBuf {
-    /*
-    pub fn from_string(string: String) -> Option<Self> {
-        let sep = string.find(':')?;
-        let hash = hash_meta(&string[..sep], &string[sep + 1..]);
-
-        Some(unsafe { Self::from_string_unchecked(hash, sep, string) })
-    }
-
-    pub fn from_string_unchecked(hash: u64, sep: usize, mut string: String) -> Self {
-        let len = string.len();
-        let (layout, meta_offset, str_offset) = layout(len);
-
-        let ptr = realloc(string.as_mut_ptr(), old_layout, layout.size());
-        if ptr.is_null() {
-            handle_alloc_error(layout);
-        }
-
-        ptr::copy(ptr, ptr.add(str_offset), len);
-
-        unsafe {
-            ptr.cast::<u64>().write(hash);
-            ptr.add(meta_offset).cast::<usize>().write(sep);
-        }
-
-        forget(string);
-
-        Self(unsafe { Box::from_raw(ptr::from_raw_parts_mut(ptr, len)) })
-    }
-     */
-
     pub fn new(group: &str, key: &str) -> Self {
         let sep = group.len();
         let len = sep + key.len() + 1;
@@ -105,8 +75,6 @@ impl GroupKeyBuf {
 
         Self(unsafe { Box::from_raw(ptr::from_raw_parts_mut(ptr, len)) })
     }
-
-    // TODO(a): add constructor that moves String instead of allocating
 }
 
 impl Hash for GroupKeyBuf {
@@ -148,7 +116,6 @@ impl<'de> Deserialize<'de> for GroupKeyBuf {
     {
         let De { sep, string } = De::deserialize(deserializer)?;
 
-        // TODO: remove unnecessary allocation, see TODO(a)
         Ok(Self::new(&string[..sep], &string[sep + 1..]))
     }
 }
@@ -176,14 +143,14 @@ impl Borrow<str> for GroupKeyBuf {
     }
 }
 
-#[derive(Deserialize)]
-struct De {
-    sep: usize,
-    string: String,
-}
-
 #[derive(Serialize)]
 struct Ser<'a> {
     sep: usize,
     str: &'a str,
+}
+
+#[derive(Deserialize)]
+struct De {
+    sep: usize,
+    string: String,
 }

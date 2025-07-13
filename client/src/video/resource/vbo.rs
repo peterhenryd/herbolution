@@ -2,7 +2,6 @@ use std::fmt::Debug;
 use std::fs::read_to_string;
 use std::path::Path;
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::LazyLock;
 
 use crate::video::gpu;
 use crate::video::resource::Buffer;
@@ -10,6 +9,49 @@ use bytemuck::NoUninit;
 use lib::vector::{vec2f, vec3f};
 use serde::{Deserialize, Serialize};
 use wgpu::{BufferUsages, IndexFormat};
+
+static MESHES_ID_COUNTER: AtomicU32 = AtomicU32::new(0);
+static SETS_ID_COUNTER: AtomicU32 = AtomicU32::new(0);
+
+pub trait Index: NoUninit {
+    const FORMAT: IndexFormat;
+
+    fn new_u16(value: u16) -> Self;
+}
+
+impl Index for u16 {
+    const FORMAT: IndexFormat = IndexFormat::Uint16;
+
+    fn new_u16(value: u16) -> Self {
+        value
+    }
+}
+
+impl Index for u32 {
+    const FORMAT: IndexFormat = IndexFormat::Uint32;
+
+    fn new_u16(value: u16) -> Self {
+        value as u32
+    }
+}
+
+pub trait Vertex: NoUninit {
+    fn new_3d(position: vec3f, normal: vec3f, uv: vec2f) -> Self;
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct MeshId {
+    parent_id: u32,
+    index: usize,
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct SetId {
+    parent_id: u32,
+    index: usize,
+}
+
+// Mesh
 
 #[derive(Debug)]
 pub struct Mesh<V, I> {
@@ -88,7 +130,7 @@ impl<V, I> Mesh<V, I> {
     }
 }
 
-static MESHES_ID_COUNTER: LazyLock<AtomicU32> = LazyLock::new(|| AtomicU32::new(0));
+// Meshes
 
 #[derive(Debug)]
 pub struct Meshes<V, I = u16> {
@@ -138,38 +180,6 @@ impl<V, I> Meshes<V, I> {
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub struct MeshId {
-    parent_id: u32,
-    index: usize,
-}
-
-pub trait Index: NoUninit {
-    const FORMAT: IndexFormat;
-
-    fn new_u16(value: u16) -> Self;
-}
-
-impl Index for u16 {
-    const FORMAT: IndexFormat = IndexFormat::Uint16;
-
-    fn new_u16(value: u16) -> Self {
-        value
-    }
-}
-
-impl Index for u32 {
-    const FORMAT: IndexFormat = IndexFormat::Uint32;
-
-    fn new_u16(value: u16) -> Self {
-        value as u32
-    }
-}
-
-pub trait Vertex: NoUninit {
-    fn new_3d(position: vec3f, normal: vec3f, uv: vec2f) -> Self;
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 struct TomlMeshFile {
     mesh: TomlMesh,
@@ -183,7 +193,7 @@ struct TomlMesh {
     indices: Vec<u16>,
 }
 
-static ID_COUNTER: AtomicU32 = AtomicU32::new(0);
+// Sets
 
 #[derive(Debug)]
 pub struct Sets<I> {
@@ -197,7 +207,7 @@ impl<I> Sets<I> {
         Self {
             handle: gpu::Handle::clone(gpu),
             buffers: Vec::new(),
-            id: ID_COUNTER.fetch_add(1, Ordering::Relaxed),
+            id: SETS_ID_COUNTER.fetch_add(1, Ordering::Relaxed),
         }
     }
 
@@ -252,10 +262,4 @@ impl<I> Sets<I> {
         debug_assert!(id.parent_id == self.id, "InstanceSetId does not belong to this InstanceSets instance");
         &mut self.buffers[id.index]
     }
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub struct SetId {
-    parent_id: u32,
-    index: usize,
 }

@@ -11,13 +11,13 @@ extern crate herbolution_lib as lib;
 use std::thread;
 
 use hashbrown::HashMap;
-use lib::aabb::Aabb3;
 use lib::save::Save;
+use lib::size::Size3;
 use lib::util::DeltaTime;
 use lib::vector::Vec3;
 
 use crate::entity::behavior::EntityBehaviors;
-use crate::entity::body::{Boundary, EntityAttrs, EntityBody};
+use crate::entity::body::{Bounds, EntityAttrs, EntityBody};
 use crate::entity::components::ChunkLoader;
 use crate::entity::{Entity, EntityData};
 use crate::handle::{ClientHandle, GameHandle};
@@ -74,15 +74,15 @@ impl Game {
         world.entity_set.add(Entity {
             data: EntityData {
                 body: EntityBody::new(
-                    Vec3::new(0., 256., 0.0),
-                    Boundary {
-                        aabb: Aabb3::new(Vec3::ZERO, Vec3::new(0.9, 1.9, 0.9)),
+                    Vec3::new(0., 96., 0.0),
+                    Bounds {
+                        size: Size3::new(0.9, 1.9, 0.9),
                         eye_offset: Vec3::new(0., 1.0, 0.),
                     },
                     EntityAttrs {
-                        has_gravity: true,
+                        has_gravity: false,
                         acceleration_rate: 20.0,
-                        terminal_velocity: 50.0,
+                        terminal_velocity: 100.0,
                     },
                 ),
             },

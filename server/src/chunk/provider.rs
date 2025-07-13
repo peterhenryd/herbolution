@@ -57,9 +57,7 @@ impl ChunkProvider {
     }
 
     pub fn dequeue(&self) -> Chain<TryIter<'_, CubeMesh>, TryIter<'_, CubeMesh>> {
-        self.generator
-            .dequeue()
-            .chain(self.reader.rx.try_iter())
+        Iterator::chain(self.reader.rx.try_iter(), self.generator.dequeue())
     }
 }
 

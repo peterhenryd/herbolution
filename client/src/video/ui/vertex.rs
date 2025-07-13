@@ -1,11 +1,12 @@
-use crate::video::resource::{AtlasTextureCoord, Vertex};
 use bytemuck::{Pod, Zeroable};
 use lib::color::Rgba;
 use lib::matrix::Mat3;
 use lib::rotation::Quat;
 use lib::size::size2f;
 use lib::vector::{vec2f, vec3f};
-use wgpu::{vertex_attr_array, VertexBufferLayout, VertexStepMode};
+use wgpu::{VertexBufferLayout, VertexStepMode, vertex_attr_array};
+
+use crate::video::resource::{AtlasTextureCoord, Vertex};
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Pod, Zeroable)]

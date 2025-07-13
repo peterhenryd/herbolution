@@ -2,29 +2,36 @@ use std::collections::HashMap;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::mem::take;
 use std::ops::Mul;
+use std::sync::Arc;
+
+use fastrand::Rng;
+use lib::aabb::Aabb3;
+use lib::collections::Mailbox;
+use lib::point::ChunkPt;
+use lib::spatial::{CubeFace, PerFace};
+use lib::vector::{vec3i, vec3u5, Vec3, Vec4};
+use lib::world::{CHUNK_LENGTH, CHUNK_VOLUME};
+use parking_lot::{RwLock, RwLockReadGuard};
+use server::chunk::cube::Cube;
+use server::chunk::handle::{ChunkCube, GameChunkHandle};
+use server::chunk::material::{Palette, PaletteCube};
+use wgpu::BufferUsages;
 
 use crate::video::gpu;
 use crate::video::resource::GrowBuffer;
 use crate::video::world::chisel::Chisel;
 use crate::video::world::Instance3d;
 use crate::world::player::PlayerCamera;
-use fastrand::Rng;
-use lib::aabb::Aabb3;
-use lib::point::ChunkPt;
-use lib::spatial::{CubeFace, PerFace};
-use lib::vector::{vec3i, vec3u5, Vec3, Vec4};
-use lib::world::{CHUNK_LENGTH, CHUNK_VOLUME};
-use server::chunk::cube::Cube;
-use server::chunk::handle::{ChunkCube, GameChunkHandle};
-use server::chunk::material::{Palette, PaletteCube};
-use wgpu::BufferUsages;
 
-type ChunkShell<'a> = [Option<&'a Chunk>; 27];
+type ChunkShell = [Option<Arc<RwLock<ChunkData>>>; 27];
+
+type ChunkShellGuard<'a> = [Option<RwLockReadGuard<'a, ChunkData>>; 27];
 
 #[derive(Debug)]
 pub struct ChunkMap {
     pub(crate) map: HashMap<ChunkPt, Chunk>,
     remesh_queue: Vec<(ChunkPt, Vec<Instance3d>)>,
+    mesh_return: Mailbox<(ChunkPt, Vec<Instance3d>)>,
 }
 
 impl ChunkMap {
@@ -32,10 +39,17 @@ impl ChunkMap {
         Self {
             map: HashMap::new(),
             remesh_queue: vec![],
+            mesh_return: Mailbox::default(),
         }
     }
 
     pub fn update(&mut self, handle: &gpu::Handle) {
+        for (position, instances) in &self.mesh_return {
+            if let Some(chunk) = self.map.get_mut(&position) {
+                chunk.submit_mesh(handle, instances);
+            }
+        }
+
         self.remesh_queue.clear();
         for (position, chunk) in &mut self.map {
             let updated = chunk.apply_updates_from_server();
@@ -43,18 +57,20 @@ impl ChunkMap {
                 continue;
             }
 
+            chunk.cached_quad_instances.clear();
             let instances = take(&mut chunk.cached_quad_instances);
             self.remesh_queue.push((*position, instances));
         }
 
         for (chunk_position, mut instances) in self.remesh_queue.drain(..) {
+            let return_tx = self.mesh_return.sender();
             let chunk_shell = create_chunk_shell(&self.map, chunk_position);
-            generate_mesh(&chunk_shell, &mut instances);
 
-            self.map
-                .get_mut(&chunk_position)
-                .unwrap()
-                .submit_mesh(handle, instances);
+            rayon::spawn(move || {
+                generate_mesh(&chunk_shell, &mut instances);
+
+                let _ = return_tx.send((chunk_position, instances));
+            })
         }
     }
 
@@ -65,7 +81,6 @@ impl ChunkMap {
     }
 }
 
-// TODO: reimplement multi-threaded chunk meshing
 // TODO: cache neighboring cube solidity for ao calculations instead of querying 26 neighbors every time
 
 #[derive(Debug)]
@@ -73,8 +88,14 @@ pub struct Chunk {
     position: ChunkPt,
     handle: GameChunkHandle,
     cached_quad_instances: Vec<Instance3d>,
-    data: Box<[PaletteCube; CHUNK_VOLUME]>,
     mesh: GrowBuffer<Instance3d>,
+    data: Arc<RwLock<ChunkData>>,
+}
+
+#[derive(Debug)]
+struct ChunkData {
+    position: ChunkPt,
+    cubes: Box<[PaletteCube; CHUNK_VOLUME]>,
     palette: Palette,
 }
 
@@ -86,18 +107,19 @@ impl Chunk {
             position,
             handle,
             cached_quad_instances: vec![],
-            data: Box::new([Cube::new(None); CHUNK_VOLUME]),
+            data: Arc::new(RwLock::new(ChunkData {
+                position,
+                cubes: Box::new([Cube::new(None); CHUNK_VOLUME]),
+                palette: Palette::new(),
+            })),
             mesh,
-            palette: Palette::new(),
         }
     }
 
     pub fn render(&self, camera: &PlayerCamera, chisel: &mut Chisel) {
-        let chunk = self.position.0 - camera.chunk_position;
-
         if !camera
             .frustum
-            .contains_cube(chunk.cast(), CHUNK_LENGTH as f32)
+            .contains_cube(self.position.0.cast(), CHUNK_LENGTH as f32)
         {
             return;
         }
@@ -110,18 +132,22 @@ impl Chunk {
     }
 
     fn apply_updates_from_server(&mut self) -> bool {
-        let updated = !self.handle.cube_update.is_empty();
+        if self.handle.cube_update.is_empty() {
+            return false;
+        }
+
+        let mut data = self.data.write();
         while let Some(update) = self.handle.next_cube_update() {
             for ChunkCube { position, cube } in update.overwrites {
-                self.data[position.linearize()] = cube;
+                data.cubes[position.linearize()] = cube;
             }
         }
 
         while let Some(update) = self.handle.next_palette_update() {
-            self.palette.insert(update.material);
+            data.palette.insert(update.material);
         }
 
-        updated
+        true
     }
 
     fn submit_mesh(&mut self, handle: &gpu::Handle, instances: Vec<Instance3d>) {
@@ -131,15 +157,21 @@ impl Chunk {
     }
 }
 
-fn create_chunk_shell(map: &HashMap<ChunkPt, Chunk>, position: ChunkPt) -> ChunkShell<'_> {
-    let mut shell = [None; 27];
+fn create_chunk_shell(map: &HashMap<ChunkPt, Chunk>, position: ChunkPt) -> ChunkShell {
+    let mut shell = [const { None }; 27];
 
     let mut i = 0;
     for x in -1..=1 {
         for y in -1..=1 {
             for z in -1..=1 {
                 let pt = position + Vec3::new(x, y, z);
-                shell[i] = map.get(&pt);
+
+                let Some(chunk) = map.get(&pt) else {
+                    i += 1;
+                    continue;
+                };
+
+                shell[i] = Some(chunk.data.clone());
                 i += 1;
             }
         }
@@ -149,9 +181,8 @@ fn create_chunk_shell(map: &HashMap<ChunkPt, Chunk>, position: ChunkPt) -> Chunk
 }
 
 fn generate_mesh(shell: &ChunkShell, instances: &mut Vec<Instance3d>) {
-    let Some(center_chunk) = shell[13] else {
-        return;
-    };
+    let center_chunk = shell[13].as_ref().unwrap();
+    let center_chunk = center_chunk.read();
 
     let mut hasher = DefaultHasher::new();
     center_chunk.position.hash(&mut hasher);
@@ -161,15 +192,20 @@ fn generate_mesh(shell: &ChunkShell, instances: &mut Vec<Instance3d>) {
         .position
         .0
         .mul(CHUNK_LENGTH as i32)
-        .cast::<f64>();
+        .cast::<f32>();
+
+    let shell_guard = shell
+        .each_ref()
+        .map(|chunk| chunk.as_ref().map(|x| x.read()));
 
     let (mut cached_material, mut prev_material_id) = (None, None);
     for x in 0..CHUNK_LENGTH {
         for z in 0..CHUNK_LENGTH {
             for y in 0..CHUNK_LENGTH {
                 let position = vec3u5::new(x as u8, y as u8, z as u8);
-                let cube = center_chunk.data[position.linearize()];
+                let cube = center_chunk.cubes[position.linearize()];
 
+                let perms = PerFace::mapped(|_| rng.f32());
                 if let Some(material_id) = cube.material {
                     if Some(material_id) != prev_material_id {
                         prev_material_id = Some(material_id);
@@ -181,18 +217,10 @@ fn generate_mesh(shell: &ChunkShell, instances: &mut Vec<Instance3d>) {
                     };
 
                     for face in cube.flags.faces() {
-                        let perms = PerFace::mapped(|_| rng.f32());
                         let color = material.get_color(perms[face]);
-                        let ao = facial_ao(shell, face, position.cast());
+                        let ao = facial_ao(&shell_guard, face, position.cast());
 
-                        instances.push(Instance3d::new(
-                            chunk_position + position.cast::<f64>(),
-                            face.rotation(),
-                            Vec3::ONE,
-                            color,
-                            0,
-                            ao,
-                        ));
+                        instances.push(Instance3d::new(chunk_position + position.cast(), face.rotation(), Vec3::ONE, color, 0, ao));
                     }
                 }
             }
@@ -200,7 +228,7 @@ fn generate_mesh(shell: &ChunkShell, instances: &mut Vec<Instance3d>) {
     }
 }
 
-fn is_cube_present(shell: &ChunkShell, position: vec3i) -> bool {
+fn is_cube_present(shell: &ChunkShellGuard, position: vec3i) -> bool {
     let chunk_offset = position.div_euclid(Vec3::splat(CHUNK_LENGTH as i32));
 
     if !Aabb3::new(-Vec3::ONE, Vec3::ONE).contains(chunk_offset) {
@@ -208,7 +236,7 @@ fn is_cube_present(shell: &ChunkShell, position: vec3i) -> bool {
     }
 
     let index = (chunk_offset + 1).linearize(3) as usize;
-    let Some(target_chunk) = shell[index] else {
+    let Some(target_chunk) = &shell[index] else {
         return false;
     };
 
@@ -221,7 +249,7 @@ fn is_cube_present(shell: &ChunkShell, position: vec3i) -> bool {
         return false;
     };
 
-    target_chunk.data[local_position.linearize()]
+    target_chunk.cubes[local_position.linearize()]
         .material
         .is_some()
 }
@@ -230,7 +258,7 @@ fn vertex_ao(s1: bool, s2: bool, c: bool) -> u8 {
     if s1 && s2 { 3 } else { s1 as u8 + s2 as u8 + c as u8 }
 }
 
-fn facial_ao(shell: &ChunkShell, face: CubeFace, position: vec3i) -> Vec4<f32> {
+fn facial_ao(shell: &ChunkShellGuard, face: CubeFace, position: vec3i) -> Vec4<f32> {
     let (u, v, n) = face.orthonormal_basis();
 
     let tl = is_cube_present(shell, position + n - v - u);

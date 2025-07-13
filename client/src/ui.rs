@@ -1,12 +1,13 @@
-use crate::app::{Render, Update};
-use crate::input::ClickEvent;
-use crate::video::ui::brush::Text;
-use crate::video::ui::Painter;
 use lib::aabb::Aabb2;
 use lib::color::Rgba;
-use lib::size::{size2f, Size2};
-use lib::vector::{vec2f, Vec2};
+use lib::size::{Size2, size2f};
+use lib::vector::{Vec2, vec2f};
 use winit::event::MouseButton;
+
+use crate::app::Render;
+use crate::input::{ClickEvent, InputFrame};
+use crate::video::ui::Painter;
+use crate::video::ui::brush::Text;
 
 #[derive(Debug)]
 pub struct Ui {
@@ -27,7 +28,7 @@ impl Ui {
         }
     }
 
-    pub fn events(&mut self, ctx: &mut Update) -> &[UiEvent] {
+    pub fn events(&mut self, input: &InputFrame) -> &[UiEvent] {
         self.events.clear();
 
         for (index, node) in self.nodes.iter().enumerate() {
@@ -36,7 +37,7 @@ impl Ui {
                     for &ClickEvent {
                         button: mouse_button,
                         position,
-                    } in &ctx.input.click_events
+                    } in &input.click_events
                     {
                         if !button.bounds.contains(position.cast()) {
                             continue;

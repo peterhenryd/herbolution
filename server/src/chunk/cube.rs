@@ -24,15 +24,6 @@ impl<M: Default> Default for Cube<M> {
     }
 }
 
-/// For cubes with any amount of translucency, this value is used to encode the amount of light
-/// each face of the cube should let through as a 5-bit value (allowing for 32 light levels).
-///
-/// For opaque cubes, this value is used to encode the number of faces that should be rendered,
-/// only requiring 6 bits in total as each facial rendering query only requires a boolean value.
-/// In the future, more information may be encoded here for other purposes.
-///
-/// To avoid repetitive queries of the material palette, the first bit of this value designates
-/// whether the cube is translucent (0) or opaque (1).
 #[repr(transparent)]
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct CubeFlags {

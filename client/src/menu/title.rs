@@ -1,14 +1,15 @@
-use crate::app::{Command, Render, Update};
-use crate::menu::MenuConfig;
-use crate::ui::{Button, ButtonId, LayoutDirection, Ui, UiEvent};
-use crate::video::ui::brush::Text;
-use crate::video::ui::Painter;
+use std::random::random;
+
 use lib::color::{Color, ColorConsts, Rgba};
 use lib::save::{SaveAttributes, WorldAttributes, WorldDescriptor};
 use lib::size::Size2;
-use std::random::random;
 
-/// The title menu, where the user can view information about the server, navigate to other menus, or quit the application.
+use crate::app::{Command, Render, Update};
+use crate::menu::MenuConfig;
+use crate::ui::{Button, ButtonId, LayoutDirection, Ui, UiEvent};
+use crate::video::ui::Painter;
+use crate::video::ui::brush::Text;
+
 #[derive(Debug)]
 pub struct TitleMenu {
     ui: Ui,
@@ -18,7 +19,6 @@ pub struct TitleMenu {
 }
 
 impl TitleMenu {
-    /// Creates a new instance of the title menu.
     pub fn new(painter: &Painter) -> Self {
         let font_id = painter.default_font_id();
 
@@ -28,7 +28,7 @@ impl TitleMenu {
         Self {
             ui: Ui::build(painter)
                 .with_background_color(Rgba::from_rgb(1.0, 0.0, 0.0))
-                .with_padding(Size2::new(64., 64.))
+                .with_padding(Size2::new(128., 128.))
                 .with_gap(16.)
                 .with_layout_direction(LayoutDirection::Column)
                 .with_text(Text {
@@ -83,12 +83,11 @@ impl TitleMenu {
         }
     }
 
-    /// Updates the title menu state.
     pub fn update(&mut self, ctx: &mut Update) -> Option<Command> {
         let mut command = None;
-        for event in self.ui.events(ctx) {
+        for event in self.ui.events(&ctx.input) {
             command = match event {
-                &UiEvent::Clicked(id) if id == self.play_button_id => Self::press_play(ctx),
+                &UiEvent::Clicked(id) if id == self.play_button_id => play_button_pressed(ctx),
                 &UiEvent::Clicked(id) if id == self.options_button_id => Some(Command::OpenMenu(MenuConfig::Options)),
                 &UiEvent::Clicked(id) if id == self.quit_button_id => Some(Command::Exit),
                 _ => continue,
@@ -98,30 +97,29 @@ impl TitleMenu {
         command
     }
 
-    fn press_play(ctx: &Update) -> Option<Command> {
-        let save = ctx
-            .store
-            .fs
-            .create_or_open_save(
-                "default",
-                SaveAttributes {
-                    title: "Default".to_string(),
-                    default_world: WorldAttributes {
-                        name: "world".to_string(),
-                        descriptor: WorldDescriptor {
-                            title: "Overworld".to_string(),
-                            seed: random(),
-                        },
-                    },
-                },
-            )
-            .unwrap();
-
-        Some(Command::StartGame { save })
-    }
-
-    /// Renders the title menu.
-    pub fn render<'t>(&'t mut self, ctx: &mut Render) {
+    pub fn render(&mut self, ctx: &mut Render) {
         self.ui.render(ctx);
     }
+}
+
+fn play_button_pressed(ctx: &Update) -> Option<Command> {
+    let save = ctx
+        .store
+        .fs
+        .create_or_open_save(
+            "default",
+            SaveAttributes {
+                title: "Default".to_string(),
+                default_world: WorldAttributes {
+                    name: "world".to_string(),
+                    descriptor: WorldDescriptor {
+                        title: "Overworld".to_string(),
+                        seed: random(),
+                    },
+                },
+            },
+        )
+        .unwrap();
+
+    Some(Command::StartGame { save })
 }

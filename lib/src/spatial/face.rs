@@ -9,8 +9,6 @@ use serde::{Deserialize, Serialize};
 use crate::rotation::{Euler, Quat};
 use crate::vector::{vec3i, vec3u5, Vec3};
 
-// Face
-
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]
 pub enum CubeFace {

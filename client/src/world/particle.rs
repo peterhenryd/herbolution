@@ -1,15 +1,15 @@
 use std::time::Duration;
 
 use lib::rotation::Quat;
-use lib::vector::{vec3d, Vec3, Vec4};
+use lib::vector::{Vec3, Vec4, vec3d};
 use server::handle::{GameHandle, Particle};
 use wgpu::BufferUsages;
 
 use crate::app::Update;
 use crate::video::gpu;
 use crate::video::resource::GrowBuffer;
-use crate::video::world::chisel::Chisel;
 use crate::video::world::Instance3d;
+use crate::video::world::chisel::Chisel;
 
 #[derive(Debug)]
 pub struct Particles {
@@ -55,7 +55,7 @@ pub fn update_particle(particle: &mut Particle, ctx: &mut Update, mut camera_pos
         .simulate(&mut particle.position, ctx.dt);
 
     Instance3d::new(
-        particle.position,
+        particle.position.cast(),
         particle.rotation.unwrap_or_else(|| {
             camera_position.y = particle.position.y;
             let dir = (particle.position - camera_position)

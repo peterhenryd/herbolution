@@ -4,17 +4,22 @@ use crate::menu::play::PlayMenu;
 use crate::menu::title::TitleMenu;
 use crate::video::ui::Painter;
 
-pub mod config;
 pub mod options;
 pub mod play;
 pub mod title;
 
-/// The active menu state of the application.
 #[derive(Debug)]
 pub enum Menu {
     Title(TitleMenu),
     Options(OptionsMenu),
     Play(PlayMenu),
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum MenuConfig {
+    Title,
+    Options,
+    Play,
 }
 
 impl Menu {
@@ -26,16 +31,14 @@ impl Menu {
         }
     }
 
-    /// Updates the active menu state using the provided context.
-    pub fn update(&mut self, context: &mut Update) -> Option<Command> {
+    pub fn update(&mut self, ctx: &mut Update) -> Option<Command> {
         match self {
-            Menu::Title(x) => x.update(context),
-            Menu::Options(x) => x.update(context),
-            Menu::Play(x) => x.update(context),
+            Menu::Title(x) => x.update(ctx),
+            Menu::Options(x) => x.update(ctx),
+            Menu::Play(x) => x.update(ctx),
         }
     }
 
-    /// Renders the active menu using the provided context.
     pub fn render<'t>(&'t mut self, ctx: &mut Render) {
         match self {
             Menu::Title(x) => x.render(ctx),
@@ -43,30 +46,4 @@ impl Menu {
             Menu::Play(x) => x.render(ctx),
         }
     }
-}
-
-impl From<TitleMenu> for Menu {
-    fn from(menu: TitleMenu) -> Self {
-        Menu::Title(menu)
-    }
-}
-
-impl From<OptionsMenu> for Menu {
-    fn from(menu: OptionsMenu) -> Self {
-        Menu::Options(menu)
-    }
-}
-
-impl From<PlayMenu> for Menu {
-    fn from(menu: PlayMenu) -> Self {
-        Menu::Play(menu)
-    }
-}
-
-/// A menu configuration used to construct a given menu with the provided options.
-#[derive(Debug, Clone)]
-pub enum MenuConfig {
-    Title,
-    Options,
-    Play,
 }

@@ -2,7 +2,6 @@ use std::fmt::{Debug, Formatter};
 use std::hint::unreachable_unchecked;
 use std::mem::{replace, MaybeUninit};
 
-/// An append-only mutable octree structure.
 pub struct Octree<T> {
     values: Vec<MaybeUninit<T>>,
     nodes: Vec<Node>,

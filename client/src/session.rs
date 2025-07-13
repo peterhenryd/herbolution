@@ -1,25 +1,25 @@
 use std::path::Path;
 use std::time::Duration;
 
-use crate::app::{Command, Render, Update};
-use crate::video::resource::{Mesh, MeshId, Meshes};
-use crate::video::ui::brush::{Brush, Text};
-use crate::video::world::Vertex3d;
-use crate::video::{world, Video};
-use crate::world::World;
 use lib::aabb::Aabb2;
 use lib::color::{Color, ColorConsts, Rgba};
 use lib::save::Save;
-use lib::size::{size2u, Size2};
+use lib::size::{Size2, size2u};
 use lib::util::IntervalCounter;
-use lib::vector::{vec3d, Vec2};
+use lib::vector::{Vec2, vec3d};
 use server::handle::GameHandle;
 use server::{Game, Options};
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
 use winit::window::CursorGrabMode;
 
-/// The render-side representation of a herbolution_game session.
+use crate::app::{Command, Render, Update};
+use crate::video::resource::{Mesh, MeshId, Meshes};
+use crate::video::ui::brush::{Brush, Text};
+use crate::video::world::Vertex3d;
+use crate::video::{Video, world};
+use crate::world::World;
+
 #[derive(Debug)]
 pub struct Session {
     world: World,
@@ -34,7 +34,6 @@ pub struct Session {
 }
 
 impl Session {
-    /// Creates a new instance, and spawns an associated behavior-side herbolution_game.
     pub fn create(save: Save, video: &mut Video, assets_path: &Path) -> Self {
         let handle = Game::spawn(Options { save });
 
@@ -49,7 +48,6 @@ impl Session {
         }
     }
 
-    /// Updates the herbolution_game session state, processing input and updating the player and world.
     pub fn update(&mut self, ctx: &mut Update) -> Option<Command> {
         self.fps.update(ctx.dt);
 
@@ -79,7 +77,6 @@ impl Session {
         None
     }
 
-    /// Renders the herbolution_game.
     pub fn render(&mut self, ctx: &mut Render) {
         {
             let mut chisel = ctx.frame.draw_3d(world::RenderType::Sky);
@@ -141,7 +138,6 @@ impl Session {
 
     pub fn set_resolution(&mut self, _: size2u) {}
 
-    /// Sends a signal to the behavior-side herbolution_game to exit.
     pub fn exit(&mut self) {
         self.handle.request_exit();
     }
@@ -211,7 +207,6 @@ impl Debugger {
     }
 }
 
-/// A utility structure that holds the mesh handles used for rendering the server.
 #[derive(Debug)]
 pub struct MeshIds {
     pub(crate) solid_quad: MeshId,

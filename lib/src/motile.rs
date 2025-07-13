@@ -2,7 +2,6 @@ use std::time::Duration;
 
 use crate::vector::{Vec3, vec3d};
 
-/// Simulates the motion of a body in 3D space over steps of time.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Motile {
     pub velocity: vec3d,

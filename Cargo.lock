@@ -860,6 +860,7 @@ dependencies = [
  "herbolution_server",
  "image",
  "image-atlas",
+ "parking_lot",
  "pollster",
  "rayon",
  "serde",

@@ -1,14 +1,15 @@
-use crate::video::frame::Frame;
-use crate::video::resource::{AtlasTextureCoord, Buffer, MeshId, SetId};
-use crate::video::ui::font::FontId;
-use crate::video::ui::vertex::Instance2d;
-use crate::video::ui::{Painter, RenderType};
 use lib::aabb::Aabb2;
 use lib::color::{ColorConsts, Rgba};
 use lib::rotation::Quat;
 use lib::size::Size2;
 use lib::vector::vec2f;
 use wgpu::{BufferUsages, RenderPass};
+
+use crate::video::frame::Frame;
+use crate::video::resource::{AtlasTextureCoord, Buffer, MeshId, SetId};
+use crate::video::ui::font::FontId;
+use crate::video::ui::vertex::Instance2d;
+use crate::video::ui::{Painter, RenderType};
 
 pub struct Brush<'h, 'f, 'a> {
     pub frame: &'f mut Frame<'h>,

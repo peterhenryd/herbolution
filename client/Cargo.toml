@@ -10,6 +10,7 @@ herbolution_server = { path = "../server" }
 bytemuck = { workspace = true, features = ["derive"] }
 fastrand.workspace = true
 image.workspace = true
+parking_lot.workspace = true
 pollster.workspace = true
 rayon.workspace = true
 serde = { workspace = true, features = ["derive"] }

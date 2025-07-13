@@ -8,7 +8,7 @@ use server::handle::GameHandle;
 use crate::app::Update;
 use crate::session::MeshIds;
 use crate::video::world::chisel::Chisel;
-use crate::video::{world, Video};
+use crate::video::{Video, world};
 use crate::world::chunk::ChunkMap;
 use crate::world::particle::Particles;
 use crate::world::player::Player;
@@ -19,20 +19,16 @@ pub mod particle;
 pub mod player;
 pub mod sky;
 
-/// The video-side representation of a world within the server.
 #[derive(Debug)]
 pub struct World {
-    /// A map of loaded chunks, keyed by their position in chunk space.
     chunk_map: ChunkMap,
-    /// The channel used for communicating with the behavior-side world.
-    /// The settings used by the fragment shader to video the world.
+
     pub(crate) render_settings: DetectMut<world::World>,
     pub(crate) player: Player,
     particles: Particles,
 }
 
 impl World {
-    /// Creates a new instance with the provided channel and video settings.
     pub fn new(video: &mut Video) -> Self {
         let render_settings = world::World {
             ambient_light: Vec3::splat(0.5),
@@ -50,7 +46,6 @@ impl World {
         }
     }
 
-    /// Renders the loaded chunks in the world.
     pub fn render(&mut self, mesh_ids: &MeshIds, chisel: &mut Chisel) {
         chisel.load_mesh(mesh_ids.solid_quad);
 
@@ -58,7 +53,6 @@ impl World {
         self.particles.render(chisel);
     }
 
-    /// Synchronizes with the behavior-side world, and updates the video state accordingly.
     pub fn update(&mut self, is_focused: bool, handle: &GameHandle, ctx: &mut Update) {
         if let Some(handle) = handle.next_player_handle() {
             self.player.handle = Some(handle);

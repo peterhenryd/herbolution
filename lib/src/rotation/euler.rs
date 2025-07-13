@@ -1,7 +1,7 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
-use num::Float;
 use num::traits::ConstZero;
+use num::Float;
 use serde::{Deserialize, Serialize};
 
 use crate::vector::Vec3;
@@ -28,7 +28,6 @@ impl<A> Euler<A> {
         Vec3::new(cos_pitch * cos_yaw, sin_pitch, cos_pitch * sin_yaw).normalize()
     }
 
-    /// Returns the parallel and perpendicular directions to the yaw of the rotation.
     pub fn yaw_directions(self) -> (Vec3<A>, Vec3<A>)
     where
         A: Float + ConstZero,

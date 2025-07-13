@@ -1,7 +1,6 @@
 use std::mem::take;
 use std::ops::{Deref, DerefMut};
 
-/// A smart pointer that tracks whether the contained value has been modified.
 #[derive(Debug)]
 pub struct DetectMut<T> {
     value: T,
@@ -9,12 +8,10 @@ pub struct DetectMut<T> {
 }
 
 impl<T> DetectMut<T> {
-    /// Creates a new instance with the provided value marked as updated.
     pub fn new(value: T) -> Self {
         Self { value, was_modified: true }
     }
 
-    /// Returns whether the value has been modified, while also marking it as not updated.
     pub fn check(value: &mut Self) -> bool {
         take(&mut value.was_modified)
     }

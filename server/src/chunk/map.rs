@@ -3,19 +3,20 @@ use std::ops::Add;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use crate::chunk::handle::ChunkLoad;
-use crate::chunk::material::{Material, PaletteMaterialId};
-use crate::chunk::provider::ChunkProvider;
-use crate::chunk::{handle, Chunk};
-use crate::handle::ClientHandle;
 use lib::aabb::Aabb3;
 use lib::collections::mailbox::Mailbox;
 use lib::point::{ChunkCubePt, ChunkPt, CubePt};
 use lib::spatial::{CubeFace, CubeFaces};
 use lib::util::{GroupKey, GroupKeyBuf};
-use lib::vector::{vec3d, vec3f, vec3i, vec3u5, Vec3};
+use lib::vector::{Vec3, vec3d, vec3f, vec3i, vec3u5};
 use lib::world::CHUNK_LENGTH;
 use line_drawing::{VoxelOrigin, WalkVoxels};
+
+use crate::chunk::handle::ChunkLoad;
+use crate::chunk::material::{Material, PaletteMaterialId};
+use crate::chunk::provider::ChunkProvider;
+use crate::chunk::{Chunk, handle};
+use crate::handle::ClientHandle;
 
 #[derive(Debug)]
 pub struct ChunkMap {

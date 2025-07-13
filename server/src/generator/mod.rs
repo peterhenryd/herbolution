@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use crossbeam_channel::{unbounded, Receiver, Sender, TryIter};
+use crossbeam_channel::{Receiver, Sender, TryIter, unbounded};
 use lib::point::ChunkPt;
 use lib::util::ProgressiveMeasurement;
 use lib::vector::{vec2f, vec3u5};

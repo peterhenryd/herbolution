@@ -8,8 +8,6 @@ use static_assertions::assert_eq_size;
 use crate::vector::macros::vector;
 use crate::vector::{vec3d, vec3f, vec3i, vec3u8, Vec2, Vec4};
 
-// Vec3<T>
-
 vector! {
     struct Vec3<T> {
         x(X = 1, 0, 0): T,
@@ -97,8 +95,6 @@ impl vec3d {
     }
 }
 
-// vec3u4
-
 #[repr(transparent)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]
 pub struct vec3u4(NonZeroU16);
@@ -184,7 +180,6 @@ impl<T: NumCast> From<Vec3<T>> for vec3u4 {
 
 // vec3u5
 
-/// Stores three 5-bit unsigned integers (ranged 0-31) in a single 16-bit value.
 #[repr(transparent)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]
 pub struct vec3u5(NonZeroU16);
