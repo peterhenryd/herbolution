@@ -9,7 +9,7 @@ use lib::aabb::Aabb3;
 use lib::collections::Mailbox;
 use lib::point::ChunkPt;
 use lib::spatial::{CubeFace, PerFace};
-use lib::vector::{vec3i, vec3u5, Vec3, Vec4};
+use lib::vector::{Vec3, Vec4, vec3i, vec3u5, vec4f};
 use lib::world::{CHUNK_LENGTH, CHUNK_VOLUME};
 use parking_lot::{RwLock, RwLockReadGuard};
 use server::chunk::cube::Cube;
@@ -19,8 +19,8 @@ use wgpu::BufferUsages;
 
 use crate::video::gpu;
 use crate::video::resource::GrowBuffer;
-use crate::video::world::chisel::Chisel;
 use crate::video::world::Instance3d;
+use crate::video::world::chisel::Chisel;
 use crate::world::player::PlayerCamera;
 
 type ChunkShell = [Option<Arc<RwLock<ChunkData>>>; 27];
@@ -166,12 +166,7 @@ fn create_chunk_shell(map: &HashMap<ChunkPt, Chunk>, position: ChunkPt) -> Chunk
             for z in -1..=1 {
                 let pt = position + Vec3::new(x, y, z);
 
-                let Some(chunk) = map.get(&pt) else {
-                    i += 1;
-                    continue;
-                };
-
-                shell[i] = Some(chunk.data.clone());
+                shell[i] = map.get(&pt).map(|chunk| &chunk.data).cloned();
                 i += 1;
             }
         }
@@ -188,11 +183,7 @@ fn generate_mesh(shell: &ChunkShell, instances: &mut Vec<Instance3d>) {
     center_chunk.position.hash(&mut hasher);
     let mut rng = Rng::with_seed(hasher.finish());
 
-    let chunk_position = center_chunk
-        .position
-        .0
-        .mul(CHUNK_LENGTH as i32)
-        .cast::<f32>();
+    let chunk_position = center_chunk.position.0.mul(CHUNK_LENGTH as i32);
 
     let shell_guard = shell
         .each_ref()
@@ -220,7 +211,14 @@ fn generate_mesh(shell: &ChunkShell, instances: &mut Vec<Instance3d>) {
                         let color = material.get_color(perms[face]);
                         let ao = facial_ao(&shell_guard, face, position.cast());
 
-                        instances.push(Instance3d::new(chunk_position + position.cast(), face.rotation(), Vec3::ONE, color, 0, ao));
+                        instances.push(Instance3d::new(
+                            (chunk_position + position.cast::<i32>()).cast::<f32>(),
+                            face.rotation(),
+                            Vec3::ONE,
+                            color,
+                            0,
+                            ao,
+                        ));
                     }
                 }
             }
@@ -229,7 +227,7 @@ fn generate_mesh(shell: &ChunkShell, instances: &mut Vec<Instance3d>) {
 }
 
 fn is_cube_present(shell: &ChunkShellGuard, position: vec3i) -> bool {
-    let chunk_offset = position.div_euclid(Vec3::splat(CHUNK_LENGTH as i32));
+    let chunk_offset = position.div_euclid_each(CHUNK_LENGTH as i32);
 
     if !Aabb3::new(-Vec3::ONE, Vec3::ONE).contains(chunk_offset) {
         return false;
@@ -240,7 +238,7 @@ fn is_cube_present(shell: &ChunkShellGuard, position: vec3i) -> bool {
         return false;
     };
 
-    let local_position = position.rem_euclid(Vec3::splat(CHUNK_LENGTH as i32));
+    let local_position = position.rem_euclid_each(CHUNK_LENGTH as i32);
     let Some(local_position) = local_position
         .try_cast::<u8>()
         .map(vec3u5::try_from)
@@ -258,7 +256,7 @@ fn vertex_ao(s1: bool, s2: bool, c: bool) -> u8 {
     if s1 && s2 { 3 } else { s1 as u8 + s2 as u8 + c as u8 }
 }
 
-fn facial_ao(shell: &ChunkShellGuard, face: CubeFace, position: vec3i) -> Vec4<f32> {
+fn facial_ao(shell: &ChunkShellGuard, face: CubeFace, position: vec3i) -> vec4f {
     let (u, v, n) = face.orthonormal_basis();
 
     let tl = is_cube_present(shell, position + n - v - u);
@@ -278,5 +276,5 @@ fn facial_ao(shell: &ChunkShellGuard, face: CubeFace, position: vec3i) -> Vec4<f
     let ao_amount = Vec4::new(occlusion_bl, occlusion_tl, occlusion_br, occlusion_tr).cast() / 3.0;
     let ao_factor = -ao_amount.cast::<f32>() + 1.0;
 
-    Vec4::max(ao_factor, Vec4::splat(0.15))
+    ao_factor.max_each(0.15)
 }

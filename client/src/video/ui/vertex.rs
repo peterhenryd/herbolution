@@ -3,7 +3,7 @@ use lib::color::Rgba;
 use lib::matrix::Mat3;
 use lib::rotation::Quat;
 use lib::size::size2f;
-use lib::vector::{vec2f, vec3f};
+use lib::vector::{Vec2, vec2f, vec3f};
 use wgpu::{VertexBufferLayout, VertexStepMode, vertex_attr_array};
 
 use crate::video::resource::{AtlasTextureCoord, Vertex};
@@ -68,8 +68,8 @@ impl Instance2d {
         let Mat3 { x: rx, y: ry, .. } = rotation.to_axes();
 
         Self {
-            model_0: vec2f::new(rx.x * scale.width, ry.x * scale.height),
-            model_1: vec2f::new(rx.y * scale.width, ry.y * scale.height),
+            model_0: Vec2::new(rx.x * scale.width, ry.x * scale.height),
+            model_1: Vec2::new(rx.y * scale.width, ry.y * scale.height),
             model_2: position,
             color,
             uv_t: texture_coord.translation,

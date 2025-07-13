@@ -1,9 +1,9 @@
 use bytemuck::{Pod, Zeroable};
 use serde::{Deserialize, Serialize};
 
-use crate::matrix::{Mat3, mat3f};
+use crate::matrix::{mat3f, Mat3};
 use crate::rotation::Euler;
-use crate::vector::{Vec3, Vec4, vec3f, vec4f};
+use crate::vector::{vec3f, vec4f, Vec3, Vec4};
 
 #[repr(transparent)]
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Deserialize, Serialize, Pod, Zeroable)]
@@ -21,7 +21,7 @@ impl Quat {
         let (sy, cy) = (euler.pitch / 2.0).sin_cos();
         let (sz, cz) = (euler.roll / 2.0).sin_cos();
 
-        Self(vec4f::new(
+        Self(Vec4::new(
             sx * cy * cz - cx * sy * sz,
             cx * sy * cz + sx * cy * sz,
             cx * cy * sz - sx * sy * cz,

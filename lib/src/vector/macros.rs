@@ -361,12 +361,32 @@ macro_rules! vector {
             }
 
             #[inline]
+            pub fn max_each(self, other: $t) -> Self
+            where
+                $t: Copy + PartialOrd
+            {
+                Self {
+                    $($field: if self.$field > other { self.$field } else { other }),+
+                }
+            }
+
+            #[inline]
             pub fn min(self, other: Self) -> Self
             where
                 $t: PartialOrd
             {
                 Self {
                     $($field: if self.$field < other.$field { self.$field } else { other.$field }),+
+                }
+            }
+
+            #[inline]
+            pub fn min_each(self, other: $t) -> Self
+            where
+                $t: Copy + PartialOrd
+            {
+                Self {
+                    $($field: if self.$field < other { self.$field } else { other }),+
                 }
             }
 
@@ -381,12 +401,30 @@ macro_rules! vector {
             }
 
             #[inline]
+            pub fn div_euclid_each(self, other: $t) -> Self
+            where
+                $t: Copy + num::traits::Euclid
+            {
+                Self {
+                    $($field: self.$field.div_euclid(&other)),+
+                }
+            }
+
+            #[inline]
             pub fn rem_euclid(self, other: Self) -> Self
             where
                 $t: num::traits::Euclid
             {
                 Self {
                     $($field: self.$field.rem_euclid(&other.$field)),+
+                }
+            }
+pub fn rem_euclid_each(self, other: $t) -> Self
+            where
+                $t: Copy + num::traits::Euclid
+            {
+                Self {
+                    $($field: self.$field.rem_euclid(&other)),+
                 }
             }
         }

@@ -182,14 +182,14 @@ use lib::proj::Perspective;
 use lib::rotation::Euler;
 use lib::size::size2u;
 use lib::spatial::CubeFace;
-use lib::vector::{vec3d, vec3f, vec3i8, Vec3, Vec4};
+use lib::vector::{Vec3, Vec4, vec3d, vec3f, vec3i8};
 use lib::world::Health;
 
 use crate::app::Update;
+use crate::video::Video;
 use crate::video::camera::{VideoCamera, View};
 use crate::video::resource::{SetId, Sets};
 use crate::video::world::{Instance3d, Sculptor};
-use crate::video::Video;
 use crate::world::frustum::Frustum;
 
 #[derive(Debug)]
@@ -203,7 +203,7 @@ pub struct PlayerCamera {
 impl PlayerCamera {
     pub fn new(resolution: size2u, sculptor: &mut Sculptor) -> Self {
         let aspect = resolution.cast::<f32>().unwrap().aspect();
-        let perspective = Perspective::new(70f32.to_radians(), aspect, 0.001, 500.0);
+        let perspective = Perspective::new(70f32.to_radians(), aspect, 0.1, 500.0);
 
         sculptor.update_camera(&VideoCamera::new(Vec3::ZERO, View::rotatable(), perspective));
 

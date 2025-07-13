@@ -134,14 +134,14 @@ impl Handle {
                 depth_stencil: Some(DepthStencilState {
                     format: TextureFormat::Depth32Float,
                     depth_write_enabled: options.depth_write_enabled,
-                    depth_compare: CompareFunction::LessEqual,
+                    depth_compare: CompareFunction::Less,
                     stencil: Default::default(),
                     bias: Default::default(),
                 }),
                 multisample: MultisampleState {
                     count: sample_count.get(),
                     mask: !0,
-                    alpha_to_coverage_enabled: false,
+                    alpha_to_coverage_enabled: true,
                 },
                 fragment: Some(FragmentState {
                     module: options.shader_module,
