@@ -52,12 +52,12 @@ impl EntityBody {
     }
 
     pub fn update(&mut self, chunk_map: &mut ChunkMap, dt: Duration) {
-        self.apply_physics_and_collision(chunk_map, dt);
-    }
-
-    fn apply_physics_and_collision(&mut self, chunk_map: &mut ChunkMap, dt: Duration) {
         let dt_secs = dt.as_secs_f64();
 
+        self.apply_physics_and_collision(chunk_map, dt_secs);
+    }
+
+    fn apply_physics_and_collision(&mut self, chunk_map: &mut ChunkMap, dt_secs: f64) {
         self.apply_input_to_velocity(dt_secs);
 
         if self.attrs.has_gravity {

@@ -46,7 +46,7 @@ impl EntityData {
     }
 }
 
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct ActionState {
     pub is_left_hand_active: bool,
     pub is_right_hand_active: bool,

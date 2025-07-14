@@ -9,8 +9,9 @@ use lib::proj::Perspective;
 use lib::spatial::CubeFace;
 use lib::vector::{vec3f, Vec3, Vec4};
 use server::entity::{ActionState, ActionTarget, CubeTarget};
-use server::player::{PlayerInput, PlayerState, ServerPlayerHandle};
+use server::player::{PlayerInputDelta, PlayerInputState, PlayerState, ServerPlayerHandle};
 use std::ops::Deref;
+use std::sync::Arc;
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
 
@@ -116,10 +117,6 @@ impl Player {
             .is_mouse_button_active(MouseButton::Right)
             || (is_lmb_active && ctx.store.input.is_left_control_active());
 
-        let _ = handle
-            .input_tx
-            .try_send(PlayerInput::ActionState(action_state));
-
         let mut forces = Vec3::ZERO;
         if ctx.store.input.is_key_active(KeyCode::KeyW) {
             forces.x += 1.0;
@@ -140,21 +137,24 @@ impl Player {
             forces.y -= 1.0;
         }
 
-        let _ = handle
-            .input_tx
-            .try_send(PlayerInput::MotionUnit(forces));
+        handle
+            .input_state
+            .store(Some(Arc::new(PlayerInputState {
+                relative_motion: forces,
+                action_state,
+            })));
 
         let movement = ctx.input.mouse_movement;
         if movement.x != 0.0 || movement.y != 0.0 {
             let _ = handle
-                .input_tx
-                .try_send(PlayerInput::MouseMovement(movement));
+                .input_delta
+                .try_send(PlayerInputDelta::MouseMovement(movement));
         }
 
         if ctx.input.mouse_scroll != 0.0 {
             let _ = handle
-                .input_tx
-                .try_send(PlayerInput::SpeedDelta(ctx.input.mouse_scroll * 2.0));
+                .input_delta
+                .try_send(PlayerInputDelta::MouseScroll(ctx.input.mouse_scroll));
         }
     }
 

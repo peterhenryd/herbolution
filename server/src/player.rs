@@ -51,30 +51,33 @@ impl Player {
     }
 
     fn process_input(&mut self, ctx: &mut EntityContext) {
-        for msg in self.handle.input_rx.try_iter() {
+        for msg in self.handle.input_delta.try_iter() {
             match msg {
-                PlayerInput::MotionUnit(motion) => {
-                    ctx.entity.body.motion = motion;
-                }
-                PlayerInput::MouseMovement(Vec2 { x: dx, y: dy }) => {
+                PlayerInputDelta::MouseMovement(Vec2 { x: dx, y: dy }) => {
                     ctx.entity
                         .body
                         .add_rotational_impulse(-dx.to_radians() as f32, -dy.to_radians() as f32);
                 }
-                PlayerInput::SpeedDelta(speed_delta) => {
+                PlayerInputDelta::MouseScroll(speed_delta) => {
                     let speed = &mut ctx.entity.body.attrs.acceleration_rate;
                     *speed += speed_delta as f64;
                     *speed = speed.max(0.0);
                 }
-                PlayerInput::ActionState(action_state) => {
-                    if !action_state.is_left_hand_active {
-                        self.dig_state = None;
-                    }
-
-                    self.action_state = action_state;
-                }
             }
         }
+
+        let input_state_guard = self.handle.input_state.load();
+        if let Some(input_state) = input_state_guard.as_ref() {
+            self.action_state = input_state.action_state;
+            ctx.entity.body.motion = input_state.relative_motion;
+        }
+
+        ctx.entity.body.motion = ctx
+            .entity
+            .body
+            .motion
+            .min_each(1.0)
+            .max_each(-1.0);
     }
 
     fn handle_interaction(&mut self, ctx: &mut EntityContext) {
@@ -255,35 +258,46 @@ impl Default for PlayerState {
     }
 }
 
-pub enum PlayerInput {
-    MotionUnit(vec3f),
+pub enum PlayerInputDelta {
     MouseMovement(vec2d),
-    SpeedDelta(f32),
-    ActionState(ActionState),
+    MouseScroll(f32),
+}
+
+#[derive(Debug)]
+pub struct PlayerInputState {
+    pub relative_motion: vec3f,
+    pub action_state: ActionState,
 }
 
 #[derive(Debug)]
 pub struct ClientPlayerHandle {
     pub state: Arc<ArcSwapOption<PlayerState>>,
-    pub input_rx: Receiver<PlayerInput>,
+    pub input_state: Arc<ArcSwapOption<PlayerInputState>>,
+    pub input_delta: Receiver<PlayerInputDelta>,
 }
 
 #[derive(Debug)]
 pub struct ServerPlayerHandle {
     pub state: Arc<ArcSwapOption<PlayerState>>,
-    pub input_tx: Sender<PlayerInput>,
+    pub input_state: Arc<ArcSwapOption<PlayerInputState>>,
+    pub input_delta: Sender<PlayerInputDelta>,
 }
 
 fn create_handles() -> (ClientPlayerHandle, ServerPlayerHandle) {
-    let state_arc = Arc::new(ArcSwapOption::default());
-    let (input_tx, input_rx) = crossbeam_channel::bounded(16);
+    let state = Arc::new(ArcSwapOption::new(None));
+    let input_state = Arc::new(ArcSwapOption::new(None));
+    let (input_delta_tx, input_delta_rx) = crossbeam_channel::bounded(16);
 
-    let client_handle = ClientPlayerHandle {
-        state: state_arc.clone(),
-        input_rx,
-    };
-
-    let server_handle = ServerPlayerHandle { state: state_arc, input_tx };
-
-    (client_handle, server_handle)
+    (
+        ClientPlayerHandle {
+            state: state.clone(),
+            input_state: input_state.clone(),
+            input_delta: input_delta_rx,
+        },
+        ServerPlayerHandle {
+            state,
+            input_state,
+            input_delta: input_delta_tx,
+        },
+    )
 }
