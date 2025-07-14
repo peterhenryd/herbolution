@@ -1,11 +1,11 @@
 macro_rules! cellular {
     ("2d", $fn_name: ident, $($f_type:ident)::+, $transmute_from: path, $seed_type: ty, $mod: ident, $transmute_to: ident) => {
         #[cfg(any(target_feature = "sse2", target_feature = "sse4.1", target_feature = "avx2"))]
-        pub unsafe fn $fn_name<S: simd::Simd>(
-            x: crate::simd::$($f_type)::+,
-            y: crate::simd::$($f_type)::+,
-            distance_function: CellDistanceFunction,
-            return_type: CellReturnType,
+        pub unsafe fn $fn_name<S: crate::simd::Simd>(
+            x: $($f_type)::+,
+            y: $($f_type)::+,
+            distance_function: crate::intrinsics::scalar::cell_distance_function::CellDistanceFunction,
+            return_type: crate::intrinsics::scalar::cell_return_type::CellReturnType,
             jitter: $($f_type)::+,
             seed: $seed_type,
         ) -> $($f_type)::+ {
@@ -22,12 +22,12 @@ macro_rules! cellular {
     };
     ("3d", $fn_name: ident, $f_type: ty, $transmute_from: path, $seed_type: ty, $mod: ident, $transmute_to: ident) => {
         #[cfg(any(target_feature = "sse2", target_feature = "sse4.1", target_feature = "avx2"))]
-        pub unsafe fn $fn_name<S: simd::Simd>(
+        pub unsafe fn $fn_name<S: crate::simd::Simd>(
             x: $f_type,
             y: $f_type,
             z: $f_type,
-            distance_function: CellDistanceFunction,
-            return_type: CellReturnType,
+            distance_function: crate::intrinsics::scalar::cell_distance_function::CellDistanceFunction,
+            return_type: crate::intrinsics::scalar::cell_return_type::CellReturnType,
             jitter: $f_type,
             seed: $seed_type,
         ) -> $f_type {
@@ -48,25 +48,25 @@ macro_rules! cellular {
 macro_rules! simplex {
     ("1d", $fn_name: ident, $f_type: ty, $transmute_from: path, $seed_type: ty, $mod: ident, $transmute_to: ident) => {
         #[cfg(any(target_feature = "sse2", target_feature = "sse4.1", target_feature = "avx2"))]
-        pub unsafe fn $fn_name<S: simd::Simd>(x: $f_type, seed: $seed_type) -> $f_type {
+        pub unsafe fn $fn_name<S: crate::simd::Simd>(x: $f_type, seed: $seed_type) -> $f_type {
             $mod::simplex_1d::<S>($transmute_from(x), seed).$transmute_to()
         }
     };
     ("2d", $fn_name: ident, $f_type: ty, $transmute_from: path, $seed_type: ty, $mod: ident, $transmute_to: ident) => {
         #[cfg(any(target_feature = "sse2", target_feature = "sse4.1", target_feature = "avx2"))]
-        pub unsafe fn $fn_name<S: simd::Simd>(x: $f_type, y: $f_type, seed: $seed_type) -> $f_type {
+        pub unsafe fn $fn_name<S: crate::simd::Simd>(x: $f_type, y: $f_type, seed: $seed_type) -> $f_type {
             $mod::simplex_2d::<S>($transmute_from(x), $transmute_from(y), seed).$transmute_to()
         }
     };
     ("3d", $fn_name: ident, $f_type: ty, $transmute_from: path, $seed_type: ty, $mod: ident, $transmute_to: ident) => {
         #[cfg(any(target_feature = "sse2", target_feature = "sse4.1", target_feature = "avx2"))]
-        pub unsafe fn $fn_name<S: simd::Simd>(x: $f_type, y: $f_type, z: $f_type, seed: $seed_type) -> $f_type {
+        pub unsafe fn $fn_name<S: crate::simd::Simd>(x: $f_type, y: $f_type, z: $f_type, seed: $seed_type) -> $f_type {
             $mod::simplex_3d::<S>($transmute_from(x), $transmute_from(y), $transmute_from(z), seed).$transmute_to()
         }
     };
     ("4d", $fn_name: ident, $f_type: ty, $transmute_from: path, $seed_type: ty, $mod: ident, $transmute_to: ident) => {
         #[cfg(any(target_feature = "sse2", target_feature = "sse4.1", target_feature = "avx2"))]
-        pub unsafe fn $fn_name<S: simd::Simd>(x: $f_type, y: $f_type, z: $f_type, w: $f_type, seed: $seed_type) -> $f_type {
+        pub unsafe fn $fn_name<S: crate::simd::Simd>(x: $f_type, y: $f_type, z: $f_type, w: $f_type, seed: $seed_type) -> $f_type {
             $mod::simplex_4d::<S>($transmute_from(x), $transmute_from(y), $transmute_from(z), $transmute_from(w), seed).$transmute_to()
         }
     };
@@ -75,13 +75,13 @@ macro_rules! simplex {
 macro_rules! fbm {
     ("1d", $fn_name: ident, $f_type: ty, $transmute_from: path, $seed_type: ty, $mod: ident, $transmute_to: ident) => {
         #[cfg(any(target_feature = "sse2", target_feature = "sse4.1", target_feature = "avx2"))]
-        pub unsafe fn $fn_name<S: simd::Simd>(x: $f_type, lacunarity: $f_type, gain: $f_type, octaves: u8, seed: $seed_type) -> $f_type {
+        pub unsafe fn $fn_name<S: crate::simd::Simd>(x: $f_type, lacunarity: $f_type, gain: $f_type, octaves: u8, seed: $seed_type) -> $f_type {
             $mod::fbm_1d::<S>($transmute_from(x), $transmute_from(lacunarity), $transmute_from(gain), octaves, seed).$transmute_to()
         }
     };
     ("2d", $fn_name: ident, $f_type: ty, $transmute_from: path, $seed_type: ty, $mod: ident, $transmute_to: ident) => {
         #[cfg(any(target_feature = "sse2", target_feature = "sse4.1", target_feature = "avx2"))]
-        pub unsafe fn $fn_name<S: simd::Simd>(x: $f_type, y: $f_type, lacunarity: $f_type, gain: $f_type, octaves: u8, seed: $seed_type) -> $f_type {
+        pub unsafe fn $fn_name<S: crate::simd::Simd>(x: $f_type, y: $f_type, lacunarity: $f_type, gain: $f_type, octaves: u8, seed: $seed_type) -> $f_type {
             $mod::fbm_2d::<S>(
                 $transmute_from(x),
                 $transmute_from(y),
@@ -95,7 +95,7 @@ macro_rules! fbm {
     };
     ("3d", $fn_name: ident, $f_type: ty, $transmute_from: path, $seed_type: ty, $mod: ident, $transmute_to: ident) => {
         #[cfg(any(target_feature = "sse2", target_feature = "sse4.1", target_feature = "avx2"))]
-        pub unsafe fn $fn_name<S: simd::Simd>(
+        pub unsafe fn $fn_name<S: crate::simd::Simd>(
             x: $f_type,
             y: $f_type,
             z: $f_type,
@@ -118,7 +118,7 @@ macro_rules! fbm {
     };
     ("4d", $fn_name: ident, $f_type: ty, $transmute_from: path, $seed_type: ty, $mod: ident, $transmute_to: ident) => {
         #[cfg(any(target_feature = "sse2", target_feature = "sse4.1", target_feature = "avx2"))]
-        pub unsafe fn $fn_name<S: simd::Simd>(
+        pub unsafe fn $fn_name<S: crate::simd::Simd>(
             x: $f_type,
             y: $f_type,
             z: $f_type,
@@ -145,13 +145,13 @@ macro_rules! fbm {
 macro_rules! ridge {
     ("1d", $fn_name: ident, $f_type: ty, $transmute_from: path, $seed_type: ty, $mod: ident, $transmute_to: ident) => {
         #[cfg(any(target_feature = "sse2", target_feature = "sse4.1", target_feature = "avx2"))]
-        pub unsafe fn $fn_name<S: simd::Simd>(x: $f_type, lacunarity: $f_type, gain: $f_type, octaves: u8, seed: $seed_type) -> $f_type {
+        pub unsafe fn $fn_name<S: crate::simd::Simd>(x: $f_type, lacunarity: $f_type, gain: $f_type, octaves: u8, seed: $seed_type) -> $f_type {
             $mod::ridge_1d::<S>($transmute_from(x), $transmute_from(lacunarity), $transmute_from(gain), octaves, seed).$transmute_to()
         }
     };
     ("2d", $fn_name: ident, $f_type: ty, $transmute_from: path, $seed_type: ty, $mod: ident, $transmute_to: ident) => {
         #[cfg(any(target_feature = "sse2", target_feature = "sse4.1", target_feature = "avx2"))]
-        pub unsafe fn $fn_name<S: simd::Simd>(x: $f_type, y: $f_type, lacunarity: $f_type, gain: $f_type, octaves: u8, seed: $seed_type) -> $f_type {
+        pub unsafe fn $fn_name<S: crate::simd::Simd>(x: $f_type, y: $f_type, lacunarity: $f_type, gain: $f_type, octaves: u8, seed: $seed_type) -> $f_type {
             $mod::ridge_2d::<S>(
                 $transmute_from(x),
                 $transmute_from(y),
@@ -165,7 +165,7 @@ macro_rules! ridge {
     };
     ("3d", $fn_name: ident, $f_type: ty, $transmute_from: path, $seed_type: ty, $mod: ident, $transmute_to: ident) => {
         #[cfg(any(target_feature = "sse2", target_feature = "sse4.1", target_feature = "avx2"))]
-        pub unsafe fn $fn_name<S: simd::Simd>(
+        pub unsafe fn $fn_name<S: crate::simd::Simd>(
             x: $f_type,
             y: $f_type,
             z: $f_type,
@@ -188,7 +188,7 @@ macro_rules! ridge {
     };
     ("4d", $fn_name: ident, $f_type: ty, $transmute_from: path, $seed_type: ty, $mod: ident, $transmute_to: ident) => {
         #[cfg(any(target_feature = "sse2", target_feature = "sse4.1", target_feature = "avx2"))]
-        pub unsafe fn $fn_name<S: simd::Simd>(
+        pub unsafe fn $fn_name<S: crate::simd::Simd>(
             x: $f_type,
             y: $f_type,
             z: $f_type,
@@ -216,13 +216,13 @@ macro_rules! ridge {
 macro_rules! turbulence {
     ("1d", $fn_name: ident, $f_type: ty, $transmute_from: path, $seed_type: ty, $mod: ident, $transmute_to: ident) => {
         #[cfg(any(target_feature = "sse2", target_feature = "sse4.1", target_feature = "avx2"))]
-        pub unsafe fn $fn_name<S: simd::Simd>(x: $f_type, lacunarity: $f_type, gain: $f_type, octaves: u8, seed: $seed_type) -> $f_type {
+        pub unsafe fn $fn_name<S: crate::simd::Simd>(x: $f_type, lacunarity: $f_type, gain: $f_type, octaves: u8, seed: $seed_type) -> $f_type {
             $mod::turbulence_1d::<S>($transmute_from(x), $transmute_from(lacunarity), $transmute_from(gain), octaves, seed).$transmute_to()
         }
     };
     ("2d", $fn_name: ident, $f_type: ty, $transmute_from: path, $seed_type: ty, $mod: ident, $transmute_to: ident) => {
         #[cfg(any(target_feature = "sse2", target_feature = "sse4.1", target_feature = "avx2"))]
-        pub unsafe fn $fn_name<S: simd::Simd>(x: $f_type, y: $f_type, lacunarity: $f_type, gain: $f_type, octaves: u8, seed: $seed_type) -> $f_type {
+        pub unsafe fn $fn_name<S: crate::simd::Simd>(x: $f_type, y: $f_type, lacunarity: $f_type, gain: $f_type, octaves: u8, seed: $seed_type) -> $f_type {
             $mod::turbulence_2d::<S>(
                 $transmute_from(x),
                 $transmute_from(y),
@@ -236,7 +236,7 @@ macro_rules! turbulence {
     };
     ("3d", $fn_name: ident, $f_type: ty, $transmute_from: path, $seed_type: ty, $mod: ident, $transmute_to: ident) => {
         #[cfg(any(target_feature = "sse2", target_feature = "sse4.1", target_feature = "avx2"))]
-        pub unsafe fn $fn_name<S: simd::Simd>(
+        pub unsafe fn $fn_name<S: crate::simd::Simd>(
             x: $f_type,
             y: $f_type,
             z: $f_type,
@@ -259,7 +259,7 @@ macro_rules! turbulence {
     };
     ("4d", $fn_name: ident, $f_type: ty, $transmute_from: path, $seed_type: ty, $mod: ident, $transmute_to: ident) => {
         #[cfg(any(target_feature = "sse2", target_feature = "sse4.1", target_feature = "avx2"))]
-        pub unsafe fn $fn_name<S: simd::Simd>(
+        pub unsafe fn $fn_name<S: crate::simd::Simd>(
             x: $f_type,
             y: $f_type,
             z: $f_type,

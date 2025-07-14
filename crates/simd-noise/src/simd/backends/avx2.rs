@@ -1,6 +1,6 @@
 use std::arch::x86_64::{__m256, __m256d, __m256i};
 
-use crate::simd::Simd;
+use crate::simd::*;
 use crate::{
     define_simd_type, impl_f32_simd_type, impl_f64_simd_type, impl_i16_simd_type, impl_i32_simd_type, impl_i64_simd_type, impl_i8_simd_type,
     impl_simd_float_overloads, impl_simd_int_overloads,
@@ -15,17 +15,6 @@ impl Simd for Avx2 {
     type I64 = I64x4;
     type F32 = F32x8;
     type F64 = F64x4;
-
-    #[inline]
-    fn invoke<R>(f: impl FnOnce() -> R) -> R {
-        #[inline]
-        #[target_feature(enable = "avx2", enable = "fma")]
-        unsafe fn inner<R>(f: impl FnOnce() -> R) -> R {
-            f()
-        }
-
-        unsafe { inner(f) }
-    }
 }
 
 define_simd_type!(Avx2, i8, 32, __m256i);

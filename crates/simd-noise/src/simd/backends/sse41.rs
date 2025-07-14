@@ -3,7 +3,7 @@ use core::arch::x86::*;
 #[cfg(target_arch = "x86_64")]
 use core::arch::x86_64::*;
 
-use crate::simd::{Simd, SimdF32, SimdF64, SimdI16, SimdI32, SimdI64, SimdI8};
+use crate::simd::*;
 use crate::{
     define_simd_type, impl_f32_simd_type, impl_f64_simd_type, impl_i16_simd_type, impl_i32_simd_type, impl_i64_simd_type, impl_i8_simd_type,
     impl_simd_float_overloads, impl_simd_int_overloads,
