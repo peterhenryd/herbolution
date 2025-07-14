@@ -4,7 +4,6 @@ use lib::color::Rgba;
 use lib::size::size2u;
 use wgpu::SurfaceTarget;
 
-use crate::video::frame::FrameOptions;
 use crate::video::resource::SampleCount;
 use crate::video::ui::Painter;
 use crate::video::ui::brush::Brush;
@@ -73,13 +72,7 @@ impl<'w> Video<'w> {
 
     pub fn create_frame(&self) -> Frame<'_, '_> {
         Frame {
-            frame: frame::Frame::new(
-                &self.handle,
-                &self.surface,
-                FrameOptions {
-                    clear_color: Some(self.clear_color),
-                },
-            ),
+            frame: frame::Frame::new(&self.handle, &self.surface, Some(self.clear_color)),
             painter: &self.painter,
             sculptor: &self.sculptor,
         }

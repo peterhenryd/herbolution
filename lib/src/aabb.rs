@@ -4,7 +4,7 @@ use std::ops::{Add, AddAssign, Sub};
 use bytemuck::Pod;
 use num::traits::real::Real;
 use num::traits::{ConstOne, ConstZero};
-use num::{Float, Num, NumCast, ToPrimitive};
+use num::{Float, Num, NumCast, Signed, ToPrimitive};
 
 use crate::size::{Size2, Size3};
 use crate::vector::{Vec2, Vec3};
@@ -32,6 +32,23 @@ impl<T> Aabb2<T> {
         T: Copy + PartialOrd,
     {
         point.x >= self.min.x && point.x <= self.max.x && point.y >= self.min.y && point.y <= self.max.y
+    }
+
+    #[inline]
+    pub fn contains_rounded(&self, point: Vec2<T>, border_radius: T) -> bool
+    where
+        T: ConstZero + Signed + Float,
+    {
+        let size = self.max - self.min;
+        let extents = size * T::from(0.5).unwrap();
+
+        let centered_point = point - (self.min + extents);
+        let radius = border_radius.min(extents.x.min(extents.y));
+
+        let q = centered_point.abs() - extents + radius;
+        let signed_distance = q.max(Vec2::ZERO).length() - radius;
+
+        signed_distance <= T::ZERO
     }
 
     #[inline]

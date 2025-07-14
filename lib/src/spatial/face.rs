@@ -111,8 +111,6 @@ impl Display for CubeFace {
     }
 }
 
-// Faces
-
 #[repr(transparent)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct CubeFaces(u8);
@@ -313,8 +311,6 @@ impl SubAssign<CubeFace> for CubeFaces {
     }
 }
 
-// FaceIter
-
 #[derive(Debug, Clone)]
 pub struct FaceIter {
     faces: CubeFaces,
@@ -336,8 +332,6 @@ impl Iterator for FaceIter {
         None
     }
 }
-
-// PerFace
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -477,8 +471,6 @@ unsafe impl<T: Zeroable> Zeroable for PerFace<T> {}
 
 unsafe impl<T: Pod> Pod for PerFace<T> {}
 
-// PerFaceIter
-
 #[derive(Debug, Clone)]
 pub struct PerFaceIter<'a, T> {
     value: &'a PerFace<T>,
@@ -497,8 +489,6 @@ impl<'a, T> Iterator for PerFaceIter<'a, T> {
         }
     }
 }
-
-// PerFaceU5
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]

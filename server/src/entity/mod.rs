@@ -71,5 +71,4 @@ impl ActionTarget {
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct CubeTarget {
     pub position: vec3i,
-    pub shell_opacity: f32,
 }

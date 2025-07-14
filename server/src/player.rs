@@ -1,29 +1,26 @@
-use std::any::Any;
-use std::mem::take;
-use std::sync::Arc;
-use std::time::Duration;
-
-use lib::aabb::Aabb3;
-use lib::motile::Motile;
-use lib::rotation::Euler;
-use lib::util::default;
-use lib::vector::{Vec2, Vec3};
-use lib::world::Health;
-
 use crate::chunk::map::CubeHit;
 use crate::chunk::material::Material;
 use crate::entity::behavior::{EntityBehavior, EntityBehaviorType, EntityContext};
 use crate::entity::{ActionState, ActionTarget, CubeTarget};
 use crate::handle::Particle;
-use crate::player::handle::ClientPlayerHandle;
-
-pub mod handle;
+use arc_swap::ArcSwapOption;
+use crossbeam_channel::{Receiver, Sender};
+use lib::aabb::Aabb3;
+use lib::motile::Motile;
+use lib::rotation::Euler;
+use lib::util::default;
+use lib::vector::{vec2d, vec3d, vec3f, Vec2, Vec3};
+use lib::world::Health;
+use std::any::Any;
+use std::mem::take;
+use std::sync::Arc;
+use std::time::Duration;
 
 #[derive(Debug)]
 pub struct Player {
     action_state: ActionState,
     handle: ClientPlayerHandle,
-    prev_target: Option<ActionTarget>,
+    target: Option<ActionTarget>,
     health: Health,
     regeneration: f32,
     dig_speed: f32,
@@ -37,15 +34,46 @@ struct DigState {
 }
 
 impl Player {
-    pub fn new(handle: ClientPlayerHandle) -> Self {
-        Self {
-            action_state: ActionState::default(),
-            handle,
-            prev_target: None,
-            health: Health::new(100.0),
-            regeneration: 3.0,
-            dig_speed: 1.0,
-            dig_state: None,
+    pub fn new() -> (Self, ServerPlayerHandle) {
+        let (handle, server_handle) = create_handles();
+        (
+            Self {
+                action_state: ActionState::default(),
+                handle,
+                target: None,
+                health: Health::new(100.0),
+                regeneration: 3.0,
+                dig_speed: 1.0,
+                dig_state: None,
+            },
+            server_handle,
+        )
+    }
+
+    fn process_input(&mut self, ctx: &mut EntityContext) {
+        for msg in self.handle.input_rx.try_iter() {
+            match msg {
+                PlayerInput::MotionUnit(motion) => {
+                    ctx.entity.body.motion = motion;
+                }
+                PlayerInput::MouseMovement(Vec2 { x: dx, y: dy }) => {
+                    ctx.entity
+                        .body
+                        .add_rotational_impulse(-dx.to_radians() as f32, -dy.to_radians() as f32);
+                }
+                PlayerInput::SpeedDelta(speed_delta) => {
+                    let speed = &mut ctx.entity.body.attrs.acceleration_rate;
+                    *speed += speed_delta as f64;
+                    *speed = speed.max(0.0);
+                }
+                PlayerInput::ActionState(action_state) => {
+                    if !action_state.is_left_hand_active {
+                        self.dig_state = None;
+                    }
+
+                    self.action_state = action_state;
+                }
+            }
         }
     }
 
@@ -54,27 +82,14 @@ impl Player {
         let ray_dir = ctx.entity.body().rotation().into_view_center();
         let cube_hit = ctx.chunk_map.cast_ray(ray_origin, ray_dir, 100.0);
 
-        let current_target = cube_hit.as_ref().map(|hit| {
-            ActionTarget::Cube(CubeTarget {
-                position: hit.position,
-                shell_opacity: self
-                    .dig_state
-                    .as_ref()
-                    .map(|x| 0.5 - (x.remaining_time * self.dig_speed) / x.material.toughness * 0.5)
-                    .unwrap_or(0.0),
-            })
-        });
+        let current_target = cube_hit
+            .as_ref()
+            .map(|hit| ActionTarget::Cube(CubeTarget { position: hit.position }));
 
-        if current_target != self.prev_target {
-            self.handle.transform.set_target(current_target);
-        }
-
-        if let (Some(a), Some(b)) = (&current_target, &self.prev_target)
-            && !a.stateless_eq(b)
-        {
+        if self.target != current_target {
             self.dig_state = None;
+            self.target = current_target;
         }
-        self.prev_target = current_target;
 
         if let Some(hit) = cube_hit {
             if self.action_state.is_left_hand_active {
@@ -126,7 +141,6 @@ impl Player {
 
             self.spawn_dig_particles(ctx, cube_hit.position, &material);
             ctx.chunk_map.set_cube(cube_hit.position, None);
-            self.handle.transform.set_target(None);
         }
     }
 
@@ -171,56 +185,38 @@ impl Player {
                 .set_cube(position, "herbolution:stone");
         }
     }
+
+    fn sync_state(&mut self, ctx: &mut EntityContext) {
+        self.handle
+            .state
+            .store(Some(Arc::new(PlayerState {
+                position: ctx.entity.body.position,
+                rotation: ctx.entity.body.rotation,
+                eye_offset: ctx.entity.body.bounds.eye_offset,
+                health: self.health,
+                target: self.target,
+                shell_opacity: self
+                    .dig_state
+                    .as_ref()
+                    .map(|x| 0.5 - (x.remaining_time * self.dig_speed) / x.material.toughness * 0.5)
+                    .unwrap_or(0.0),
+            })));
+    }
 }
 
 impl EntityBehavior for Player {
     fn update(&mut self, ctx: &mut EntityContext) {
         self.health += self.regeneration * ctx.dt.as_secs_f32();
 
-        let body = ctx.entity.body_mut();
-
-        if let Some(command) = self.handle.input.next_movement() {
-            body.motion = command.cast();
-        }
-
-        while let Some(Vec2 { x: dx, y: dy }) = self.handle.input.next_mouse_movement() {
-            *body.rotation_mut() -= Euler {
-                yaw: dx.to_radians() as f32,
-                pitch: dy.to_radians() as f32,
-                ..default()
-            };
-        }
-
-        while let Some(speed_delta) = self.handle.input.next_speed_delta() {
-            let speed = &mut body.attrs.acceleration_rate;
-            *speed += speed_delta as f64;
-            *speed = speed.max(0.0);
-        }
-
-        self.handle
-            .transform
-            .set_position(body.eye_position());
-        self.handle
-            .transform
-            .set_rotation(*body.rotation());
-
         if let Some(fall_distance) = ctx.entity.body.last_fell.take() {
             if fall_distance > 3.0 {
-                self.health -= (fall_distance as f32 - 3.0) * 2.0;
+                self.health -= (fall_distance - 3.0) * 2.0;
             }
         }
 
-        self.handle.set_health(self.health);
-
-        if let Some(action_state) = self.handle.input.next_action_state() {
-            if !action_state.is_left_hand_active {
-                self.dig_state = None;
-            }
-
-            self.action_state = action_state;
-        }
-
+        self.process_input(ctx);
         self.handle_interaction(ctx);
+        self.sync_state(ctx);
     }
 
     fn select_from(behavior: &mut EntityBehaviorType) -> Option<&mut Self>
@@ -234,4 +230,60 @@ impl EntityBehavior for Player {
             _ => None,
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct PlayerState {
+    pub position: vec3d,
+    pub rotation: Euler<f32>,
+    pub eye_offset: vec3f,
+    pub health: Health,
+    pub target: Option<ActionTarget>,
+    pub shell_opacity: f32,
+}
+
+impl Default for PlayerState {
+    fn default() -> Self {
+        Self {
+            position: Vec3::ZERO,
+            rotation: Euler::IDENTITY,
+            eye_offset: Vec3::ZERO,
+            health: Health::new(100.0),
+            target: None,
+            shell_opacity: 0.0,
+        }
+    }
+}
+
+pub enum PlayerInput {
+    MotionUnit(vec3f),
+    MouseMovement(vec2d),
+    SpeedDelta(f32),
+    ActionState(ActionState),
+}
+
+#[derive(Debug)]
+pub struct ClientPlayerHandle {
+    pub state: Arc<ArcSwapOption<PlayerState>>,
+    pub input_rx: Receiver<PlayerInput>,
+}
+
+#[derive(Debug)]
+pub struct ServerPlayerHandle {
+    pub state: Arc<ArcSwapOption<PlayerState>>,
+    pub input_tx: Sender<PlayerInput>,
+}
+
+fn create_handles() -> (ClientPlayerHandle, ServerPlayerHandle) {
+    let state_arc = Arc::new(ArcSwapOption::default());
+    let (input_tx, input_rx) = crossbeam_channel::bounded(16);
+
+    let client_handle = ClientPlayerHandle {
+        state: state_arc.clone(),
+        input_rx,
+    };
+
+    let server_handle = ServerPlayerHandle { state: state_arc, input_tx };
+
+    (client_handle, server_handle)
 }

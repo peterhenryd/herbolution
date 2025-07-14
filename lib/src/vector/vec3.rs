@@ -178,8 +178,6 @@ impl<T: NumCast> From<Vec3<T>> for vec3u4 {
     }
 }
 
-// vec3u5
-
 #[repr(transparent)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]
 pub struct vec3u5(NonZeroU16);

@@ -35,10 +35,6 @@ pub struct App<'w> {
     init: bool,
 }
 
-pub struct Options {
-    pub root_dir: Option<PathBuf>,
-}
-
 pub struct Update<'w, 'a> {
     pub store: &'a mut Store,
     pub window: &'a Window,
@@ -57,9 +53,9 @@ pub struct Render<'a> {
 }
 
 impl App<'_> {
-    pub fn new(options: Options) -> Self {
+    pub fn new(root_dir: Option<PathBuf>) -> Self {
         Self {
-            store: Store::new(options.root_dir),
+            store: Store::new(root_dir),
             state: State::default(),
             switch: Switch::Suspended(None),
             init: false,

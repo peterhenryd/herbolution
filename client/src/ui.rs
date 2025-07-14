@@ -1,13 +1,13 @@
 use lib::aabb::Aabb2;
 use lib::color::Rgba;
-use lib::size::{Size2, size2f};
-use lib::vector::{Vec2, vec2f};
+use lib::size::{size2f, Size2};
+use lib::vector::{vec2f, Vec2};
 use winit::event::MouseButton;
 
 use crate::app::Render;
 use crate::input::{ClickEvent, InputFrame};
-use crate::video::ui::Painter;
 use crate::video::ui::brush::Text;
+use crate::video::ui::Painter;
 
 #[derive(Debug)]
 pub struct Ui {
@@ -39,7 +39,10 @@ impl Ui {
                         position,
                     } in &input.click_events
                     {
-                        if !button.bounds.contains(position.cast()) {
+                        if !button
+                            .bounds
+                            .contains_rounded(position.cast(), 32.0)
+                        {
                             continue;
                         }
 
@@ -68,7 +71,7 @@ impl Ui {
         for node in &self.nodes {
             match node {
                 UiNode::Button(button) => {
-                    brush.draw_rect(button.bounds, button.color);
+                    brush.draw_rect(button.bounds, button.color, 32.0);
 
                     let text_position = button.bounds.min + (button.padding / 2.0).to_vec2();
                     brush.draw_text(text_position, &button.text);
@@ -159,9 +162,7 @@ impl UiBuilder<'_> {
         self
     }
 
-    pub fn finish(mut self) -> Ui {
-        let mut pen = self.padding.to_vec2();
-
+    fn compute_layout(&mut self, mut pen: vec2f) {
         for (i, node) in self.nodes.iter_mut().enumerate() {
             if i != 0 {
                 pen += self
@@ -187,6 +188,10 @@ impl UiBuilder<'_> {
                 }
             }
         }
+    }
+
+    pub fn finish(mut self) -> Ui {
+        self.compute_layout(self.padding.to_vec2());
 
         Ui {
             nodes: self.nodes,

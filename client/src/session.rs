@@ -4,9 +4,9 @@ use std::time::Duration;
 use lib::aabb::Aabb2;
 use lib::color::{Color, ColorConsts, Rgba};
 use lib::save::Save;
-use lib::size::{Size2, size2u};
+use lib::size::{size2u, Size2};
 use lib::util::IntervalCounter;
-use lib::vector::{Vec2, vec3d};
+use lib::vector::{vec3d, Vec2};
 use server::handle::GameHandle;
 use server::{Game, Options};
 use winit::event::MouseButton;
@@ -17,7 +17,7 @@ use crate::app::{Command, Render, Update};
 use crate::video::resource::{Mesh, MeshId, Meshes};
 use crate::video::ui::brush::{Brush, Text};
 use crate::video::world::Vertex3d;
-use crate::video::{Video, world};
+use crate::video::{world, Video};
 use crate::world::World;
 
 #[derive(Debug)]
@@ -103,7 +103,7 @@ impl Session {
             self.render_hud(ctx.resolution, &mut brush);
 
             self.debugger
-                .render(self.fps.get(), self.world.player.camera.position, &mut brush);
+                .render(self.fps.get(), self.world.player.state.position, &mut brush);
 
             let font_id = brush.default_font_id();
             brush.draw_text(
@@ -119,21 +119,36 @@ impl Session {
     }
 
     fn render_hud(&mut self, resolution: size2u, brush: &mut Brush) {
-        let health = self.world.player.health.percent();
+        let health = self.world.player.state.health.get();
+        let health_factor = self.world.player.state.health.percent();
 
-        let position = Vec2::new(64., resolution.height as f32 - 48. - 64.);
+        let position = Vec2::new(resolution.width as f32 - 64. - 136., resolution.height as f32 - 48. - 64.);
         let scale = Size2::new(128., 48.);
 
-        let filled_scale = Size2::new(scale.width * health, scale.height);
+        let filled_scale = Size2::new(scale.width * health_factor, scale.height);
         let unfilled_position = position + Vec2::new(filled_scale.width, 0.);
-        let unfilled_scale = Size2::new(scale.width * (1.0 - health), scale.height);
+        let unfilled_scale = Size2::new(scale.width * (1.0 - health_factor), scale.height);
 
         brush.draw_rect(
-            Aabb2::sized(Vec2::new(60., resolution.height as f32 - 48. - 64. - 4.), Size2::new(136., 56.)),
-            Rgba::from_rgb(14, 14, 14).into(),
+            Aabb2::sized(
+                Vec2::new(resolution.width as f32 - 68. - 136., resolution.height as f32 - 48. - 64. - 4.),
+                Size2::new(136., 56.),
+            ),
+            Rgba::from_rgb(0, 0, 0).into(),
+            6.0,
         );
-        brush.draw_rect(Aabb2::sized(position, filled_scale), Rgba::from_rgb(255, 0, 0).into());
-        brush.draw_rect(Aabb2::sized(unfilled_position, unfilled_scale), Rgba::BLACK);
+        brush.draw_rect(Aabb2::sized(position, filled_scale), Rgba::from_rgb(255, 0, 0).into(), 4.0);
+        brush.draw_rect(Aabb2::sized(unfilled_position, unfilled_scale), Rgba::BLACK, 4.0);
+
+        brush.draw_text(
+            position + Vec2::new(24., 16.),
+            &Text {
+                font_id: brush.default_font_id(),
+                content: format!("{:.0} HP", health),
+                font_size: 24.0,
+                color: Rgba::WHITE,
+            },
+        );
     }
 
     pub fn set_resolution(&mut self, _: size2u) {}

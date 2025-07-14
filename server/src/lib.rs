@@ -6,6 +6,7 @@
 #![feature(random)]
 #![feature(duration_constants)]
 #![feature(integer_atomics)]
+#![feature(variant_count)]
 extern crate herbolution_lib as lib;
 
 use std::thread;
@@ -66,7 +67,7 @@ impl Game {
     fn exit(&self) {}
 
     fn add_client(&mut self) {
-        let (client_handle, handle) = player::handle::create();
+        let (player, handle) = Player::new();
         let world = self
             .world_map
             .get_mut(&self.save.descriptor.default_world)
@@ -74,20 +75,20 @@ impl Game {
         world.entity_set.add(Entity {
             data: EntityData {
                 body: EntityBody::new(
-                    Vec3::new(0., 96., 0.0),
+                    Vec3::new(0.0, 96.0, 0.0),
                     Bounds {
                         size: Size3::new(0.9, 1.9, 0.9),
-                        eye_offset: Vec3::new(0., 1.0, 0.),
+                        eye_offset: Vec3::new(0.0, 1.0, 0.0),
                     },
                     EntityAttrs {
-                        has_gravity: false,
+                        has_gravity: true,
                         acceleration_rate: 20.0,
                         terminal_velocity: 100.0,
                     },
                 ),
             },
             behaviors: EntityBehaviors::new()
-                .with(Player::new(client_handle))
+                .with(player)
                 .with(ChunkLoader::new()),
         });
 

@@ -52,7 +52,6 @@ impl CubeGrid {
     pub fn decode(bytes: &[u8]) -> Self {
         let mut i = 0;
         let palette = Palette::new();
-        // TODO: implement palette codec
 
         let mut mesh = Self::new(palette);
 

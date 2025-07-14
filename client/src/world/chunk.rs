@@ -9,7 +9,7 @@ use lib::aabb::Aabb3;
 use lib::collections::Mailbox;
 use lib::point::ChunkPt;
 use lib::spatial::{CubeFace, PerFace};
-use lib::vector::{Vec3, Vec4, vec3i, vec3u5, vec4f};
+use lib::vector::{vec3i, vec3u5, vec4f, Vec3, Vec4};
 use lib::world::{CHUNK_LENGTH, CHUNK_VOLUME};
 use parking_lot::{RwLock, RwLockReadGuard};
 use server::chunk::cube::Cube;
@@ -19,9 +19,9 @@ use wgpu::BufferUsages;
 
 use crate::video::gpu;
 use crate::video::resource::GrowBuffer;
-use crate::video::world::Instance3d;
 use crate::video::world::chisel::Chisel;
-use crate::world::player::PlayerCamera;
+use crate::video::world::Instance3d;
+use crate::world::frustum::Frustum;
 
 type ChunkShell = [Option<Arc<RwLock<ChunkData>>>; 27];
 
@@ -74,9 +74,9 @@ impl ChunkMap {
         }
     }
 
-    pub fn render(&self, camera: &PlayerCamera, chisel: &mut Chisel) {
+    pub fn render(&self, frustum: &Frustum, chisel: &mut Chisel) {
         for chunk in self.map.values() {
-            chunk.render(camera, chisel);
+            chunk.render(frustum, chisel);
         }
     }
 }
@@ -116,11 +116,8 @@ impl Chunk {
         }
     }
 
-    pub fn render(&self, camera: &PlayerCamera, chisel: &mut Chisel) {
-        if !camera
-            .frustum
-            .contains_cube(self.position.0.cast(), CHUNK_LENGTH as f32)
-        {
+    pub fn render(&self, frustum: &Frustum, chisel: &mut Chisel) {
+        if !frustum.contains_cube(self.position.0.cast(), CHUNK_LENGTH as f32) {
             return;
         }
 

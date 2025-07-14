@@ -154,7 +154,7 @@ impl Drop for SurfaceTexture {
     }
 }
 
-pub fn create<'w>(target: impl Into<wgpu::SurfaceTarget<'w>>, resolution: impl Into<lib::size::size2u>, sample_count: SampleCount) -> (Handle, Surface<'w>) {
+pub fn create<'w>(target: impl Into<wgpu::SurfaceTarget<'w>>, resolution: impl Into<size2u>, sample_count: SampleCount) -> (Handle, Surface<'w>) {
     let instance = wgpu::Instance::default();
     let surface = instance
         .create_surface(target)

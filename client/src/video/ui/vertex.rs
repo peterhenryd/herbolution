@@ -3,8 +3,8 @@ use lib::color::Rgba;
 use lib::matrix::Mat3;
 use lib::rotation::Quat;
 use lib::size::size2f;
-use lib::vector::{Vec2, vec2f, vec3f};
-use wgpu::{VertexBufferLayout, VertexStepMode, vertex_attr_array};
+use lib::vector::{vec2f, vec3f, Vec2};
+use wgpu::{vertex_attr_array, VertexBufferLayout, VertexStepMode};
 
 use crate::video::resource::{AtlasTextureCoord, Vertex};
 
@@ -47,6 +47,7 @@ pub struct Instance2d {
     color: Rgba<f32>,
     uv_t: vec2f,
     uv_s: vec2f,
+    border_radius: f32,
     scale: size2f,
 }
 
@@ -59,12 +60,14 @@ impl Instance2d {
             4 => Float32x2,
             5 => Float32x2,
             6 => Float32x4,
-            7 => Float32x2, // texture translation
-            8 => Float32x2, // texture scale
+            7 => Float32x2,
+            8 => Float32x2,
+            9 => Float32,
+            10 => Float32x2
         ],
     };
 
-    pub fn new(position: vec2f, rotation: Quat, scale: size2f, color: Rgba<f32>, texture_coord: AtlasTextureCoord) -> Self {
+    pub fn new(position: vec2f, rotation: Quat, scale: size2f, color: Rgba<f32>, texture_coord: AtlasTextureCoord, border_radius: f32) -> Self {
         let Mat3 { x: rx, y: ry, .. } = rotation.to_axes();
 
         Self {
@@ -74,6 +77,7 @@ impl Instance2d {
             color,
             uv_t: texture_coord.translation,
             uv_s: texture_coord.scale,
+            border_radius,
             scale,
         }
     }

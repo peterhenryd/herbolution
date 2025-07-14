@@ -1,11 +1,11 @@
 use std::f32::consts::FRAC_PI_2;
-use std::ops::{Add, Deref, DerefMut};
+use std::ops::Add;
 use std::time::Duration;
 
 use lib::aabb::Aabb3;
 use lib::rotation::Euler;
 use lib::size::size3f;
-use lib::vector::{Vec3, vec3d, vec3f};
+use lib::vector::{vec3d, vec3f, Vec3};
 
 use crate::chunk::map::ChunkMap;
 
@@ -16,10 +16,10 @@ const AIR_FRICTION: f64 = 2.0;
 
 #[derive(Debug, Clone)]
 pub struct EntityBody {
-    position: vec3d,
+    pub(crate) position: vec3d,
     velocity: vec3d,
-    rotation: Euler<f32>,
-    bounds: Bounds,
+    pub(crate) rotation: Euler<f32>,
+    pub(crate) bounds: Bounds,
     pub(crate) motion: vec3f,
     is_on_ground: bool,
     near_colliders: Vec<Aabb3<f64>>,
@@ -176,34 +176,12 @@ impl EntityBody {
         &self.rotation
     }
 
-    pub fn rotation_mut(&mut self) -> RotateEntity<'_> {
-        RotateEntity { euler: &mut self.rotation }
-    }
-}
+    pub fn add_rotational_impulse(&mut self, yaw: f32, pitch: f32) {
+        self.rotation.yaw += yaw;
+        self.rotation.pitch += pitch;
 
-#[derive(Debug)]
-pub struct RotateEntity<'a> {
-    euler: &'a mut Euler<f32>,
-}
-
-impl Deref for RotateEntity<'_> {
-    type Target = Euler<f32>;
-
-    fn deref(&self) -> &Self::Target {
-        self.euler
-    }
-}
-
-impl DerefMut for RotateEntity<'_> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        self.euler
-    }
-}
-
-impl Drop for RotateEntity<'_> {
-    fn drop(&mut self) {
-        self.euler.pitch = self
-            .euler
+        self.rotation.pitch = self
+            .rotation
             .pitch
             .clamp(-FRAC_PI_2 + f32::EPSILON, FRAC_PI_2 - f32::EPSILON);
     }

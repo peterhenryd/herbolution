@@ -10,7 +10,6 @@ use crate::handle::ClientHandle;
 
 #[derive(Debug)]
 pub struct World {
-    //name: String,
     chunk_map: ChunkMap,
     pub(crate) entity_set: EntitySet,
     acc: Duration,
@@ -19,7 +18,6 @@ pub struct World {
 impl World {
     pub fn from_save(save: SaveWorld) -> Self {
         Self {
-            //name: save.name,
             chunk_map: ChunkMap::new(save.descriptor.seed, save.path),
             entity_set: EntitySet::new(),
             acc: Duration::ZERO,

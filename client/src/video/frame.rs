@@ -8,24 +8,17 @@ use crate::video::gpu::SurfaceTexture;
 use crate::video::resource::{SampleCount, Texture};
 
 pub struct Frame<'h> {
-    pub handle: &'h gpu::Handle,
+    pub(crate) handle: &'h gpu::Handle,
     state: Option<State>,
 }
 
-pub struct FrameOptions {
-    pub clear_color: Option<Rgba<f64>>,
-}
-
 impl<'h> Frame<'h> {
-    pub fn new(handle: &'h gpu::Handle, surface: &gpu::Surface, options: FrameOptions) -> Self {
+    pub fn new(handle: &'h gpu::Handle, surface: &gpu::Surface, clear_color: Option<Rgba<f64>>) -> Self {
         let surface_texture = surface
             .create_texture()
             .expect("Failed to get current texture");
         let depth_view = surface.depth_texture().view().clone();
-
-        let clear_color = options
-            .clear_color
-            .map(|Rgba { r, g, b, a }| Color { r, g, b, a });
+        let clear_color = clear_color.map(|Rgba { r, g, b, a }| Color { r, g, b, a });
 
         let state = State::create(handle, surface_texture, clear_color, depth_view, surface.sample_count());
 
@@ -58,15 +51,18 @@ impl<'h> Frame<'h> {
 
 impl Drop for Frame<'_> {
     fn drop(&mut self) {
-        if let Some(State { encoder, pass, .. }) = self.state.take() {
-            drop(pass);
-            self.handle.queue().submit(Some(encoder.finish()));
+        let Some(State { encoder, pass, surface, .. }) = self.state.take() else {
+            return;
         };
+
+        drop(pass);
+        self.handle.queue().submit(Some(encoder.finish()));
+        drop(surface);
     }
 }
 
 struct State {
-    _surface: SurfaceTexture,
+    surface: SurfaceTexture,
     encoder: CommandEncoder,
     view: TextureView,
     resolve_target: Option<TextureView>,
@@ -94,7 +90,7 @@ impl State {
 
         Self {
             encoder,
-            _surface: surface,
+            surface,
             view,
             resolve_target,
             depth_view,
@@ -115,6 +111,7 @@ fn begin_pass<'e>(
         label: None,
         color_attachments: &[Some(RenderPassColorAttachment {
             view,
+            depth_slice: None,
             resolve_target,
             ops: Operations {
                 load: clear_color

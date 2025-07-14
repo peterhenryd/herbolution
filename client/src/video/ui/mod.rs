@@ -52,7 +52,7 @@ impl Painter {
         fonts.set_filter(filter);
         fonts.add_font(
             Font::from_bytes(read(asset_path.join("font/editundo.ttf")).unwrap(), FontSettings::default()).unwrap(),
-            [12.0, 24.0, 36.0, 96.0],
+            [12.0, 24.0, 36.0, 54.0, 96.0],
         );
         let fonts = fonts.finish();
         let atlas = Atlas::create(gpu, &fonts);

@@ -1,8 +1,8 @@
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::time::Duration;
 
-use crossbeam_channel::{Receiver, Sender, bounded, unbounded};
+use crossbeam_channel::{bounded, unbounded, Receiver, Sender};
 use lib::color::Rgba;
 use lib::motile::Motile;
 use lib::point::ChunkPt;
@@ -11,8 +11,7 @@ use lib::vector::vec3d;
 use tracing::error;
 
 use crate::chunk::handle::ChunkLoad;
-use crate::player::handle::ServerPlayerHandle;
-// Game-side handles
+use crate::player::ServerPlayerHandle;
 
 #[derive(Debug)]
 pub struct GameHandle {
@@ -56,8 +55,6 @@ impl GameChunksHandle {
         self.unload_rx.try_recv().ok()
     }
 }
-
-// Client-side handles
 
 #[derive(Debug)]
 pub struct ClientHandle {

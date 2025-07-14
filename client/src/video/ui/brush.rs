@@ -48,9 +48,15 @@ impl<'h, 'f, 'a> Brush<'h, 'f, 'a> {
         self.render(self.painter.instance_sets.get(id));
     }
 
-    pub fn draw_rect(&mut self, bounds: Aabb2<f32>, color: Rgba<f32>) {
-        self.quads
-            .push(Instance2d::new(bounds.min, Quat::IDENTITY, bounds.size(), color, AtlasTextureCoord::NONE));
+    pub fn draw_rect(&mut self, bounds: Aabb2<f32>, color: Rgba<f32>, border_radius: f32) {
+        self.quads.push(Instance2d::new(
+            bounds.min,
+            Quat::IDENTITY,
+            bounds.size(),
+            color,
+            AtlasTextureCoord::NONE,
+            border_radius,
+        ));
     }
 
     pub fn draw_text(&mut self, position: vec2f, text: &Text) {
@@ -71,6 +77,7 @@ impl<'h, 'f, 'a> Brush<'h, 'f, 'a> {
                 Size2::new(coord.metrics.width as f32, coord.metrics.height as f32),
                 Rgba::new(text.color.r, text.color.g, text.color.b, 0.0),
                 coord.texture,
+                0.0,
             ));
 
             x += coord.metrics.advance_width;

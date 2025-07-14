@@ -11,6 +11,6 @@ mod ui;
 pub mod video;
 pub mod world;
 
-pub fn run(options: app::Options) -> Result<(), winit::error::EventLoopError> {
-    app::App::new(options).run()
+pub fn run(root_path: Option<std::path::PathBuf>) -> Result<(), winit::error::EventLoopError> {
+    app::App::new(root_path).run()
 }

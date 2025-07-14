@@ -7,8 +7,8 @@ use lib::size::Size2;
 use crate::app::{Command, Render, Update};
 use crate::menu::MenuConfig;
 use crate::ui::{Button, ButtonId, LayoutDirection, Ui, UiEvent};
-use crate::video::ui::Painter;
 use crate::video::ui::brush::Text;
+use crate::video::ui::Painter;
 
 #[derive(Debug)]
 pub struct TitleMenu {
@@ -39,12 +39,12 @@ impl TitleMenu {
                 })
                 .with_button(
                     Button {
-                        padding: Size2::new(32., 32.),
+                        padding: Size2::splat(64.),
                         color: Rgba::BLACK,
                         text: Text {
                             font_id,
                             content: "Play".to_owned(),
-                            font_size: 36.0,
+                            font_size: 54.0,
                             color: Rgba::WHITE,
                         },
                     },
@@ -52,12 +52,12 @@ impl TitleMenu {
                 )
                 .with_button(
                     Button {
-                        padding: Size2::new(32., 32.),
+                        padding: Size2::splat(64.),
                         color: Rgba::BLACK,
                         text: Text {
                             font_id,
                             content: "Options".to_owned(),
-                            font_size: 36.0,
+                            font_size: 54.0,
                             color: Rgba::WHITE,
                         },
                     },
@@ -65,12 +65,12 @@ impl TitleMenu {
                 )
                 .with_button(
                     Button {
-                        padding: Size2::new(32., 32.),
+                        padding: Size2::splat(64.),
                         color: Rgba::BLACK,
                         text: Text {
                             font_id,
                             content: "Quit".to_owned(),
-                            font_size: 36.0,
+                            font_size: 54.0,
                             color: Rgba::WHITE,
                         },
                     },

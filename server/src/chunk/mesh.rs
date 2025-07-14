@@ -3,7 +3,7 @@ use std::ops::{Not, Range};
 
 use lib::point::ChunkPt;
 use lib::spatial::{CubeFace, CubeFaces};
-use lib::vector::{Vec3, vec3u5};
+use lib::vector::{vec3u5, Vec3};
 use lib::world::{CHUNK_LENGTH, CHUNK_VOLUME};
 use rayon::prelude::{IntoParallelRefMutIterator, ParallelIterator};
 
@@ -212,7 +212,6 @@ impl CubeMesh {
             .iter()
             .map(|f| (f, f.normal()))
             .map(|(f, v)| (f, position.try_cast::<i32>().unwrap() + v))
-            //.filter(|(_, x)| in_bounds(*x))
             .filter_map(|(f, v)| v.try_cast::<u8>().map(|x| (f, x)))
             .filter_map(|(f, v)| vec3u5::try_from(v).map(|x| (f, x)))
             .for_each(|(f, v)| {

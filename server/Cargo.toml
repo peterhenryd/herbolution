@@ -17,4 +17,5 @@ serde = { workspace = true, features = ["derive"] }
 smallvec.workspace = true
 tracing.workspace = true
 
+arc-swap = "1.7.1"
 line_drawing = "1.0.1"

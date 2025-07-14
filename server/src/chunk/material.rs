@@ -2,8 +2,8 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::num::NonZeroU16;
 use std::slice::Iter;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 
 use hashbrown::{Equivalent, HashMap};
 use lib::color::Rgba;
@@ -20,7 +20,6 @@ pub struct Material {
     pub has_collider: bool,
     pub cullable_faces: CubeFaces,
     pub texture: Texture,
-    // time to break by hand in seconds
     pub toughness: f32,
 }
 

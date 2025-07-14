@@ -2,7 +2,7 @@ extern crate herbolution_client as client;
 
 use clap::builder::PathBufValueParser;
 use clap::{Arg, Command};
-use client::app::{App, Options};
+use client::app::App;
 use winit::error::EventLoopError;
 
 fn main() -> Result<(), EventLoopError> {
@@ -11,11 +11,9 @@ fn main() -> Result<(), EventLoopError> {
     }
 
     let matches = command().get_matches();
-    let options = Options {
-        root_dir: matches.get_one("root").cloned(),
-    };
+    let root_dir = matches.get_one("root").cloned();
 
-    App::new(options).run()
+    App::new(root_dir).run()
 }
 
 fn command() -> Command {

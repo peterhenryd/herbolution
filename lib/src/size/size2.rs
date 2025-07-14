@@ -13,12 +13,21 @@ pub struct Size2<T> {
 }
 
 impl<T> Size2<T> {
+    #[inline]
     pub const fn new(width: T, height: T) -> Self {
         Self { width, height }
     }
 
     #[inline]
-    pub fn cast<U: NumCast>(self) -> Option<Size2<U>>
+    pub const fn splat(value: T) -> Self
+    where
+        T: Copy,
+    {
+        Self { width: value, height: value }
+    }
+
+    #[inline]
+    pub fn try_cast<U: NumCast>(self) -> Option<Size2<U>>
     where
         T: ToPrimitive,
     {
@@ -26,6 +35,14 @@ impl<T> Size2<T> {
             width: NumCast::from(self.width)?,
             height: NumCast::from(self.height)?,
         })
+    }
+
+    #[inline]
+    pub fn cast<U: NumCast>(self) -> Size2<U>
+    where
+        T: ToPrimitive,
+    {
+        self.try_cast().unwrap()
     }
 
     #[inline]
