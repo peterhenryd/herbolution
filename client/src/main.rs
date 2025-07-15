@@ -3,12 +3,11 @@ extern crate herbolution_client as client;
 use clap::builder::PathBufValueParser;
 use clap::{Arg, Command};
 use client::app::App;
+use client::trace::trace_init;
 use winit::error::EventLoopError;
 
 fn main() -> Result<(), EventLoopError> {
-    if let Err(e) = tracing_subscriber::fmt::try_init() {
-        eprintln!("Failed to initialize tracing subscriber: {}", e);
-    }
+    let _guard = trace_init();
 
     let matches = command().get_matches();
     let root_dir = matches.get_one("root").cloned();

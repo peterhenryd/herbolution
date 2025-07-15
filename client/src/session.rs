@@ -4,9 +4,9 @@ use std::time::Duration;
 use lib::aabb::Aabb2;
 use lib::color::{Color, ColorConsts, Rgba};
 use lib::save::Save;
-use lib::size::{size2u, Size2};
+use lib::size::{Size2, size2u};
 use lib::util::IntervalCounter;
-use lib::vector::{vec3d, Vec2};
+use lib::vector::{Vec2, vec3d};
 use server::handle::GameHandle;
 use server::{Game, Options};
 use winit::event::MouseButton;
@@ -17,7 +17,7 @@ use crate::app::{Command, Render, Update};
 use crate::video::resource::{Mesh, MeshId, Meshes};
 use crate::video::ui::brush::{Brush, Text};
 use crate::video::world::Vertex3d;
-use crate::video::{world, Video};
+use crate::video::{Video, world};
 use crate::world::World;
 
 #[derive(Debug)]
@@ -77,6 +77,7 @@ impl Session {
         None
     }
 
+    #[tracing::instrument(name = "render_session", skip_all)]
     pub fn render(&mut self, ctx: &mut Render) {
         {
             let mut chisel = ctx.frame.draw_3d(world::RenderType::Sky);
@@ -118,6 +119,7 @@ impl Session {
         }
     }
 
+    #[tracing::instrument(skip_all)]
     fn render_hud(&mut self, resolution: size2u, brush: &mut Brush) {
         let health = self.world.player.state.health.get();
         let health_factor = self.world.player.state.health.percent();
@@ -174,6 +176,7 @@ impl Debugger {
         }
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn render(&mut self, fps: u64, player_position: vec3d, brush: &mut Brush) {
         if !self.is_enabled {
             return;

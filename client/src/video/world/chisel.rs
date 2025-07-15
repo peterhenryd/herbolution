@@ -21,6 +21,7 @@ impl<'h, 'f, 'a> Chisel<'h, 'f, 'a> {
         }
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn load_mesh(&mut self, id: MeshId) {
         let mesh = self.renderer.meshes.get(id);
         self.mesh_index_count = Some(mesh.load_into_render_pass(&mut self.frame.pass()));
@@ -44,6 +45,7 @@ impl<'h, 'f, 'a> Chisel<'h, 'f, 'a> {
             .draw_indexed(0..index_count, 0, 0..buffer.len() as u32);
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn render_each_by_id(&mut self, id: SetId) {
         self.render_each(self.renderer.sets.get(id));
     }

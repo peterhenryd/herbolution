@@ -16,6 +16,10 @@ rayon.workspace = true
 serde = { workspace = true, features = ["derive"] }
 smallvec.workspace = true
 tracing.workspace = true
+tracing-tracy = { workspace = true, optional = true }
 
 arc-swap = "1.7.1"
 line_drawing = "1.0.1"
+
+[features]
+tracing = ["dep:tracing-tracy"]

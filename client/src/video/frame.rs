@@ -29,6 +29,7 @@ impl<'h> Frame<'h> {
         unsafe { transmute(&mut self.state.as_mut().unwrap().pass) }
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn advance_pass(&mut self, clear_color: Option<Rgba<f64>>, no_depth: bool) {
         let state = self.state.as_mut().unwrap();
 
@@ -99,6 +100,7 @@ impl State {
     }
 }
 
+#[tracing::instrument(skip_all)]
 fn begin_pass<'e>(
     encoder: &'e mut CommandEncoder,
     view: &TextureView,
