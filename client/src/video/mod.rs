@@ -90,14 +90,17 @@ pub struct Frame<'h, 'a> {
 }
 
 impl<'h, 'a> Frame<'h, 'a> {
+    #[tracing::instrument(skip_all)]
     pub fn draw_2d<'f>(&'f mut self) -> Brush<'h, 'f, 'a> {
         Brush::create(ui::RenderType, &mut self.frame, self.painter)
     }
 
+    #[tracing::instrument(skip(self))]
     pub fn draw_3d<'f>(&'f mut self, render_type: world::RenderType) -> Chisel<'h, 'f, 'a> {
         Chisel::create(render_type, &mut self.frame, self.sculptor)
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn advance_pass(&mut self, clear_color: Option<Rgba<f64>>, no_depth: bool) {
         self.frame.advance_pass(clear_color, no_depth);
     }

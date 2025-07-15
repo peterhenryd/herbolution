@@ -59,6 +59,7 @@ impl<'h, 'f, 'a> Brush<'h, 'f, 'a> {
         ));
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn draw_text(&mut self, position: vec2f, text: &Text) {
         let mut x = 0.0;
 

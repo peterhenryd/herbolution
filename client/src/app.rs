@@ -85,6 +85,7 @@ impl ApplicationHandler for App<'_> {
             .resume(event_loop, self.store.fs.path().join("assets"));
     }
 
+    #[tracing::instrument(skip(self))]
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _: WindowId, event: WindowEvent) {
         let Switch::Resumed { window, video } = &mut self.switch else {
             return;
@@ -149,6 +150,9 @@ impl ApplicationHandler for App<'_> {
                 }
             }
             WindowEvent::RedrawRequested => {
+                #[cfg(feature = "tracing")]
+                tracing_tracy::client::frame_mark();
+
                 let input = self.store.input.take_frame();
                 self.state.update(&mut Update {
                     dt: self.store.delta_time.next(),
@@ -304,6 +308,7 @@ impl State {
         }
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn render(&mut self, ctx: &mut Render) {
         match self {
             State::Loading(splash) => splash.render(ctx),

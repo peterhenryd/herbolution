@@ -36,6 +36,8 @@ impl ChunkGenerator {
         let params = self.params.clone();
 
         rayon::spawn(move || {
+            #[cfg(feature = "tracing")]
+            tracing_tracy::client::set_thread_name!("chunk_generator");
             let mut mesh = CubeMesh::new(position);
 
             params.generate(&mut mesh);
@@ -59,6 +61,7 @@ impl GenerationParams {
         Self { seed, global_palette }
     }
 
+    #[tracing::instrument(name = "chunk_generate", skip_all)]
     pub fn generate(&self, chunk: &mut CubeMesh) {
         let stopwatch = CHUNK_GENERATION_TIME.start_measuring();
 

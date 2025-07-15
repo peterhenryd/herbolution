@@ -8,7 +8,7 @@ use server::handle::GameHandle;
 use crate::app::Update;
 use crate::session::MeshIds;
 use crate::video::world::chisel::Chisel;
-use crate::video::{world, Video};
+use crate::video::{Video, world};
 use crate::world::chunk::ChunkMap;
 use crate::world::particle::Particles;
 use crate::world::player::Player;
@@ -46,6 +46,7 @@ impl World {
         }
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn render(&mut self, mesh_ids: &MeshIds, chisel: &mut Chisel) {
         chisel.load_mesh(mesh_ids.solid_quad);
 
