@@ -1,9 +1,8 @@
-use std::ops::{Add, Mul};
-
 use bytemuck::{Pod, Zeroable};
-use num::Float;
 use num::traits::{ConstOne, ConstZero};
+use num::Float;
 use serde::{Deserialize, Serialize};
+use std::ops::{Add, Mul};
 
 use crate::matrix::Mat3;
 use crate::vector::{Vec3, Vec4};

@@ -1,6 +1,5 @@
-use std::ops::{Add, AddAssign, Sub, SubAssign};
-
 use bytemuck::{Pod, Zeroable};
+use std::ops::{Add, AddAssign, Sub, SubAssign};
 
 pub const CHUNK_EXP: u32 = 5;
 pub const CHUNK_LENGTH: usize = 32;

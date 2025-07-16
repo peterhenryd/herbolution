@@ -7,6 +7,7 @@ pub mod aabb;
 pub mod collections;
 pub mod color;
 pub mod fs;
+mod macros;
 pub mod matrix;
 pub mod motile;
 pub mod point;

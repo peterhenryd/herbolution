@@ -5,10 +5,10 @@ use lib::size::size2u;
 use wgpu::SurfaceTarget;
 
 use crate::video::resource::SampleCount;
-use crate::video::ui::Painter;
 use crate::video::ui::brush::Brush;
-use crate::video::world::Sculptor;
+use crate::video::ui::Painter;
 use crate::video::world::chisel::Chisel;
+use crate::video::world::Sculptor;
 
 pub mod camera;
 pub mod frame;

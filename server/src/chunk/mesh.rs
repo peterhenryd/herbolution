@@ -1,11 +1,10 @@
-use std::iter::zip;
-use std::ops::{Not, Range};
-
 use lib::point::ChunkPt;
 use lib::spatial::{CubeFace, CubeFaces};
-use lib::vector::{Vec3, vec3u5};
+use lib::vector::{vec3u5, Vec3};
 use lib::world::{CHUNK_LENGTH, CHUNK_VOLUME};
 use rayon::prelude::{IntoParallelRefMutIterator, ParallelIterator};
+use std::iter::zip;
+use std::ops::{Not, Range};
 
 use crate::chunk::cube::Cube;
 use crate::chunk::material::{Palette, PaletteCube, PaletteMaterialId, PaletteMaterialOptionExt};

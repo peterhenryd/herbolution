@@ -1,3 +1,6 @@
+pub use crate::functions::{cell_32, fbm_32, fbm_64, ridge_32, ridge_64, simplex_32, simplex_64, turbulence_32, turbulence_64};
+pub use crate::simd::{SimdTransmuteF32, SimdTransmuteF64};
+
 cellular!(
     "2d",
     cellular_2d,

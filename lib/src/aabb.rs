@@ -1,13 +1,11 @@
-use std::fmt::Debug;
-use std::ops::{Add, AddAssign, Sub};
-
+use crate::size::{Size2, Size3};
+use crate::vector::{Vec2, Vec3};
 use bytemuck::Pod;
 use num::traits::real::Real;
 use num::traits::{ConstOne, ConstZero};
 use num::{Float, Num, NumCast, Signed, ToPrimitive};
-
-use crate::size::{Size2, Size3};
-use crate::vector::{Vec2, Vec3};
+use std::fmt::Debug;
+use std::ops::{Add, AddAssign, Sub};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Aabb2<T> {

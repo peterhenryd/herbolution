@@ -10,7 +10,7 @@ use lib::collections::Mailbox;
 use lib::point::ChunkPt;
 use lib::spatial::{CubeFace, PerFace};
 use lib::task::THREAD_POOL;
-use lib::vector::{Vec3, Vec4, vec3i, vec3u5, vec4f};
+use lib::vector::{vec3i, vec3u5, vec4f, Vec3, Vec4};
 use lib::world::{CHUNK_LENGTH, CHUNK_VOLUME};
 use parking_lot::{RwLock, RwLockReadGuard};
 use server::chunk::cube::Cube;
@@ -20,8 +20,8 @@ use wgpu::BufferUsages;
 
 use crate::video::gpu;
 use crate::video::resource::GrowBuffer;
-use crate::video::world::Instance3d;
 use crate::video::world::chisel::Chisel;
+use crate::video::world::Instance3d;
 use crate::world::frustum::Frustum;
 
 type ChunkShell = [Option<Arc<RwLock<ChunkData>>>; 27];
@@ -174,18 +174,16 @@ fn create_chunk_shell(map: &HashMap<ChunkPt, Chunk>, position: ChunkPt) -> Chunk
 }
 
 fn generate_mesh(shell: &ChunkShell, instances: &mut Vec<Instance3d>) {
-    let center_chunk = shell[13].as_ref().unwrap();
-    let center_chunk = center_chunk.read();
+    let shell_guard = shell
+        .each_ref()
+        .map(|chunk| chunk.as_ref().map(|x| x.read()));
+    let center_chunk = shell_guard[13].as_ref().unwrap();
 
     let mut hasher = DefaultHasher::new();
     center_chunk.position.hash(&mut hasher);
     let mut rng = Rng::with_seed(hasher.finish());
 
     let chunk_position = center_chunk.position.0.mul(CHUNK_LENGTH as i32);
-
-    let shell_guard = shell
-        .each_ref()
-        .map(|chunk| chunk.as_ref().map(|x| x.read()));
 
     let (mut cached_material, mut prev_material_id) = (None, None);
     for x in 0..CHUNK_LENGTH {

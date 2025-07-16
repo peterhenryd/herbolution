@@ -1,9 +1,67 @@
-use bytemuck::{Pod, Zeroable};
-use serde::{Deserialize, Serialize};
-
+use crate::macros::impl_ops;
 use crate::matrix::{mat3f, Mat3};
-use crate::rotation::Euler;
 use crate::vector::{vec3f, vec4f, Vec3, Vec4};
+use bytemuck::{Pod, Zeroable};
+use num::traits::ConstZero;
+use num::Float;
+use serde::{Deserialize, Serialize};
+use std::ops::{
+    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Not, Rem, RemAssign,
+    Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
+};
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]
+pub struct Euler<A> {
+    pub yaw: A,
+    pub pitch: A,
+    pub roll: A,
+}
+
+impl<A> Euler<A> {
+    pub const fn new(yaw: A, pitch: A, roll: A) -> Self {
+        Self { yaw, pitch, roll }
+    }
+
+    pub fn into_view_center(self) -> Vec3<A>
+    where
+        A: Float + ConstZero,
+    {
+        let (sin_pitch, cos_pitch) = self.pitch.sin_cos();
+        let (sin_yaw, cos_yaw) = self.yaw.sin_cos();
+        Vec3::new(cos_pitch * cos_yaw, sin_pitch, cos_pitch * sin_yaw).normalize()
+    }
+
+    pub fn yaw_directions(self) -> (Vec3<A>, Vec3<A>)
+    where
+        A: Float + ConstZero,
+    {
+        let (sin_yaw, cos_yaw) = self.yaw.sin_cos();
+
+        let straight = Vec3::new(cos_yaw, A::ZERO, sin_yaw);
+        let side = Vec3::new(-sin_yaw, A::ZERO, cos_yaw);
+
+        (straight.normalize(), side.normalize())
+    }
+}
+
+impl<A: ConstZero> Euler<A> {
+    pub const IDENTITY: Self = Self::new(A::ZERO, A::ZERO, A::ZERO);
+}
+
+impl<A: ConstZero> Default for Euler<A> {
+    fn default() -> Self {
+        Self::IDENTITY
+    }
+}
+
+impl_ops! {
+    struct Euler<A> {
+        yaw: A,
+        pitch: A,
+        roll: A,
+    }
+}
 
 #[repr(transparent)]
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Deserialize, Serialize, Pod, Zeroable)]

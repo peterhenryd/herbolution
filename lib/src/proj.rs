@@ -1,6 +1,6 @@
 use bytemuck::{Pod, Zeroable};
 
-use crate::matrix::{Mat4, mat4f};
+use crate::matrix::{mat4f, Mat4};
 use crate::size::size2u;
 use crate::vector::Vec4;
 

@@ -1,8 +1,7 @@
-use std::ops::{Add, Mul};
-
-use num::Float;
 use num::traits::ConstZero;
+use num::Float;
 use serde::{Deserialize, Serialize};
+use std::ops::{Add, Mul};
 
 use crate::matrix::Mat4;
 use crate::vector::{Vec3, Vec4};

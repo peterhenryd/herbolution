@@ -3,8 +3,8 @@ use lib::color::Rgba;
 use lib::matrix::Mat3;
 use lib::rotation::Quat;
 use lib::size::size2f;
-use lib::vector::{Vec2, vec2f, vec3f};
-use wgpu::{VertexBufferLayout, VertexStepMode, vertex_attr_array};
+use lib::vector::{vec2f, vec3f, Vec2};
+use wgpu::{vertex_attr_array, VertexBufferLayout, VertexStepMode};
 
 use crate::video::resource::{AtlasTextureCoord, Vertex};
 

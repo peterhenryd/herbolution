@@ -1,10 +1,9 @@
+use bytemuck::{Pod, Zeroable};
+use serde::{Deserialize, Serialize};
 use std::array::IntoIter;
 use std::f32::consts::{FRAC_PI_2, PI};
 use std::fmt::{Debug, Display, Formatter};
 use std::ops::{Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Index, IndexMut, Not, Sub, SubAssign};
-
-use bytemuck::{Pod, Zeroable};
-use serde::{Deserialize, Serialize};
 
 use crate::rotation::{Euler, Quat};
 use crate::vector::{vec3i, vec3u5, Vec3};

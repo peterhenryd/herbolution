@@ -1,6 +1,5 @@
 use lib::save::SaveWorld;
 use time::Duration;
-use tracing::info;
 
 use crate::chunk::map::ChunkMap;
 use crate::entity::set::EntitySet;
@@ -27,7 +26,7 @@ impl World {
         self.acc += dt;
         if self.acc >= Duration::SECOND {
             self.acc -= Duration::SECOND;
-            info!("Avg. chunk generation time: {:?}", CHUNK_GENERATION_TIME.average(),);
+            tracing::info!("Avg. chunk generation time: {}", CHUNK_GENERATION_TIME.average());
         }
 
         self.chunk_map.update(handle);

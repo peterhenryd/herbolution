@@ -1,13 +1,13 @@
 use lib::aabb::Aabb2;
 use lib::color::Rgba;
-use lib::size::{Size2, size2f};
-use lib::vector::{Vec2, vec2f};
+use lib::size::{size2f, Size2};
+use lib::vector::{vec2f, Vec2};
 use winit::event::MouseButton;
 
 use crate::app::Render;
 use crate::input::{ClickEvent, InputFrame};
-use crate::video::ui::Painter;
 use crate::video::ui::brush::Text;
+use crate::video::ui::Painter;
 
 #[derive(Debug)]
 pub struct Ui {

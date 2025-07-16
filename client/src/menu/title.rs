@@ -7,8 +7,8 @@ use lib::size::Size2;
 use crate::app::{Command, Render, Update};
 use crate::menu::MenuConfig;
 use crate::ui::{Button, ButtonId, LayoutDirection, Ui, UiEvent};
-use crate::video::ui::Painter;
 use crate::video::ui::brush::Text;
+use crate::video::ui::Painter;
 
 #[derive(Debug)]
 pub struct TitleMenu {

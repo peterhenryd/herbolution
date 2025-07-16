@@ -1,7 +1,6 @@
 #![allow(non_camel_case_types)]
 
 use std::ops::{Add, AddAssign};
-
 use bytemuck::{Pod, Zeroable};
 use serde::{Deserialize, Serialize};
 

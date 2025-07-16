@@ -1,4 +1,4 @@
-use lib::size::{Size2, size2u};
+use lib::size::{size2u, Size2};
 use pollster::FutureExt;
 use wgpu::{
     Adapter, CompositeAlphaMode, Device, DeviceDescriptor, Features, Instance, Limits, MemoryHints, PowerPreference, PresentMode, Queue, RequestAdapterOptions,

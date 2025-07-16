@@ -1,7 +1,6 @@
-use std::ops::{Add, AddAssign, BitAnd, Sub, SubAssign};
-
-use crate::vector::{Vec3, vec3i, vec3u5};
+use crate::vector::{vec3i, vec3u5, Vec3};
 use crate::world::{CHUNK_EXP, CHUNK_LENGTH};
+use std::ops::{Add, AddAssign, BitAnd, Sub, SubAssign};
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub struct CubePt(pub vec3i);
