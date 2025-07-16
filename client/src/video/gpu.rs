@@ -40,6 +40,8 @@ impl Handle {
             .block_on()
             .expect("Failed to request device");
 
+        tracing::info!("Using adapter: {:?}", adapter.get_info());
+
         Self { adapter, device, queue }
     }
 
