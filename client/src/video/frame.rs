@@ -8,13 +8,13 @@ use crate::video::gpu::SurfaceTexture;
 use crate::video::resource::{SampleCount, Texture};
 
 #[derive(Debug)]
-pub struct Frame<'h> {
-    pub(crate) handle: &'h gpu::Handle,
+pub struct Frame<'a> {
+    pub(crate) handle: &'a gpu::Handle,
     state: Option<State>,
 }
 
-impl<'h> Frame<'h> {
-    pub fn new(handle: &'h gpu::Handle, surface: &gpu::Surface, clear_color: Option<Rgba<f64>>) -> Self {
+impl<'a> Frame<'a> {
+    pub fn new(handle: &'a gpu::Handle, surface: &gpu::Surface, clear_color: Option<Rgba<f64>>) -> Self {
         let surface_texture = surface
             .create_texture()
             .expect("Failed to get current texture");

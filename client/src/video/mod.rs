@@ -73,7 +73,7 @@ impl<'w> Video<'w> {
         self.surface.resolution()
     }
 
-    pub fn create_frame(&self) -> Frame<'_, '_> {
+    pub fn create_frame(&self) -> Frame<'_> {
         Frame {
             frame: frame::Frame::new(&self.handle, &self.surface, Some(self.clear_color)),
             painter: &self.painter,
@@ -87,20 +87,20 @@ impl<'w> Video<'w> {
 }
 
 #[derive(Debug)]
-pub struct Frame<'h, 'a> {
-    pub(crate) frame: frame::Frame<'h>,
+pub struct Frame<'a> {
+    pub(crate) frame: frame::Frame<'a>,
     pub painter: &'a Painter,
     pub sculptor: &'a Sculptor,
 }
 
-impl<'h, 'a> Frame<'h, 'a> {
+impl<'a> Frame<'a> {
     #[tracing::instrument(skip_all)]
-    pub fn draw_2d<'f>(&'f mut self) -> Brush<'h, 'f, 'a> {
+    pub fn draw_2d<'f>(&'f mut self) -> Brush<'f, 'a> {
         Brush::create(ui::RenderType, &mut self.frame, self.painter)
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn draw_3d<'f>(&'f mut self, render_type: world::RenderType) -> Chisel<'h, 'f, 'a> {
+    pub fn draw_3d<'f>(&'f mut self, render_type: world::RenderType) -> Chisel<'f, 'a> {
         Chisel::create(render_type, &mut self.frame, self.sculptor)
     }
 

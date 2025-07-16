@@ -2,14 +2,14 @@ use crate::video::frame::Frame;
 use crate::video::resource::{Buffer, MeshId, SetId};
 use crate::video::world::{Instance3d, RenderType, Sculptor};
 
-pub struct Chisel<'h, 'f, 'a> {
-    pub frame: &'f mut Frame<'h>,
+pub struct Chisel<'f, 'a> {
+    pub frame: &'f mut Frame<'a>,
     renderer: &'a Sculptor,
     mesh_index_count: Option<u32>,
 }
 
-impl<'h, 'f, 'a> Chisel<'h, 'f, 'a> {
-    pub fn create(render_type: RenderType, frame: &'f mut Frame<'h>, renderer: &'a Sculptor) -> Self {
+impl<'f, 'a> Chisel<'f, 'a> {
+    pub fn create(render_type: RenderType, frame: &'f mut Frame<'a>, renderer: &'a Sculptor) -> Self {
         renderer
             .pipeline_map
             .load_by_type(render_type, frame.pass());

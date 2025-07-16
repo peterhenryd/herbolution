@@ -251,7 +251,7 @@ pub struct Update<'w, 'a> {
 pub struct Render<'a> {
     pub store: &'a mut Store,
 
-    pub frame: video::Frame<'a, 'a>,
+    pub frame: video::Frame<'a>,
     pub resolution: size2u,
 }
 

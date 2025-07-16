@@ -11,15 +11,15 @@ use crate::video::ui::font::FontId;
 use crate::video::ui::vertex::Instance2d;
 use crate::video::ui::{Painter, RenderType};
 
-pub struct Brush<'h, 'f, 'a> {
-    pub frame: &'f mut Frame<'h>,
+pub struct Brush<'f, 'a> {
+    pub frame: &'f mut Frame<'a>,
     pub painter: &'a Painter,
     mesh_index_count: Option<u32>,
     quads: Vec<Instance2d>,
 }
 
-impl<'h, 'f, 'a> Brush<'h, 'f, 'a> {
-    pub fn create(render_type: RenderType, frame: &'f mut Frame<'h>, painter: &'a Painter) -> Self {
+impl<'f, 'a> Brush<'f, 'a> {
+    pub fn create(render_type: RenderType, frame: &'f mut Frame<'a>, painter: &'a Painter) -> Self {
         painter
             .pipeline_map
             .load_by_type(render_type, frame.pass());
@@ -90,7 +90,7 @@ impl<'h, 'f, 'a> Brush<'h, 'f, 'a> {
     }
 }
 
-impl Drop for Brush<'_, '_, '_> {
+impl Drop for Brush<'_, '_> {
     fn drop(&mut self) {
         if !self.quads.is_empty() {
             let buffer = Buffer::from_data(self.frame.handle, &self.quads, BufferUsages::VERTEX | BufferUsages::COPY_DST);
