@@ -1,6 +1,3 @@
-use crate::functions::*;
-use crate::simd::*;
-
 cellular!(
     "2d",
     cellular_2d,

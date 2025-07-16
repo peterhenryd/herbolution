@@ -1,19 +1,21 @@
-use crate::app::Update;
-use crate::video::camera::{VideoCamera, View};
-use crate::video::resource::{SetId, Sets};
-use crate::video::world::Instance3d;
-use crate::video::Video;
-use crate::world::frustum::Frustum;
+use std::ops::Deref;
+use std::sync::Arc;
+
 use lib::color::{ColorConsts, Rgba};
 use lib::proj::Perspective;
 use lib::spatial::CubeFace;
-use lib::vector::{vec3f, Vec3, Vec4};
+use lib::vector::{Vec3, Vec4, vec3f};
 use server::entity::{ActionState, ActionTarget, CubeTarget};
 use server::player::{PlayerInputDelta, PlayerInputState, PlayerState, ServerPlayerHandle};
-use std::ops::Deref;
-use std::sync::Arc;
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
+
+use crate::app::Update;
+use crate::video::Video;
+use crate::video::camera::{VideoCamera, View};
+use crate::video::resource::{SetId, Sets};
+use crate::video::world::Instance3d;
+use crate::world::frustum::Frustum;
 
 #[derive(Debug)]
 pub struct Player {

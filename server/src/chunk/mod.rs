@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use lib::point::ChunkPt;
+use lib::task::THREAD_POOL;
 use parking_lot::RwLock;
 
 use crate::chunk::handle::{ChunkCube, ClientChunkHandle, CubeUpdate};
@@ -48,7 +49,7 @@ impl Chunk {
         let mesh = self.mesh.clone();
         let sender = self.handle.cube_update.clone();
 
-        rayon::spawn(move || {
+        THREAD_POOL.spawn(move || {
             let mut mesh = mesh.write();
             let mesh = &mut *mesh;
 

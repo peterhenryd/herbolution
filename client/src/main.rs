@@ -1,25 +1,30 @@
 extern crate herbolution_client as client;
 
-use clap::builder::PathBufValueParser;
-use clap::{Arg, Command};
-use client::app::App;
-use client::trace::trace_init;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 use winit::error::EventLoopError;
 
 fn main() -> Result<(), EventLoopError> {
-    let _guard = trace_init();
+    init_tracing();
 
-    let matches = command().get_matches();
-    let root_dir = matches.get_one("root").cloned();
+    if let Some(home_dir) = std::env::home_dir()
+        && home_dir.join(".herbolution").exists()
+    {
+        tracing::warn!("The .herbolution directory in your home folder is deprecated and no longer used. Please consider removing it.");
+    }
 
-    App::new(root_dir).run()
+    client::run()
 }
 
-fn command() -> Command {
-    let root_arg = Arg::new("root")
-        .long("root")
-        .value_parser(PathBufValueParser::new())
-        .required(false);
+fn init_tracing() {
+    let registry = tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer())
+        .with(tracing_subscriber::filter::EnvFilter::from_default_env());
 
-    Command::new("herbolution").arg(root_arg)
+    #[cfg(feature = "tracing")]
+    let registry = registry.with(tracing_tracy::TracyLayer::default());
+
+    if let Err(e) = registry.try_init() {
+        eprintln!("Failed to initialize tracing: {}", e);
+    }
 }

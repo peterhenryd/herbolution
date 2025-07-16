@@ -1,15 +1,21 @@
 //! This module defines the Herbolution application structure and system-level behavior with a video and update cycle.
 
-use std::path::PathBuf;
+use std::ffi::{OsStr, OsString};
+use std::marker::PhantomData;
+use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use std::sync::Arc;
-use std::time::Duration;
 
+use clap::builder::{BoolValueParser, TypedValueParser};
+use clap::error::ErrorKind;
+use clap::{Arg, Error, Parser};
 use lib::color::{Color, ColorConsts, Rgba};
 use lib::fs::Fs;
 use lib::save::Save;
-use lib::size::{Size2, size2u};
+use lib::size::{size2u, Size2};
 use lib::util::DeltaTime;
 use lib::vector::Vec2;
+use time::Duration;
 use winit::application::ApplicationHandler;
 use winit::dpi::{PhysicalPosition, PhysicalSize};
 use winit::error::EventLoopError;
@@ -22,67 +28,44 @@ use crate::input::{Input, InputFrame};
 use crate::menu::{Menu, MenuConfig};
 use crate::session::Session;
 use crate::video;
-use crate::video::Video;
 use crate::video::resource::SampleCount;
 use crate::video::ui::brush::Text;
+use crate::video::Video;
 
+#[derive(Debug)]
 pub struct App<'w> {
     store: Store,
-
     state: State,
-
     switch: Switch<'w>,
-    init: bool,
-}
-
-pub struct Update<'w, 'a> {
-    pub store: &'a mut Store,
-    pub window: &'a Window,
-    pub event_loop: &'a ActiveEventLoop,
-    pub video: &'a mut Video<'w>,
-
-    pub dt: Duration,
-    pub input: InputFrame,
-}
-
-pub struct Render<'a> {
-    pub store: &'a mut Store,
-
-    pub frame: video::Frame<'a, 'a>,
-    pub resolution: size2u,
+    options: AppOptions,
 }
 
 impl App<'_> {
-    pub fn new(root_dir: Option<PathBuf>) -> Self {
+    pub fn new(options: AppOptions) -> Self {
+        let store = Store::new(options.data_dir.clone());
+
+        store
+            .fs
+            .init()
+            .expect("Failed to init Herbolution file system");
+
         Self {
-            store: Store::new(root_dir),
-            state: State::default(),
+            store,
+            state: State::Loading(Splash::new()),
             switch: Switch::Suspended(None),
-            init: false,
+            options,
         }
     }
 
     pub fn run(&mut self) -> Result<(), EventLoopError> {
         EventLoop::new()?.run_app(self)
     }
-
-    fn init(&mut self) {
-        self.store
-            .fs
-            .init()
-            .expect("Failed to init Herbolution file system");
-    }
 }
 
 impl ApplicationHandler for App<'_> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        if !self.init {
-            self.init();
-            self.init = true;
-        }
-
         self.switch
-            .resume(event_loop, self.store.fs.path().join("assets"));
+            .resume(event_loop, self.store.fs.path().join("assets"), &self.options);
     }
 
     #[tracing::instrument(skip(self))]
@@ -195,6 +178,7 @@ impl ApplicationHandler for App<'_> {
     }
 }
 
+#[derive(Debug)]
 pub struct Store {
     pub(crate) input: Input,
     pub(crate) fs: Fs,
@@ -202,7 +186,7 @@ pub struct Store {
 }
 
 impl Store {
-    pub fn new(root_dir: Option<PathBuf>) -> Self {
+    pub fn new(root_dir: PathBuf) -> Self {
         Self {
             input: Input::default(),
             fs: Fs::new(root_dir),
@@ -211,29 +195,29 @@ impl Store {
     }
 }
 
+#[derive(Debug)]
 pub enum Switch<'w> {
     Resumed { window: Arc<Window>, video: Video<'w> },
     Suspended(Option<Arc<Window>>),
 }
 
-const RESOLUTION: (u32, u32) = (1920, 1080);
-
 impl Switch<'_> {
-    pub(super) fn resume(&mut self, event_loop: &ActiveEventLoop, asset_path: PathBuf) {
+    pub(super) fn resume(&mut self, event_loop: &ActiveEventLoop, asset_path: PathBuf, options: &AppOptions) {
         let cached_window;
         match self {
             Switch::Resumed { .. } => return,
             Switch::Suspended(window) => cached_window = window.take(),
         }
 
-        let window = cached_window.unwrap_or_else(|| create_window(event_loop));
+        let window = cached_window.unwrap_or_else(|| create_window(event_loop, options.resolution));
         let video = Video::create(
             window.clone(),
             video::Options {
-                resolution: RESOLUTION.into(),
+                resolution: options.resolution,
                 clear_color: Rgba::<u8>::from_rgb(117, 255, 250).into(),
-                sample_count: SampleCount::Multi,
+                sample_count: options.sample_count,
                 asset_path,
+                vsync: options.vsync,
             },
         );
 
@@ -252,26 +236,29 @@ impl Switch<'_> {
     }
 }
 
-fn create_window(event_loop: &ActiveEventLoop) -> Arc<Window> {
-    const VERSION: &str = env!("CARGO_PKG_VERSION");
-    const RESOLUTION: (u32, u32) = (1920, 1080);
+#[derive(Debug)]
+pub struct Update<'w, 'a> {
+    pub store: &'a mut Store,
+    pub window: &'a Window,
+    pub event_loop: &'a ActiveEventLoop,
+    pub video: &'a mut Video<'w>,
 
-    let attributes = WindowAttributes::default()
-        .with_title(format!("Herbolution {}", VERSION))
-        .with_inner_size::<PhysicalSize<u32>>(RESOLUTION.into());
-    let window = event_loop
-        .create_window(attributes)
-        .expect("Failed to create window");
+    pub dt: Duration,
+    pub input: InputFrame,
+}
 
-    Arc::new(window)
+#[derive(Debug)]
+pub struct Render<'a> {
+    pub store: &'a mut Store,
+
+    pub frame: video::Frame<'a, 'a>,
+    pub resolution: size2u,
 }
 
 #[derive(Debug)]
 pub enum State {
     Loading(Splash),
-
     Browsing(Menu),
-
     Playing(Session),
 }
 
@@ -318,19 +305,11 @@ impl State {
     }
 }
 
-impl Default for State {
-    fn default() -> Self {
-        Self::Loading(Splash::default())
-    }
-}
-
 #[derive(Debug, Clone)]
 pub enum Command {
     OpenMenu(MenuConfig),
-
     StartGame { save: Save },
     PauseGame,
-
     Exit,
 }
 
@@ -340,8 +319,14 @@ pub struct Splash {
 }
 
 impl Splash {
+    pub fn new() -> Self {
+        Self {
+            lifetime: Duration::milliseconds(750),
+        }
+    }
+
     pub fn update(&mut self, ctx: &mut Update) -> Option<Command> {
-        self.lifetime = self.lifetime.saturating_sub(ctx.dt);
+        self.lifetime -= ctx.dt;
 
         if self.lifetime > Duration::ZERO {
             None
@@ -369,10 +354,123 @@ impl Splash {
     }
 }
 
-impl Default for Splash {
-    fn default() -> Self {
-        Self {
-            lifetime: Duration::from_millis(750),
-        }
+#[derive(Debug, Parser)]
+#[command(
+    name = "herbolution",
+    about = "The client for Herbolution, a 3D voxel game.",
+    version = env!("CARGO_PKG_VERSION"),
+)]
+pub struct AppOptions {
+    #[arg(
+        default_value = "1920x1080",
+        help = "Resolution of the window in physical pixels",
+        long = "resolution",
+        short = 'r',
+        value_name = "WIDTHxHEIGHT",
+        value_parser = Size2ValueParser::<u32>::new(),
+    )]
+    pub resolution: size2u,
+    #[arg(
+        default_value = default_root_dir().as_os_str(),
+        help = "Directory for Herbolution data",
+        long = "data-dir",
+        short = 'd',
+        value_name = "PATH",
+        value_parser = clap::value_parser!(PathBuf),
+    )]
+    pub data_dir: PathBuf,
+    #[arg(
+        default_value = num_cpus_os_str(),
+        help = "Number of CPU cores utilized for background tasks (overrides `HERBOLUTION_WORKER_THREADS`)",
+        long = "workers",
+        short = 'w',
+        value_name = "NUM_THREADS",
+    )]
+    pub workers: usize,
+    #[arg(
+        action = clap::ArgAction::SetTrue,
+        default_value = "false",
+        help = "Enable multisample anti-aliasing",
+        long = "msaa",
+        short = 'a',
+        value_parser = SampleCountValueParser,
+    )]
+    pub sample_count: SampleCount,
+    #[arg(default_value = "false", help = "Limit frame rate to display refresh rate", long = "vsync", short = 'v')]
+    pub vsync: bool,
+}
+
+#[derive(Debug)]
+struct Size2ValueParser<T>(PhantomData<T>);
+
+impl<T> Size2ValueParser<T> {
+    pub const fn new() -> Self {
+        Self(PhantomData)
     }
+}
+
+impl<T> Clone for Size2ValueParser<T> {
+    fn clone(&self) -> Self {
+        Self::new()
+    }
+}
+
+impl<T> Copy for Size2ValueParser<T> {}
+
+impl<T: FromStr + Clone + Send + Sync + 'static> TypedValueParser for Size2ValueParser<T> {
+    type Value = Size2<T>;
+
+    fn parse_ref(&self, _: &clap::Command, _: Option<&Arg>, value: &OsStr) -> Result<Self::Value, Error> {
+        let value_string = value.to_string_lossy();
+        let [width, height] = value_string
+            .split('x')
+            .next_chunk::<2>()
+            .map_err(|_| Error::new(ErrorKind::InvalidValue))?;
+
+        Ok(Size2 {
+            width: T::from_str(width).map_err(|_| Error::new(ErrorKind::InvalidValue))?,
+            height: T::from_str(height).map_err(|_| Error::new(ErrorKind::InvalidValue))?,
+        })
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+struct SampleCountValueParser;
+
+impl TypedValueParser for SampleCountValueParser {
+    type Value = SampleCount;
+
+    fn parse_ref(&self, cmd: &clap::Command, arg: Option<&Arg>, value: &OsStr) -> Result<Self::Value, Error> {
+        Ok(BoolValueParser::new()
+            .parse_ref(cmd, arg, value)?
+            .then_some(SampleCount::Multi)
+            .unwrap_or(SampleCount::Single))
+    }
+}
+
+fn create_window(event_loop: &ActiveEventLoop, resolution: size2u) -> Arc<Window> {
+    const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+    let attributes = WindowAttributes::default()
+        .with_title(format!("Herbolution {VERSION}"))
+        .with_inner_size::<PhysicalSize<u32>>(resolution.to_tuple().into());
+    let window = event_loop
+        .create_window(attributes)
+        .expect("Failed to create window");
+
+    Arc::new(window)
+}
+
+fn default_root_dir() -> &'static Path {
+    directories::BaseDirs::new()
+        .map(|dirs| dirs.data_local_dir().join("Herbolution"))
+        .unwrap_or_else(|| {
+            tracing::error!("Failed to find local data directory; using '.herbolution' in the working directory as the root directory.");
+            PathBuf::from(".herbolution")
+        })
+        .leak()
+}
+
+fn num_cpus_os_str() -> &'static OsStr {
+    OsString::from(num_cpus::get().to_string()).leak()
 }

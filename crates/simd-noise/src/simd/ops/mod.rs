@@ -1,9 +1,5 @@
 #![allow(dead_code)]
 
-use core::marker::PhantomData;
-use crate::simd::backends::scalar::Scalar;
-use crate::simd::float::Float;
-
 #[cfg(target_arch = "aarch64")]
 use core::arch::aarch64::*;
 #[cfg(target_arch = "wasm32")]
@@ -12,13 +8,16 @@ use core::arch::wasm32::*;
 use core::arch::x86::*;
 #[cfg(target_arch = "x86_64")]
 use core::arch::x86_64::*;
+use core::marker::PhantomData;
 
 #[cfg(target_arch = "aarch64")]
 use crate::simd::backends::neon::Neon;
+use crate::simd::backends::scalar::Scalar;
 #[cfg(target_arch = "wasm32")]
 use crate::simd::backends::wasm32::Wasm;
 #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
 use crate::simd::backends::{avx2::Avx2, sse2::Sse2, sse41::Sse41};
+use crate::simd::float::Float;
 
 mod i8;
 

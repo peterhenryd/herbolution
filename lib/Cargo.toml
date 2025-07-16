@@ -6,10 +6,13 @@ edition = "2024"
 [dependencies]
 bytemuck = { workspace = true, features = ["derive"] }
 crossbeam-channel.workspace = true
+rayon.workspace = true
 serde = { workspace = true, features = ["derive"] }
 thiserror.workspace = true
+time.workspace = true
 toml.workspace = true
 
 include_dir = "0.7.4"
 num = "0.4.3"
+num_cpus = "1.17.0"
 static_assertions = "1.1.0"

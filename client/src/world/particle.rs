@@ -1,15 +1,15 @@
 use std::time::Duration;
 
 use lib::rotation::Quat;
-use lib::vector::{Vec3, Vec4, vec3d};
+use lib::vector::{vec3d, Vec3, Vec4};
 use server::handle::{GameHandle, Particle};
 use wgpu::BufferUsages;
 
 use crate::app::Update;
 use crate::video::gpu;
 use crate::video::resource::GrowBuffer;
-use crate::video::world::Instance3d;
 use crate::video::world::chisel::Chisel;
+use crate::video::world::Instance3d;
 
 #[derive(Debug)]
 pub struct Particles {
@@ -48,7 +48,7 @@ impl Particles {
 }
 
 pub fn update_particle(particle: &mut Particle, ctx: &mut Update, mut camera_position: vec3d) -> Instance3d {
-    particle.lifetime = particle.lifetime.saturating_sub(ctx.dt);
+    particle.lifetime -= ctx.dt;
 
     particle
         .motile

@@ -1,6 +1,5 @@
-use std::time::Duration;
-
 use lib::save::SaveWorld;
+use time::Duration;
 use tracing::info;
 
 use crate::chunk::map::ChunkMap;

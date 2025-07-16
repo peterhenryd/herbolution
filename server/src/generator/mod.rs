@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use crossbeam_channel::{Receiver, Sender, TryIter, unbounded};
 use lib::point::ChunkPt;
+use lib::task::THREAD_POOL;
 use lib::util::ProgressiveMeasurement;
 use lib::vector::{vec2f, vec3u5};
 use lib::world::{CHUNK_AREA, CHUNK_LENGTH};
@@ -35,7 +36,7 @@ impl ChunkGenerator {
         let sender = self.sender.clone();
         let params = self.params.clone();
 
-        rayon::spawn(move || {
+        THREAD_POOL.spawn(move || {
             #[cfg(feature = "tracing")]
             tracing_tracy::client::set_thread_name!("chunk_generator");
             let mut mesh = CubeMesh::new(position);

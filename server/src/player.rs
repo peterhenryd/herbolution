@@ -1,8 +1,7 @@
-use crate::chunk::map::CubeHit;
-use crate::chunk::material::Material;
-use crate::entity::behavior::{EntityBehavior, EntityBehaviorType, EntityContext};
-use crate::entity::{ActionState, ActionTarget, CubeTarget};
-use crate::handle::Particle;
+use std::any::Any;
+use std::mem::take;
+use std::sync::Arc;
+
 use arc_swap::ArcSwapOption;
 use crossbeam_channel::{Receiver, Sender};
 use lib::aabb::Aabb3;
@@ -11,10 +10,13 @@ use lib::rotation::Euler;
 use lib::util::default;
 use lib::vector::{vec2d, vec3d, vec3f, Vec2, Vec3};
 use lib::world::Health;
-use std::any::Any;
-use std::mem::take;
-use std::sync::Arc;
-use std::time::Duration;
+use time::Duration;
+
+use crate::chunk::map::CubeHit;
+use crate::chunk::material::Material;
+use crate::entity::behavior::{EntityBehavior, EntityBehaviorType, EntityContext};
+use crate::entity::{ActionState, ActionTarget, CubeTarget};
+use crate::handle::Particle;
 
 #[derive(Debug)]
 pub struct Player {
@@ -136,7 +138,7 @@ impl Player {
             });
         }
 
-        state.remaining_time -= ctx.dt.as_secs_f32();
+        state.remaining_time -= ctx.dt.as_seconds_f32();
         let finished = state.remaining_time <= 0.0;
 
         if finished {
@@ -209,7 +211,7 @@ impl Player {
 
 impl EntityBehavior for Player {
     fn update(&mut self, ctx: &mut EntityContext) {
-        self.health += self.regeneration * ctx.dt.as_secs_f32();
+        self.health += self.regeneration * ctx.dt.as_seconds_f32();
 
         if let Some(fall_distance) = ctx.entity.body.last_fell.take() {
             if fall_distance > 3.0 {

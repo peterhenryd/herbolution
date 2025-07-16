@@ -10,20 +10,22 @@ herbolution_server = { path = "../server" }
 bytemuck = { workspace = true, features = ["derive"] }
 fastrand.workspace = true
 image.workspace = true
+num_cpus.workspace = true
 parking_lot.workspace = true
 pollster.workspace = true
-rayon.workspace = true
 serde = { workspace = true, features = ["derive"] }
 smallvec.workspace = true
 thiserror.workspace = true
+time.workspace = true
 toml.workspace = true
+tracing-tracy = { workspace = true, optional = true }
 tracing.workspace = true
 
-clap = "4.5.41"
+clap = { version = "4.5.41", features = ["derive"] }
+directories = "6.0.0"
 fontdue = "0.9.3"
 image-atlas = "0.4.1"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
-tracing-tracy = { workspace = true, optional = true }
 wgpu = "26.0.1"
 winit = "0.30.11"
 

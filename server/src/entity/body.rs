@@ -1,11 +1,10 @@
-use std::f32::consts::FRAC_PI_2;
-use std::ops::Add;
-use std::time::Duration;
-
 use lib::aabb::Aabb3;
 use lib::rotation::Euler;
 use lib::size::size3f;
 use lib::vector::{vec3d, vec3f, Vec3};
+use std::f32::consts::FRAC_PI_2;
+use std::ops::Add;
+use time::Duration;
 
 use crate::chunk::map::ChunkMap;
 
@@ -52,7 +51,7 @@ impl EntityBody {
     }
 
     pub fn update(&mut self, chunk_map: &mut ChunkMap, dt: Duration) {
-        let dt_secs = dt.as_secs_f64();
+        let dt_secs = dt.as_seconds_f64();
 
         self.apply_physics_and_collision(chunk_map, dt_secs);
     }

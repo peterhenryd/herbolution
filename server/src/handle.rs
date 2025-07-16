@@ -1,6 +1,5 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use std::time::Duration;
 
 use crossbeam_channel::{bounded, unbounded, Receiver, Sender};
 use lib::color::Rgba;
@@ -8,6 +7,7 @@ use lib::motile::Motile;
 use lib::point::ChunkPt;
 use lib::rotation::Quat;
 use lib::vector::vec3d;
+use time::Duration;
 use tracing::error;
 
 use crate::chunk::handle::ChunkLoad;

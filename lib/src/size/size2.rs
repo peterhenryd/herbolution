@@ -56,6 +56,10 @@ impl<T> Size2<T> {
     pub fn to_vec2(self) -> Vec2<T> {
         Vec2::new(self.width, self.height)
     }
+
+    pub fn to_tuple(self) -> (T, T) {
+        (self.width, self.height)
+    }
 }
 
 impl<T: ConstZero> Size2<T> {

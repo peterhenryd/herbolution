@@ -1,10 +1,8 @@
-use std::time::Duration;
-
-use generational_arena::{Arena, Index, Iter, IterMut};
-
 use crate::chunk::map::ChunkMap;
 use crate::entity::Entity;
 use crate::handle::ClientHandle;
+use generational_arena::{Arena, Index, Iter, IterMut};
+use time::Duration;
 
 #[derive(Debug)]
 pub struct EntitySet {

@@ -1,19 +1,14 @@
 #![allow(incomplete_features)]
-#![feature(generic_const_exprs)]
 #![feature(array_chunks)]
-#![feature(iter_array_chunks)]
+#![feature(generic_const_exprs)]
 #![feature(iter_next_chunk)]
-#![feature(random)]
-#![feature(duration_constants)]
-#![feature(integer_atomics)]
-#![feature(variant_count)]
-extern crate herbolution_lib as lib;
 
-use std::thread;
+extern crate herbolution_lib as lib;
 
 use hashbrown::HashMap;
 use lib::save::Save;
 use lib::size::Size3;
+use lib::task::THREAD_POOL;
 use lib::util::DeltaTime;
 use lib::vector::Vec3;
 
@@ -47,7 +42,7 @@ impl Game {
     pub fn spawn(options: Options) -> GameHandle {
         let (client_handle, handle) = handle::create();
 
-        thread::spawn(move || {
+        THREAD_POOL.spawn(move || {
             let mut game = Game::new(options, client_handle);
             game.add_client();
 

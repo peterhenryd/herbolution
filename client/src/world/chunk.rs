@@ -9,7 +9,8 @@ use lib::aabb::Aabb3;
 use lib::collections::Mailbox;
 use lib::point::ChunkPt;
 use lib::spatial::{CubeFace, PerFace};
-use lib::vector::{vec3i, vec3u5, vec4f, Vec3, Vec4};
+use lib::task::THREAD_POOL;
+use lib::vector::{Vec3, Vec4, vec3i, vec3u5, vec4f};
 use lib::world::{CHUNK_LENGTH, CHUNK_VOLUME};
 use parking_lot::{RwLock, RwLockReadGuard};
 use server::chunk::cube::Cube;
@@ -19,8 +20,8 @@ use wgpu::BufferUsages;
 
 use crate::video::gpu;
 use crate::video::resource::GrowBuffer;
-use crate::video::world::chisel::Chisel;
 use crate::video::world::Instance3d;
+use crate::video::world::chisel::Chisel;
 use crate::world::frustum::Frustum;
 
 type ChunkShell = [Option<Arc<RwLock<ChunkData>>>; 27];
@@ -66,7 +67,7 @@ impl ChunkMap {
             let return_tx = self.mesh_return.sender();
             let chunk_shell = create_chunk_shell(&self.map, chunk_position);
 
-            rayon::spawn(move || {
+            THREAD_POOL.spawn(move || {
                 generate_mesh(&chunk_shell, &mut instances);
 
                 let _ = return_tx.send((chunk_position, instances));

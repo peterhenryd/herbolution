@@ -1,15 +1,14 @@
 use std::any::{Any, TypeId};
 use std::fmt::Debug;
 use std::mem::take;
-use std::time::Duration;
-
-use hashbrown::HashMap;
 
 use crate::chunk::map::ChunkMap;
-use crate::entity::EntityData;
 use crate::entity::components::ChunkLoader;
+use crate::entity::EntityData;
 use crate::handle::ClientHandle;
 use crate::player::Player;
+use hashbrown::HashMap;
+use time::Duration;
 
 pub struct EntityContext<'a> {
     pub entity: &'a mut EntityData,

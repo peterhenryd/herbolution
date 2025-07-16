@@ -7,7 +7,7 @@ use winit::event::Modifiers;
 pub use winit::event::MouseButton;
 use winit::keyboard::{KeyCode, ModifiersKeyState};
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Input {
     active_keys: HashSet<KeyCode>,
     active_mouse_buttons: HashSet<MouseButton>,

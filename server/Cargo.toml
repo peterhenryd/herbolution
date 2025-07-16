@@ -15,8 +15,9 @@ parking_lot.workspace = true
 rayon.workspace = true
 serde = { workspace = true, features = ["derive"] }
 smallvec.workspace = true
-tracing.workspace = true
+time.workspace = true
 tracing-tracy = { workspace = true, optional = true }
+tracing.workspace = true
 
 arc-swap = "1.7.1"
 line_drawing = "1.0.1"

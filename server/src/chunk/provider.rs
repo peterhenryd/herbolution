@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use crossbeam_channel::{Receiver, Sender, TryIter, unbounded};
 use lib::point::ChunkPt;
+use lib::task::THREAD_POOL;
 use lib::util::DisplayJoined;
 use tracing::error;
 
@@ -71,7 +72,7 @@ impl ChunkReader {
     pub fn request(&self, path: PathBuf, position: ChunkPt) {
         let tx = self.tx.clone();
 
-        rayon::spawn(move || {
+        THREAD_POOL.spawn(move || {
             let bytes;
             match std::fs::read(path) {
                 Ok(x) => bytes = x,

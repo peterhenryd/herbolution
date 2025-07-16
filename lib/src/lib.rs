@@ -1,4 +1,3 @@
-#![feature(duration_constants)]
 #![feature(const_precise_live_drops)]
 #![feature(const_trait_impl)]
 #![feature(const_ops)]
@@ -17,6 +16,7 @@ pub mod rotation;
 pub mod save;
 pub mod size;
 pub mod spatial;
+pub mod task;
 pub mod util;
 pub mod vector;
 pub mod world;

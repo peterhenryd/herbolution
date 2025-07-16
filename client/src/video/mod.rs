@@ -18,6 +18,7 @@ pub mod resource;
 pub mod ui;
 pub mod world;
 
+#[derive(Debug)]
 pub struct Video<'w> {
     pub handle: gpu::Handle,
     pub surface: gpu::Surface<'w>,
@@ -26,16 +27,18 @@ pub struct Video<'w> {
     clear_color: Rgba<f64>,
 }
 
+#[derive(Debug)]
 pub struct Options {
     pub resolution: size2u,
     pub clear_color: Rgba<f64>,
     pub sample_count: SampleCount,
     pub asset_path: PathBuf,
+    pub vsync: bool,
 }
 
 impl<'w> Video<'w> {
     pub fn create(target: impl Into<SurfaceTarget<'w>>, options: Options) -> Self {
-        let (handle, surface) = gpu::create(target, options.resolution, options.sample_count);
+        let (handle, surface) = gpu::create(target, options.resolution, options.sample_count, options.vsync);
         let mut painter = Painter::create(&handle, options.sample_count, &options.asset_path);
         painter.set_resolution(&handle, options.resolution);
         let sculptor = Sculptor::create(&handle, options.sample_count);
@@ -83,6 +86,7 @@ impl<'w> Video<'w> {
     }
 }
 
+#[derive(Debug)]
 pub struct Frame<'h, 'a> {
     pub(crate) frame: frame::Frame<'h>,
     pub painter: &'a Painter,

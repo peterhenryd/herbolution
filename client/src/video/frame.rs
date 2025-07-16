@@ -7,6 +7,7 @@ use crate::video::gpu;
 use crate::video::gpu::SurfaceTexture;
 use crate::video::resource::{SampleCount, Texture};
 
+#[derive(Debug)]
 pub struct Frame<'h> {
     pub(crate) handle: &'h gpu::Handle,
     state: Option<State>,
@@ -62,6 +63,7 @@ impl Drop for Frame<'_> {
     }
 }
 
+#[derive(Debug)]
 struct State {
     surface: SurfaceTexture,
     encoder: CommandEncoder,

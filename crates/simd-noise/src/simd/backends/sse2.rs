@@ -12,8 +12,12 @@ impl Simd for Sse2 {
 use core::arch::x86::*;
 #[cfg(target_arch = "x86_64")]
 use core::arch::x86_64::*;
-  use crate::{define_simd_type, impl_f32_simd_type, impl_f64_simd_type, impl_i16_simd_type, impl_i32_simd_type, impl_i64_simd_type, impl_i8_simd_type, impl_simd_float_overloads, impl_simd_int_overloads};
+
 use crate::simd::*;
+use crate::{
+    define_simd_type, impl_f32_simd_type, impl_f64_simd_type, impl_i16_simd_type, impl_i32_simd_type, impl_i64_simd_type, impl_i8_simd_type,
+    impl_simd_float_overloads, impl_simd_int_overloads,
+};
 
 define_simd_type!(Sse2, i8, 16, __m128i);
 impl_simd_int_overloads!(I8x16);

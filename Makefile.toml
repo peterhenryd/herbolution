@@ -1,0 +1,13 @@
+[env]
+CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
+
+[tasks.run-traced]
+command = "cargo"
+args = [
+    "run",
+    "--release",
+    "--features=tracing",
+    "--bin=herbolution_client",
+    "--",
+]
+env = { "RUST_LOG" = "herbolution_client=trace,herbolution_server=trace" }

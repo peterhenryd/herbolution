@@ -1,5 +1,7 @@
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::time::{Duration, Instant};
+use std::time::Instant;
+use time::ext::InstantExt;
+use time::Duration;
 
 #[derive(Debug)]
 pub struct DeltaTime {
@@ -13,7 +15,7 @@ impl DeltaTime {
 
     pub fn next(&mut self) -> Duration {
         let now = Instant::now();
-        let dt = now - self.instant;
+        let dt = now.signed_duration_since(self.instant);
         self.instant = now;
         dt
     }
@@ -29,7 +31,7 @@ pub struct TickTime {
 impl TickTime {
     pub fn new(ticks_per_second: u64) -> Self {
         Self {
-            interval: Duration::from_millis(1000 / ticks_per_second),
+            interval: Duration::milliseconds(1000 / ticks_per_second as i64),
             acc: Duration::ZERO,
             rate: ticks_per_second,
         }
@@ -37,7 +39,7 @@ impl TickTime {
 
     pub fn set_rate(&mut self, ticks_per_second: u64) {
         self.rate = ticks_per_second;
-        self.interval = Duration::from_millis(1000 / ticks_per_second);
+        self.interval = Duration::milliseconds(1000 / ticks_per_second as i64);
     }
 
     #[inline]
@@ -116,7 +118,7 @@ impl ProgressiveMeasurement {
         if count == 0 {
             Duration::ZERO
         } else {
-            Duration::from_nanos(self.acc.load(Ordering::Relaxed) / count)
+            Duration::nanoseconds((self.acc.load(Ordering::Relaxed) / count) as i64)
         }
     }
 }

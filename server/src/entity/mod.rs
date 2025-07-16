@@ -1,6 +1,5 @@
-use std::time::Duration;
-
 use lib::vector::vec3i;
+use time::Duration;
 
 use crate::chunk::map::ChunkMap;
 use crate::entity::behavior::EntityBehaviors;

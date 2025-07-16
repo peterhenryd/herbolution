@@ -59,6 +59,7 @@ impl Handle {
     }
 }
 
+#[derive(Debug)]
 pub struct Surface<'w> {
     inner: wgpu::Surface<'w>,
     config: SurfaceConfiguration,
@@ -67,13 +68,13 @@ pub struct Surface<'w> {
 }
 
 impl<'w> Surface<'w> {
-    pub fn new(gpu: &Handle, inner: wgpu::Surface<'w>, resolution: size2u, sample_count: SampleCount) -> Self {
+    pub fn new(gpu: &Handle, inner: wgpu::Surface<'w>, resolution: size2u, sample_count: SampleCount, vsync: bool) -> Self {
         let config = SurfaceConfiguration {
             usage: TextureUsages::RENDER_ATTACHMENT,
             format: TextureFormat::Bgra8UnormSrgb,
             width: resolution.width,
             height: resolution.height,
-            present_mode: PresentMode::AutoVsync,
+            present_mode: if vsync { PresentMode::AutoVsync } else { PresentMode::AutoNoVsync },
             desired_maximum_frame_latency: 2,
             alpha_mode: CompositeAlphaMode::Opaque,
             view_formats: vec![],
@@ -88,6 +89,11 @@ impl<'w> Surface<'w> {
             depth_texture,
             sample_count,
         }
+    }
+
+    pub fn set_vsync(&mut self, gpu: &Handle, vsync: bool) {
+        self.config.present_mode = if vsync { PresentMode::AutoVsync } else { PresentMode::AutoNoVsync };
+        self.inner.configure(gpu.device(), &self.config);
     }
 
     pub fn set_sample_count(&mut self, gpu: &Handle, sample_count: SampleCount) {
@@ -123,6 +129,7 @@ impl<'w> Surface<'w> {
     }
 }
 
+#[derive(Debug)]
 pub struct SurfaceTexture {
     inner: Option<wgpu::SurfaceTexture>,
     view: TextureView,
@@ -154,14 +161,14 @@ impl Drop for SurfaceTexture {
     }
 }
 
-pub fn create<'w>(target: impl Into<wgpu::SurfaceTarget<'w>>, resolution: impl Into<size2u>, sample_count: SampleCount) -> (Handle, Surface<'w>) {
+pub fn create<'w>(target: impl Into<wgpu::SurfaceTarget<'w>>, resolution: impl Into<size2u>, sample_count: SampleCount, vsync: bool) -> (Handle, Surface<'w>) {
     let instance = wgpu::Instance::default();
     let surface = instance
         .create_surface(target)
         .expect("Failed to create surface");
 
     let handle = Handle::create(&instance, &surface);
-    let surface = Surface::new(&handle, surface, resolution.into(), sample_count);
+    let surface = Surface::new(&handle, surface, resolution.into(), sample_count, vsync);
 
     (handle, surface)
 }

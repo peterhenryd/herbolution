@@ -7,6 +7,7 @@ use lib::aabb::Aabb3;
 use lib::collections::mailbox::Mailbox;
 use lib::point::{ChunkCubePt, ChunkPt, CubePt};
 use lib::spatial::{CubeFace, CubeFaces};
+use lib::task::THREAD_POOL;
 use lib::util::{GroupKey, GroupKeyBuf};
 use lib::vector::{Vec3, vec3d, vec3f, vec3i, vec3u5};
 use lib::world::CHUNK_LENGTH;
@@ -216,7 +217,7 @@ impl ChunkMap {
 
                 let mesh = chunk.mesh.clone();
                 let adj_mesh = other.mesh.clone();
-                rayon::spawn(move || {
+                THREAD_POOL.spawn(move || {
                     mesh.write()
                         .cull_shared_faces(&mut *adj_mesh.write());
                 });

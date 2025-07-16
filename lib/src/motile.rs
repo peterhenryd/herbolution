@@ -1,6 +1,5 @@
-use std::time::Duration;
-
-use crate::vector::{Vec3, vec3d};
+use crate::vector::{vec3d, Vec3};
+use time::Duration;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Motile {
@@ -24,9 +23,9 @@ impl Motile {
 
         self.jump += -self.jump * self.damp;
         self.drive += -self.drive * self.damp;
-        self.velocity += acceleration * dt.as_secs_f64();
+        self.velocity += acceleration * dt.as_seconds_f64();
 
-        *position += self.velocity * dt.as_secs_f64();
+        *position += self.velocity * dt.as_seconds_f64();
     }
 }
 

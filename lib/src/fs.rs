@@ -1,4 +1,3 @@
-use std::env::home_dir;
 use std::fs::{create_dir, write};
 use std::path::{Path, PathBuf};
 
@@ -13,9 +12,7 @@ pub struct Fs {
 }
 
 impl Fs {
-    pub fn new(root: Option<PathBuf>) -> Self {
-        let root = root.unwrap_or_else(root_dir);
-
+    pub fn new(root: PathBuf) -> Self {
         Self {
             saves: root.join("saves"),
             root,
@@ -51,12 +48,6 @@ impl Fs {
     pub fn path(&self) -> &Path {
         &self.root
     }
-}
-
-fn root_dir() -> PathBuf {
-    home_dir()
-        .unwrap_or_else(|| PathBuf::from("../../../../../../.."))
-        .join(".herbolution")
 }
 
 fn copy_assets(base_path: &Path) -> std::io::Result<()> {
