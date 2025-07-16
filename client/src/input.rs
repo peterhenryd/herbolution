@@ -21,14 +21,13 @@ impl Input {
     pub fn push_key_activity(&mut self, key_code: KeyCode, is_active: bool) {
         if is_active {
             self.active_keys.insert(key_code);
-            return;
-        }
+        } else {
+            if self.active_keys.contains(&key_code) {
+                self.frame.key_events.push(key_code);
+            }
 
-        if self.active_keys.contains(&key_code) {
-            self.frame.key_events.push(key_code);
+            self.active_keys.remove(&key_code);
         }
-
-        self.active_keys.remove(&key_code);
     }
 
     pub fn is_key_active(&self, key_code: KeyCode) -> bool {

@@ -1,4 +1,3 @@
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;
 use time::ext::InstantExt;
 use time::Duration;
@@ -90,60 +89,5 @@ impl IntervalCounter {
     #[inline]
     pub fn get(&self) -> u64 {
         self.last
-    }
-}
-
-pub struct ProgressiveMeasurement {
-    count: AtomicU64,
-    acc: AtomicU64,
-}
-
-impl ProgressiveMeasurement {
-    pub const fn new() -> Self {
-        Self {
-            count: AtomicU64::new(0),
-            acc: AtomicU64::new(0),
-        }
-    }
-
-    pub fn start_measuring(&self) -> Stopwatch<'_> {
-        Stopwatch {
-            stopwatch: self,
-            start: Instant::now(),
-        }
-    }
-
-    pub fn average(&self) -> Duration {
-        let count = self.count.load(Ordering::Relaxed);
-        if count == 0 {
-            Duration::ZERO
-        } else {
-            Duration::nanoseconds((self.acc.load(Ordering::Relaxed) / count) as i64)
-        }
-    }
-}
-
-pub struct Stopwatch<'a> {
-    stopwatch: &'a ProgressiveMeasurement,
-    start: Instant,
-}
-
-impl Stopwatch<'_> {
-    pub fn stop(self) {
-        let elapsed = self.start.elapsed();
-        let nanos = elapsed.as_nanos() as u64;
-
-        self.stopwatch
-            .count
-            .fetch_add(1, Ordering::Relaxed);
-        let acc = self
-            .stopwatch
-            .acc
-            .fetch_add(nanos, Ordering::Relaxed);
-
-        if u64::MAX - acc < nanos * 16 {
-            self.stopwatch.count.store(0, Ordering::Relaxed);
-            self.stopwatch.acc.store(0, Ordering::Relaxed);
-        }
     }
 }

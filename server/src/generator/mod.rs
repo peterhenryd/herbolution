@@ -1,18 +1,15 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use crossbeam_channel::{Receiver, Sender, TryIter, unbounded};
+use crossbeam_channel::{unbounded, Receiver, Sender, TryIter};
 use lib::point::ChunkPt;
 use lib::task::THREAD_POOL;
-use lib::util::ProgressiveMeasurement;
 use lib::vector::{vec2f, vec3u5};
 use lib::world::{CHUNK_AREA, CHUNK_LENGTH};
 use simd_noise::noise::{FbmNoise, Noise, NoiseDim, NoiseTransform, OctaveNoise};
 
 use crate::chunk::material::Palette;
 use crate::chunk::mesh::CubeMesh;
-
-pub static CHUNK_GENERATION_TIME: ProgressiveMeasurement = ProgressiveMeasurement::new();
 
 #[derive(Debug)]
 pub struct ChunkGenerator {
@@ -64,8 +61,6 @@ impl GenerationParams {
 
     #[tracing::instrument(name = "chunk_generate", skip_all)]
     pub fn generate(&self, chunk: &mut CubeMesh) {
-        let stopwatch = CHUNK_GENERATION_TIME.start_measuring();
-
         let stone = chunk
             .palette
             .insert(self.global_palette.get("herbolution:stone"));
@@ -97,8 +92,6 @@ impl GenerationParams {
                 }
             }
         }
-
-        stopwatch.stop();
     }
 
     #[inline]
