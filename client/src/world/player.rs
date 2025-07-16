@@ -4,17 +4,17 @@ use std::sync::Arc;
 use lib::color::{ColorConsts, Rgba};
 use lib::proj::Perspective;
 use lib::spatial::CubeFace;
-use lib::vector::{Vec3, Vec4, vec3f};
+use lib::vector::{vec3f, Vec3, Vec4};
 use server::entity::{ActionState, ActionTarget, CubeTarget};
 use server::player::{PlayerInputDelta, PlayerInputState, PlayerState, ServerPlayerHandle};
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
 
 use crate::app::Update;
-use crate::video::Video;
 use crate::video::camera::{VideoCamera, View};
 use crate::video::resource::{SetId, Sets};
 use crate::video::world::Instance3d;
+use crate::video::Video;
 use crate::world::frustum::Frustum;
 
 #[derive(Debug)]
@@ -144,6 +144,7 @@ impl Player {
             .store(Some(Arc::new(PlayerInputState {
                 relative_motion: forces,
                 action_state,
+                toggle_gravity: ctx.store.input.is_key_active(KeyCode::KeyG),
             })));
 
         let movement = ctx.input.mouse_movement;

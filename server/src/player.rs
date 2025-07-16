@@ -72,6 +72,10 @@ impl Player {
         if let Some(input_state) = input_state_guard.as_ref() {
             self.action_state = input_state.action_state;
             ctx.entity.body.motion = input_state.relative_motion;
+
+            if input_state.toggle_gravity {
+                ctx.entity.body.attrs.has_gravity = !ctx.entity.body.attrs.has_gravity;
+            }
         }
 
         ctx.entity.body.motion = ctx
@@ -269,6 +273,7 @@ pub enum PlayerInputDelta {
 pub struct PlayerInputState {
     pub relative_motion: vec3f,
     pub action_state: ActionState,
+    pub toggle_gravity: bool,
 }
 
 #[derive(Debug)]

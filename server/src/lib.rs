@@ -76,7 +76,7 @@ impl Game {
                         eye_offset: Vec3::new(0.0, 1.0, 0.0),
                     },
                     EntityAttrs {
-                        has_gravity: false,
+                        has_gravity: true,
                         acceleration_rate: 20.0,
                         terminal_velocity: 100.0,
                     },

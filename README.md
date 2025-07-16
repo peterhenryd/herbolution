@@ -27,8 +27,9 @@ If you decide to run Herbolution, please note that the client will create a `.he
 
 Herbolution has the following (currently hard-coded) controls:
 
-- Use the `W`, `A`, `S` and `D` keys to move forward, left, backward and right.
-- Use the space-bar and left-shift key to move up (jump) and down.
+- Press the `W`, `A`, `S` and `D` keys to move forward, left, backward and right.
+- Press the space-bar and left-shift key to move up (jump) and down.
+- Press the `G` key to toggle the player's gravity.
 - Scroll to change the player's speed.
 - Hold left-lick to destroy cubes, and right-click (or left-control left-click) to place stone cubes.
 - Press the backtick/`~` key to toggle the debug information display.
