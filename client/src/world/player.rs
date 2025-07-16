@@ -144,7 +144,7 @@ impl Player {
             .store(Some(Arc::new(PlayerInputState {
                 relative_motion: forces,
                 action_state,
-                toggle_gravity: ctx.store.input.is_key_active(KeyCode::KeyG),
+                toggle_gravity: ctx.input.key_events.contains(&KeyCode::KeyG),
             })));
 
         let movement = ctx.input.mouse_movement;
