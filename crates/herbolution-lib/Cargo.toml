@@ -1,0 +1,16 @@
+[package]
+name = "herbolution-lib"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bytemuck = { workspace = true, features = ["derive"] }
+crossbeam-channel.workspace = true
+rayon.workspace = true
+serde = { workspace = true, features = ["derive"] }
+thiserror.workspace = true
+time.workspace = true
+toml.workspace = true
+kiln-prims = { path = "../kiln-prims" }
+include_dir.workspace = true
+num.workspace = true

@@ -1,0 +1,26 @@
+[package]
+name = "herbolution-server"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+arc-swap.workspace = true
+crossbeam-channel.workspace = true
+fastrand.workspace = true
+generational-arena.workspace = true
+hashbrown.workspace = true
+herbolution-lib = { path = "../herbolution-lib" }
+line_drawing.workspace = true
+parking_lot.workspace = true
+rayon.workspace = true
+serde = { workspace = true, features = ["derive"] }
+herbolution-simd-noise = { path = "../herbolution-simd-noise" }
+smallvec.workspace = true
+time.workspace = true
+tracing-tracy = { workspace = true, optional = true }
+tracing.workspace = true
+kiln-prims = { path = "../kiln-prims" }
+tokio = { workspace = true, features = ["macros", "net", "rt-multi-thread"]  }
+
+[features]
+tracing = ["dep:tracing-tracy"]

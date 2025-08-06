@@ -1,0 +1,12 @@
+[package]
+name = "kiln-prims"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde.workspace = true
+bytemuck.workspace = true
+num = "0.4.3"

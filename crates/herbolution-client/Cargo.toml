@@ -1,0 +1,28 @@
+[package]
+name = "herbolution-client"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+herbolution-lib = { path = "../herbolution-lib" }
+herbolution-server = { path = "../herbolution-server" }
+kiln = { path = "../kiln" }
+kiln-prims = { path = "../kiln-prims" }
+bytemuck = { workspace = true, features = ["derive"] }
+fastrand.workspace = true
+parking_lot.workspace = true
+serde = { workspace = true, features = ["derive"] }
+smallvec.workspace = true
+time.workspace = true
+toml.workspace = true
+tracing-tracy = { workspace = true, optional = true }
+tracing.workspace = true
+rayon.workspace = true
+clap = { version = "4.5.41", features = ["derive"] }
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+wgpu = { version = "26.0.1", features = ["default"] }
+winit = "0.30.11"
+directories = "6.0.0"
+
+[features]
+tracing = ["dep:tracing-tracy", "herbolution-server/tracing"]

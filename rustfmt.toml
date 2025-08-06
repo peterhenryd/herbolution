@@ -1,7 +1,8 @@
-group_imports = "StdExternalCrate"
-max_width = 160
-use_small_heuristics = "Default"
-struct_lit_single_line = true
-comment_width = 160
-wrap_comments = true
 chain_width = 50
+comment_width = 160
+group_imports = "StdExternalCrate"
+imports_granularity = "Module"
+max_width = 160
+struct_lit_single_line = true
+use_small_heuristics = "Default"
+wrap_comments = true
