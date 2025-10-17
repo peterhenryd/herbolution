@@ -1,0 +1,10 @@
+[package]
+name = "kiln-types"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bytemuck.workspace = true
+num.workspace = true
+serde.workspace = true
+static_assertions.workspace = true

@@ -1,0 +1,10 @@
+[package]
+name = "kiln"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+kiln-types = { version = "0.1.0", path = "../kiln-types" }
+pollster.workspace = true
+thiserror.workspace = true
+wgpu.workspace = true
